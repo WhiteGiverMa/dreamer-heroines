@@ -1,0 +1,91 @@
+[gd_scene load_steps=9 format=3 uid="uid://rangedenemy12345"]
+
+[ext_resource type="Script" path="res://src/enemies/ranged_enemy.gd" id="1_ranged"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(36, 56)
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_body"]
+size = Vector2(36, 56)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_detection"]
+radius = 600.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hitbox"]
+size = Vector2(36, 56)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
+size = Vector2(46, 66)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
+size = Vector2(18, 10)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(10, 36)
+
+[sub_resource type="Gradient" id="Gradient_aim"]
+colors = PackedColorArray(1, 0, 0, 0.5, 1, 0, 0, 0)
+
+[node name="RangedEnemy" type="CharacterBody2D" groups=["enemy"]]
+collision_layer = 2
+collision_mask = 13
+script = ExtResource("1_ranged")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -28)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -28)
+texture = SubResource("PlaceholderTexture2D_body")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+
+[node name="Muzzle" type="Marker2D" parent="."]
+position = Vector2(20, -35)
+
+[node name="AimLine" type="Line2D" parent="."]
+points = PackedVector2Array(0, 0, 100, 0)
+width = 2.0
+default_color = Color(1, 0, 0, 0.5)
+gradient = SubResource("Gradient_aim")
+
+[node name="DetectionArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea"]
+shape = SubResource("CircleShape2D_detection")
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -28)
+shape = SubResource("RectangleShape2D_hitbox")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -28)
+shape = SubResource("RectangleShape2D_hurtbox")
+
+[node name="AttackTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="GroundCheck" type="RayCast2D" parent="."]
+position = Vector2(0, -5)
+target_position = Vector2(0, 10)
+collision_mask = 8
+
+[node name="WallCheck" type="RayCast2D" parent="."]
+position = Vector2(0, -28)
+target_position = Vector2(23, 0)
+collision_mask = 8
+
+[node name="InvulnerabilityTimer" type="Timer" parent="."]
+wait_time = 0.1
+one_shot = true

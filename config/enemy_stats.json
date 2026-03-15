@@ -1,0 +1,368 @@
+{
+  "_comment": "敌人数值配置 - 修改这些数值来调整敌人难度",
+  "_warning": "此文件需要人工填写和调优",
+  
+  "melee_grunt": {
+    "_comment": "近战杂兵 - 最基础的近战敌人",
+    "enemy_name": "近战杂兵",
+    "description": "最基础的近战敌人，血量低，速度慢",
+    
+    "max_health": {
+      "value": 30,
+      "description": "最大生命值",
+      "recommended_range": "20-50",
+      "note": "杂兵血量低"
+    },
+    "move_speed": {
+      "value": 120.0,
+      "description": "移动速度（像素/秒）",
+      "recommended_range": "80-150",
+      "note": "比玩家慢"
+    },
+    "attack_damage": {
+      "value": 15,
+      "description": "攻击伤害",
+      "recommended_range": "10-25",
+      "note": "单次攻击伤害"
+    },
+    "attack_cooldown": {
+      "value": 1.2,
+      "description": "攻击冷却（秒）",
+      "recommended_range": "0.8-2.0",
+      "note": "攻击间隔"
+    },
+    "attack_range": {
+      "value": 60.0,
+      "description": "攻击范围（像素）",
+      "recommended_range": "40-100",
+      "note": "近战范围"
+    },
+    "detection_range": {
+      "value": 400.0,
+      "description": "侦测范围（像素）",
+      "recommended_range": "300-600",
+      "note": "发现玩家的距离"
+    },
+    "knockback_resistance": {
+      "value": 0.5,
+      "description": "击退抗性（0-1）",
+      "recommended_range": "0.3-0.8",
+      "note": "1.0 = 不被击退"
+    },
+    "score_value": {
+      "value": 100,
+      "description": "击杀得分",
+      "recommended_range": "50-200",
+      "note": "击杀获得的分数"
+    },
+    "gold_drop": {
+      "value": 10,
+      "description": "金币掉落",
+      "recommended_range": "5-30",
+      "note": "击杀掉落的金币"
+    },
+    "exp_drop": {
+      "value": 15,
+      "description": "经验掉落",
+      "recommended_range": "10-30",
+      "note": "击杀获得的经验"
+    }
+  },
+  
+  "melee_fast": {
+    "_comment": "快速近战 - 速度快血量低",
+    "enemy_name": "快速突击兵",
+    "description": "移动速度快，血量低，适合冲锋",
+    
+    "max_health": {
+      "value": 20,
+      "description": "最大生命值",
+      "recommended_range": "15-30",
+      "note": "血量比杂兵还低"
+    },
+    "move_speed": {
+      "value": 220.0,
+      "description": "移动速度（像素/秒）",
+      "recommended_range": "180-280",
+      "note": "接近玩家速度"
+    },
+    "attack_damage": {
+      "value": 10,
+      "description": "攻击伤害",
+      "recommended_range": "8-15",
+      "note": "单次伤害低但频率高"
+    },
+    "attack_cooldown": {
+      "value": 0.6,
+      "description": "攻击冷却（秒）",
+      "recommended_range": "0.4-1.0",
+      "note": "攻击频率高"
+    },
+    "attack_range": {
+      "value": 50.0,
+      "description": "攻击范围（像素）",
+      "recommended_range": "40-70",
+      "note": "近战范围"
+    },
+    "detection_range": {
+      "value": 500.0,
+      "description": "侦测范围（像素）",
+      "recommended_range": "400-700",
+      "note": "视野较好"
+    },
+    "knockback_resistance": {
+      "value": 0.3,
+      "description": "击退抗性（0-1）",
+      "recommended_range": "0.2-0.5",
+      "note": "容易被击退"
+    },
+    "score_value": {
+      "value": 150,
+      "description": "击杀得分",
+      "recommended_range": "100-250",
+      "note": "比杂兵高"
+    },
+    "gold_drop": {
+      "value": 15,
+      "description": "金币掉落",
+      "recommended_range": "10-25",
+      "note": "略高"
+    },
+    "exp_drop": {
+      "value": 20,
+      "description": "经验掉落",
+      "recommended_range": "15-35",
+      "note": "略高"
+    }
+  },
+  
+  "melee_tank": {
+    "_comment": "坦克近战 - 高血量高伤害",
+    "enemy_name": "重装兵",
+    "description": "血量高，伤害高，速度慢，适合作为肉盾",
+    
+    "max_health": {
+      "value": 120,
+      "description": "最大生命值",
+      "recommended_range": "80-200",
+      "note": "血量很高"
+    },
+    "move_speed": {
+      "value": 80.0,
+      "description": "移动速度（像素/秒）",
+      "recommended_range": "60-100",
+      "note": "移动很慢"
+    },
+    "attack_damage": {
+      "value": 35,
+      "description": "攻击伤害",
+      "recommended_range": "25-50",
+      "note": "伤害很高"
+    },
+    "attack_cooldown": {
+      "value": 1.8,
+      "description": "攻击冷却（秒）",
+      "recommended_range": "1.5-2.5",
+      "note": "攻击间隔长"
+    },
+    "attack_range": {
+      "value": 80.0,
+      "description": "攻击范围（像素）",
+      "recommended_range": "60-120",
+      "note": "攻击范围较大"
+    },
+    "detection_range": {
+      "value": 350.0,
+      "description": "侦测范围（像素）",
+      "recommended_range": "250-450",
+      "note": "视野一般"
+    },
+    "knockback_resistance": {
+      "value": 0.9,
+      "description": "击退抗性（0-1）",
+      "recommended_range": "0.7-1.0",
+      "note": "几乎不被击退"
+    },
+    "armor": {
+      "value": 5,
+      "description": "护甲值",
+      "recommended_range": "0-10",
+      "note": "减少受到的伤害"
+    },
+    "score_value": {
+      "value": 300,
+      "description": "击杀得分",
+      "recommended_range": "200-500",
+      "note": "高分值"
+    },
+    "gold_drop": {
+      "value": 40,
+      "description": "金币掉落",
+      "recommended_range": "30-80",
+      "note": "掉落多"
+    },
+    "exp_drop": {
+      "value": 50,
+      "description": "经验掉落",
+      "recommended_range": "35-80",
+      "note": "掉落多"
+    }
+  },
+  
+  "ranged_basic": {
+    "_comment": "基础远程 - 站桩射击",
+    "enemy_name": "远程射手",
+    "description": "保持距离射击，血量低",
+    
+    "max_health": {
+      "value": 25,
+      "description": "最大生命值",
+      "recommended_range": "20-40",
+      "note": "血量低"
+    },
+    "move_speed": {
+      "value": 100.0,
+      "description": "移动速度（像素/秒）",
+      "recommended_range": "80-130",
+      "note": "移动慢"
+    },
+    "attack_damage": {
+      "value": 12,
+      "description": "攻击伤害",
+      "recommended_range": "8-20",
+      "note": "单次伤害中等"
+    },
+    "attack_cooldown": {
+      "value": 1.5,
+      "description": "攻击冷却（秒）",
+      "recommended_range": "1.0-2.5",
+      "note": "射击间隔"
+    },
+    "attack_range": {
+      "value": 450.0,
+      "description": "攻击范围（像素）",
+      "recommended_range": "350-600",
+      "note": "远程射程"
+    },
+    "detection_range": {
+      "value": 550.0,
+      "description": "侦测范围（像素）",
+      "recommended_range": "450-700",
+      "note": "视野好"
+    },
+    "preferred_range": {
+      "value": 350.0,
+      "description": "理想交战距离（像素）",
+      "recommended_range": "250-450",
+      "note": "会尝试保持此距离"
+    },
+    "projectile_speed": {
+      "value": 600.0,
+      "description": "子弹速度（像素/秒）",
+      "recommended_range": "400-800",
+      "note": "子弹较慢可躲避"
+    },
+    "knockback_resistance": {
+      "value": 0.4,
+      "description": "击退抗性（0-1）",
+      "recommended_range": "0.3-0.6",
+      "note": "容易被击退"
+    },
+    "score_value": {
+      "value": 120,
+      "description": "击杀得分",
+      "recommended_range": "80-200",
+      "note": "比近战杂兵略高"
+    },
+    "gold_drop": {
+      "value": 12,
+      "description": "金币掉落",
+      "recommended_range": "8-25",
+      "note": "略高"
+    },
+    "exp_drop": {
+      "value": 18,
+      "description": "经验掉落",
+      "recommended_range": "12-30",
+      "note": "略高"
+    }
+  },
+  
+  "flying_basic": {
+    "_comment": "飞行单位 - 可跨越地形",
+    "enemy_name": "飞行无人机",
+    "description": "飞行单位，可跨越地形，血量低",
+    
+    "max_health": {
+      "value": 20,
+      "description": "最大生命值",
+      "recommended_range": "15-35",
+      "note": "血量低"
+    },
+    "move_speed": {
+      "value": 140.0,
+      "description": "移动速度（像素/秒）",
+      "recommended_range": "120-180",
+      "note": "飞行速度中等"
+    },
+    "attack_damage": {
+      "value": 8,
+      "description": "攻击伤害",
+      "recommended_range": "5-15",
+      "note": "伤害低"
+    },
+    "attack_cooldown": {
+      "value": 1.0,
+      "description": "攻击冷却（秒）",
+      "recommended_range": "0.8-1.5",
+      "note": "攻击频率中等"
+    },
+    "attack_range": {
+      "value": 200.0,
+      "description": "攻击范围（像素）",
+      "recommended_range": "150-300",
+      "note": "中近距离"
+    },
+    "detection_range": {
+      "value": 500.0,
+      "description": "侦测范围（像素）",
+      "recommended_range": "400-600",
+      "note": "视野好"
+    },
+    "flying_height": {
+      "value": 100.0,
+      "description": "飞行高度（像素）",
+      "recommended_range": "50-200",
+      "note": "相对于地面的高度"
+    },
+    "can_pass_through_walls": {
+      "value": false,
+      "description": "是否可穿墙",
+      "note": "false = 会被墙壁阻挡"
+    },
+    "knockback_resistance": {
+      "value": 0.2,
+      "description": "击退抗性（0-1）",
+      "recommended_range": "0.1-0.4",
+      "note": "非常容易被击退"
+    },
+    "score_value": {
+      "value": 130,
+      "description": "击杀得分",
+      "recommended_range": "100-200",
+      "note": "略高"
+    },
+    "gold_drop": {
+      "value": 15,
+      "description": "金币掉落",
+      "recommended_range": "10-30",
+      "note": "略高"
+    },
+    "exp_drop": {
+      "value": 20,
+      "description": "经验掉落",
+      "recommended_range": "15-35",
+      "note": "略高"
+    }
+  }
+}

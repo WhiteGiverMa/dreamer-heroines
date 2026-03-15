@@ -1,0 +1,178 @@
+{
+  "_comment": "游戏手感参数配置 - 修改这些数值来调整游戏手感",
+  "_warning": "此文件需要人工填写和调优",
+  
+  "player_movement": {
+    "_comment": "玩家移动参数",
+    "max_speed": {
+      "value": 300.0,
+      "description": "最大移动速度（像素/秒）",
+      "recommended_range": "250-400",
+      "note": "值越大移动越快，但可能难以控制"
+    },
+    "acceleration": {
+      "value": 2000.0,
+      "description": "地面加速度",
+      "recommended_range": "1500-3000",
+      "note": "值越大启动越快"
+    },
+    "deceleration": {
+      "value": 1500.0,
+      "description": "地面减速度",
+      "recommended_range": "1000-2000",
+      "note": "值越大停止越快"
+    },
+    "air_acceleration": {
+      "value": 1000.0,
+      "description": "空中加速度",
+      "recommended_range": "500-1500",
+      "note": "通常比地面加速度小"
+    },
+    "air_deceleration": {
+      "value": 500.0,
+      "description": "空中减速度",
+      "recommended_range": "300-800",
+      "note": "控制空中惯性"
+    },
+    "sprint_multiplier": {
+      "value": 1.5,
+      "description": "冲刺速度倍率",
+      "recommended_range": "1.3-2.0",
+      "note": "1.5 = 冲刺时速度为正常的1.5倍"
+    },
+    "crouch_multiplier": {
+      "value": 0.5,
+      "description": "蹲伏速度倍率",
+      "recommended_range": "0.3-0.6",
+      "note": "蹲伏时移动变慢"
+    }
+  },
+  
+  "player_jump": {
+    "_comment": "玩家跳跃参数",
+    "jump_velocity": {
+      "value": -600.0,
+      "description": "跳跃初速度（负值向上）",
+      "recommended_range": "-500 ~ -800",
+      "note": "值越小（越负）跳得越高"
+    },
+    "gravity_scale": {
+      "value": 1.0,
+      "description": "重力倍率",
+      "recommended_range": "0.8-1.5",
+      "note": "影响下落速度和跳跃弧线"
+    },
+    "max_fall_speed": {
+      "value": 1000.0,
+      "description": "最大下落速度",
+      "recommended_range": "800-1200",
+      "note": "限制下落速度防止过快"
+    },
+    "coyote_time": {
+      "value": 0.1,
+      "description": "土狼时间（秒）",
+      "recommended_range": "0.05-0.15",
+      "note": "离开平台后仍可跳跃的缓冲时间"
+    },
+    "jump_buffer_time": {
+      "value": 0.1,
+      "description": "跳跃缓冲时间（秒）",
+      "recommended_range": "0.05-0.15",
+      "note": "提前按键的缓冲时间"
+    },
+    "variable_jump_cut": {
+      "value": 0.5,
+      "description": "可变跳跃高度削减倍率",
+      "recommended_range": "0.3-0.7",
+      "note": "松开跳跃键后速度削减比例"
+    },
+    "enable_double_jump": {
+      "value": false,
+      "description": "是否启用二段跳",
+      "note": "硬核风格建议关闭"
+    },
+    "double_jump_velocity": {
+      "value": -480.0,
+      "description": "二段跳速度（为jump_velocity的0.8倍）",
+      "recommended_range": "-400 ~ -600",
+      "note": "二段跳通常比首跳弱"
+    }
+  },
+  
+  "player_combat": {
+    "_comment": "玩家战斗参数",
+    "max_health": {
+      "value": 100,
+      "description": "最大生命值",
+      "recommended_range": "80-150",
+      "note": "硬核风格建议偏低"
+    },
+    "invulnerability_time": {
+      "value": 0.5,
+      "description": "受击无敌时间（秒）",
+      "recommended_range": "0.3-1.0",
+      "note": "防止连续受击"
+    },
+    "knockback_resistance": {
+      "value": 0.8,
+      "description": "击退抗性（0-1）",
+      "recommended_range": "0.5-1.0",
+      "note": "1.0 = 完全不被击退"
+    },
+    "aim_assist": {
+      "value": 0.0,
+      "description": "瞄准辅助强度（0-1）",
+      "recommended_range": "0.0-0.3",
+      "note": "硬核风格建议为0"
+    }
+  },
+  
+  "camera": {
+    "_comment": "镜头参数",
+    "follow_speed": {
+      "value": 10.0,
+      "description": "镜头跟随速度",
+      "recommended_range": "5-15",
+      "note": "值越大跟随越紧密"
+    },
+    "look_ahead": {
+      "value": 100.0,
+      "description": "镜头超前距离（像素）",
+      "recommended_range": "50-200",
+      "note": "根据移动方向预判"
+    },
+    "screen_shake_decay": {
+      "value": 5.0,
+      "description": "屏幕震动衰减速度",
+      "recommended_range": "3-10",
+      "note": "值越大震动停止越快"
+    }
+  },
+  
+  "game_flow": {
+    "_comment": "游戏流程参数",
+    "respawn_delay": {
+      "value": 2.0,
+      "description": "重生延迟（秒）",
+      "recommended_range": "1-3",
+      "note": "死亡后多久重生"
+    },
+    "checkpoint_heal": {
+      "value": false,
+      "description": "检查点是否回血",
+      "note": "硬核风格建议关闭"
+    },
+    "ammo_pickup_amount": {
+      "value": 30,
+      "description": "弹药拾取数量",
+      "recommended_range": "15-60",
+      "note": "每次拾取获得的弹药"
+    },
+    "health_pickup_amount": {
+      "value": 25,
+      "description": "生命值拾取量",
+      "recommended_range": "15-50",
+      "note": "每次拾取恢复的生命值"
+    }
+  }
+}

@@ -1,0 +1,65 @@
+[gd_scene load_steps=5 format=3 uid="uid://player12345"]
+
+[ext_resource type="Script" path="res://src/characters/player.gd" id="1_player"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
+size = Vector2(32, 64)
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_body"]
+size = Vector2(32, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_feet"]
+size = Vector2(30, 4)
+
+[node name="Player" type="CharacterBody2D"]
+collision_layer = 1
+collision_mask = 54
+script = ExtResource("1_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -32)
+shape = SubResource("RectangleShape2D_player")
+
+[node name="Body" type="Sprite2D" parent="."]
+position = Vector2(0, -32)
+texture = SubResource("PlaceholderTexture2D_body")
+
+[node name="WeaponPivot" type="Marker2D" parent="."]
+position = Vector2(0, -40)
+
+[node name="Weapon" type="Node2D" parent="WeaponPivot"]
+
+[node name="Muzzle" type="Marker2D" parent="WeaponPivot/Weapon"]
+position = Vector2(24, 0)
+
+[node name="GroundCheck" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="GroundCheck"]
+position = Vector2(0, -2)
+shape = SubResource("RectangleShape2D_feet")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(0, -50)
+offset = Vector2(100, 0)
+limit_smoothed = true
+position_smoothing_enabled = true
+position_smoothing_speed = 10.0
+drag_horizontal_enabled = true
+drag_vertical_enabled = true
+drag_left_margin = 0.1
+drag_right_margin = 0.1
+drag_top_margin = 0.1
+drag_bottom_margin = 0.1
+
+[node name="HealthComponent" type="Node" parent="."]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+
+[node name="InvulnerabilityTimer" type="Timer" parent="."]
+wait_time = 0.5
+one_shot = true
+
+[connection signal="body_entered" from="GroundCheck" to="." method="_on_ground_check_body_entered"]
+[connection signal="body_exited" from="GroundCheck" to="." method="_on_ground_check_body_exited"]

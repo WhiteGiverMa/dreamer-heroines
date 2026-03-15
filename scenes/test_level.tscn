@@ -1,0 +1,210 @@
+[gd_scene load_steps=13 format=3 uid="uid://level12345"]
+
+[ext_resource type="Script" path="res://src/levels/level_manager.gd" id="1_level_manager"]
+[ext_resource type="PackedScene" uid="uid://meleeenemy12345" path="res://scenes/enemies/melee_enemy.tscn" id="2_melee_enemy"]
+[ext_resource type="PackedScene" uid="uid://rangedenemy12345" path="res://scenes/enemies/ranged_enemy.tscn" id="3_ranged_enemy"]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_ground"]
+normal = Vector2(0, -1)
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_ground"]
+size = Vector2(1920, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_platform"]
+size = Vector2(200, 32)
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_platform"]
+size = Vector2(200, 32)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(64, 400)
+
+[sub_resource type="Gradient" id="Gradient_checkpoint"]
+colors = PackedColorArray(0.2, 0.8, 0.2, 1, 0.2, 1, 0.2, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_checkpoint"]
+gradient = SubResource("Gradient_checkpoint")
+width = 32
+height = 64
+fill_from = Vector2(0.5, 1)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_checkpoint"]
+size = Vector2(32, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_killzone"]
+size = Vector2(2000, 100)
+
+[node name="TestLevel" type="Node2D" groups=["level"]]
+script = ExtResource("1_level_manager")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_left = -1000.0
+offset_top = -500.0
+offset_right = 3000.0
+offset_bottom = 1500.0
+color = Color(0.1, 0.12, 0.15, 1)
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(960, 1000)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("WorldBoundaryShape2D_ground")
+
+[node name="Sprite2D" type="Sprite2D" parent="Ground"]
+position = Vector2(0, 32)
+texture = SubResource("PlaceholderTexture2D_ground")
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="Platform1" type="StaticBody2D" parent="Platforms"]
+position = Vector2(400, 800)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform1"]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/Platform1"]
+texture = SubResource("PlaceholderTexture2D_platform")
+
+[node name="Platform2" type="StaticBody2D" parent="Platforms"]
+position = Vector2(800, 650)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform2"]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/Platform2"]
+texture = SubResource("PlaceholderTexture2D_platform")
+
+[node name="Platform3" type="StaticBody2D" parent="Platforms"]
+position = Vector2(1200, 500)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform3"]
+shape = SubResource("RectangleShape2D_platform")
+
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/Platform3"]
+texture = SubResource("PlaceholderTexture2D_platform")
+
+[node name="Walls" type="Node2D" parent="."]
+
+[node name="LeftWall" type="StaticBody2D" parent="Walls"]
+position = Vector2(-32, 500)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/LeftWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="RightWall" type="StaticBody2D" parent="Walls"]
+position = Vector2(1952, 500)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/RightWall"]
+shape = SubResource("RectangleShape2D_wall")
+
+[node name="Lighting" type="Node2D" parent="."]
+
+[node name="DirectionalLight2D" type="DirectionalLight2D" parent="Lighting"]
+energy = 0.5
+blend_mode = 1
+
+[node name="SpawnPoints" type="Node2D" parent="."]
+
+[node name="PlayerSpawn" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(200, 900)
+
+[node name="EnemySpawn1" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(1500, 900)
+
+[node name="EnemySpawn2" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(1700, 600)
+
+[node name="EnemySpawn3" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(1000, 400)
+
+[node name="Checkpoints" type="Node2D" parent="."]
+
+[node name="Checkpoint1" type="Area2D" parent="Checkpoints" groups=["checkpoint"]]
+position = Vector2(200, 950)
+script = ExtResource("1_level_manager")
+checkpoint_id = "start"
+checkpoint_name = "Start"
+is_unlocked = true
+
+[node name="Sprite2D" type="Sprite2D" parent="Checkpoints/Checkpoint1"]
+position = Vector2(0, -32)
+texture = SubResource("GradientTexture2D_checkpoint")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Checkpoints/Checkpoint1"]
+position = Vector2(0, -32)
+shape = SubResource("RectangleShape2D_checkpoint")
+
+[node name="Label" type="Label" parent="Checkpoints/Checkpoint1"]
+visible = false
+offset_left = -40.0
+offset_top = -80.0
+offset_right = 40.0
+offset_bottom = -57.0
+text = "Checkpoint"
+horizontal_alignment = 1
+
+[node name="Checkpoint2" type="Area2D" parent="Checkpoints" groups=["checkpoint"]]
+position = Vector2(800, 600)
+script = ExtResource("1_level_manager")
+checkpoint_id = "mid"
+checkpoint_name = "Mid Point"
+
+[node name="Sprite2D" type="Sprite2D" parent="Checkpoints/Checkpoint2"]
+position = Vector2(0, -32)
+texture = SubResource("GradientTexture2D_checkpoint")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Checkpoints/Checkpoint2"]
+position = Vector2(0, -32)
+shape = SubResource("RectangleShape2D_checkpoint")
+
+[node name="Label" type="Label" parent="Checkpoints/Checkpoint2"]
+visible = false
+offset_left = -40.0
+offset_top = -80.0
+offset_right = 40.0
+offset_bottom = -57.0
+text = "Checkpoint"
+horizontal_alignment = 1
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="MeleeEnemy1" parent="Enemies" instance=ExtResource("2_melee_enemy")]
+position = Vector2(1500, 900)
+
+[node name="MeleeEnemy2" parent="Enemies" instance=ExtResource("2_melee_enemy")]
+position = Vector2(1600, 900)
+
+[node name="RangedEnemy1" parent="Enemies" instance=ExtResource("3_ranged_enemy")]
+position = Vector2(1700, 600)
+
+[node name="RangedEnemy2" parent="Enemies" instance=ExtResource("3_ranged_enemy")]
+position = Vector2(1300, 450)
+
+[node name="KillZone" type="Area2D" parent="."]
+position = Vector2(960, 1200)
+collision_layer = 0
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="KillZone"]
+shape = SubResource("RectangleShape2D_killzone")
+
+[node name="LevelBoundary" type="StaticBody2D" parent="."]
+position = Vector2(960, 1100)
+collision_layer = 8
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBoundary"]
+shape = SubResource("RectangleShape2D_killzone")

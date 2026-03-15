@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3 uid="uid://rifle12345"]
+
+[ext_resource type="Script" path="res://src/weapons/rifle.gd" id="1_rifle"]
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_rifle"]
+size = Vector2(64, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_muzzle"]
+size = Vector2(10, 10)
+
+[node name="Rifle" type="Node2D"]
+script = ExtResource("1_rifle")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = SubResource("PlaceholderTexture2D_rifle")
+
+[node name="Muzzle" type="Marker2D" parent="."]
+position = Vector2(35, 0)
+
+[node name="EjectionPort" type="Marker2D" parent="."]
+position = Vector2(-10, -8)

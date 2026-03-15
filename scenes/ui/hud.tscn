@@ -1,0 +1,138 @@
+[gd_scene load_steps=4 format=3 uid="uid://hud12345"]
+
+[ext_resource type="Script" path="res://src/ui/hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_bg"]
+bg_color = Color(0.2, 0.2, 0.2, 0.8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_fill"]
+bg_color = Color(0.8, 0.2, 0.2, 1.0)
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+[node name="MainContainer" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="TopBar" type="HBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="HealthSection" type="VBoxContainer" parent="MainContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HealthLabel" type="Label" parent="MainContainer/TopBar/HealthSection"]
+layout_mode = 2
+text = "HP: 100 / 100"
+
+[node name="HealthBar" type="ProgressBar" parent="MainContainer/TopBar/HealthSection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 20)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_styles/background = SubResource("StyleBoxFlat_health_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_health_fill")
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="ScoreSection" type="VBoxContainer" parent="MainContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="MainContainer/TopBar/ScoreSection"]
+layout_mode = 2
+text = "Score: 0"
+horizontal_alignment = 1
+
+[node name="LivesLabel" type="Label" parent="MainContainer/TopBar/ScoreSection"]
+layout_mode = 2
+text = "x3"
+horizontal_alignment = 1
+
+[node name="ObjectiveSection" type="VBoxContainer" parent="MainContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_alignment = 2
+
+[node name="ObjectiveLabel" type="Label" parent="MainContainer/TopBar/ObjectiveSection"]
+layout_mode = 2
+text = "消灭所有敌人"
+horizontal_alignment = 2
+
+[node name="TimerLabel" type="Label" parent="MainContainer/TopBar/ObjectiveSection"]
+layout_mode = 2
+text = "00:00"
+horizontal_alignment = 2
+
+[node name="BottomBar" type="HBoxContainer" parent="MainContainer"]
+layout_mode = 2
+size_flags_vertical = 8
+
+[node name="WeaponSection" type="VBoxContainer" parent="MainContainer/BottomBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="WeaponNameLabel" type="Label" parent="MainContainer/BottomBar/WeaponSection"]
+layout_mode = 2
+text = "Rifle"
+
+[node name="AmmoLabel" type="Label" parent="MainContainer/BottomBar/WeaponSection"]
+layout_mode = 2
+text = "30 / 30"
+
+[node name="ReloadProgress" type="ProgressBar" parent="MainContainer/BottomBar/WeaponSection"]
+visible = false
+custom_minimum_size = Vector2(150, 10)
+layout_mode = 2
+max_value = 1.0
+
+[node name="WeaponSlots" type="HBoxContainer" parent="MainContainer/BottomBar/WeaponSection"]
+layout_mode = 2
+
+[node name="CenterSection" type="Control" parent="MainContainer/BottomBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HitMarker" type="TextureRect" parent="MainContainer/BottomBar/CenterSection"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DamageOverlay" type="ColorRect" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 0, 0, 0.3)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+
+[node name="HitMarkerTimer" type="Timer" parent="."]
+wait_time = 0.2
+one_shot = true
+
+[connection signal="timeout" from="HitMarkerTimer" to="." method="_on_hit_marker_timer_timeout"]

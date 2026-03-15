@@ -1,0 +1,318 @@
+{
+  "_comment": "武器数值配置 - 修改这些数值来调整武器平衡",
+  "_warning": "此文件需要人工填写和调优",
+  
+  "rifle_basic": {
+    "_comment": "基础突击步枪 - 均衡型武器",
+    "weapon_name": "基础步枪",
+    "description": "标准突击步枪，射速快，精度高",
+    
+    "damage": {
+      "value": 15,
+      "description": "单发伤害",
+      "recommended_range": "10-25",
+      "note": "DPS = damage / fire_rate"
+    },
+    "fire_rate": {
+      "value": 0.1,
+      "description": "射击间隔（秒）",
+      "recommended_range": "0.05-0.2",
+      "note": "0.1 = 每秒10发"
+    },
+    "reload_time": {
+      "value": 1.5,
+      "description": "换弹时间（秒）",
+      "recommended_range": "1.0-3.0",
+      "note": "换弹期间无法射击"
+    },
+    "magazine_size": {
+      "value": 30,
+      "description": "弹匣容量",
+      "recommended_range": "20-60",
+      "note": "突击步枪通常30发"
+    },
+    "max_ammo": {
+      "value": 300,
+      "description": "最大携带弹药",
+      "recommended_range": "150-600",
+      "note": "包括弹匣内的弹药"
+    },
+    "projectile_speed": {
+      "value": 1200.0,
+      "description": "子弹速度（像素/秒）",
+      "recommended_range": "800-2000",
+      "note": "影响命中判定"
+    },
+    "spread": {
+      "value": 3.0,
+      "description": "散布角度（度）",
+      "recommended_range": "0-10",
+      "note": "0 = 完全精准"
+    },
+    "is_automatic": {
+      "value": true,
+      "description": "是否全自动",
+      "note": "true = 按住连射，false = 单发"
+    },
+    "recoil_amount": {
+      "value": 3.0,
+      "description": "后坐力强度",
+      "recommended_range": "0-10",
+      "note": "影响玩家速度"
+    },
+    "screen_shake": {
+      "value": 0.2,
+      "description": "屏幕震动强度",
+      "recommended_range": "0-1",
+      "note": "每次射击的震动"
+    },
+    "pierce_count": {
+      "value": 0,
+      "description": "穿透次数",
+      "recommended_range": "0-3",
+      "note": "0 = 不穿透"
+    },
+    "unlock_cost": {
+      "value": 0,
+      "description": "解锁所需金币",
+      "note": "0 = 初始武器"
+    }
+  },
+  
+  "shotgun_basic": {
+    "_comment": "基础霰弹枪 - 近战高伤害",
+    "weapon_name": "基础霰弹枪",
+    "description": "近距离高伤害，远距离衰减严重",
+    
+    "damage": {
+      "value": 12,
+      "description": "每发弹丸伤害",
+      "recommended_range": "8-20",
+      "note": "实际伤害 = damage * pellet_count"
+    },
+    "pellet_count": {
+      "value": 8,
+      "description": "弹丸数量",
+      "recommended_range": "5-12",
+      "note": "每次射击发射的弹丸数"
+    },
+    "fire_rate": {
+      "value": 0.8,
+      "description": "射击间隔（秒）",
+      "recommended_range": "0.5-1.5",
+      "note": "霰弹枪射速慢"
+    },
+    "reload_time": {
+      "value": 2.5,
+      "description": "换弹时间（秒）",
+      "recommended_range": "2.0-4.0",
+      "note": "霰弹枪换弹慢"
+    },
+    "magazine_size": {
+      "value": 6,
+      "description": "弹匣容量",
+      "recommended_range": "4-10",
+      "note": "霰弹枪通常6-8发"
+    },
+    "max_ammo": {
+      "value": 60,
+      "description": "最大携带弹药",
+      "recommended_range": "40-100",
+      "note": "霰弹枪弹药较少"
+    },
+    "projectile_speed": {
+      "value": 900.0,
+      "description": "子弹速度（像素/秒）",
+      "recommended_range": "600-1200",
+      "note": "霰弹通常较慢"
+    },
+    "spread": {
+      "value": 15.0,
+      "description": "散布角度（度）",
+      "recommended_range": "10-25",
+      "note": "霰弹散布大"
+    },
+    "is_automatic": {
+      "value": false,
+      "description": "是否全自动",
+      "note": "霰弹枪通常是半自动"
+    },
+    "recoil_amount": {
+      "value": 8.0,
+      "description": "后坐力强度",
+      "recommended_range": "5-15",
+      "note": "霰弹枪后坐力大"
+    },
+    "screen_shake": {
+      "value": 0.5,
+      "description": "屏幕震动强度",
+      "recommended_range": "0.3-0.8",
+      "note": "霰弹枪震动强"
+    },
+    "effective_range": {
+      "value": 300.0,
+      "description": "有效射程（像素）",
+      "recommended_range": "200-500",
+      "note": "超出此距离伤害衰减"
+    },
+    "unlock_cost": {
+      "value": 500,
+      "description": "解锁所需金币",
+      "note": "需要解锁的武器"
+    }
+  },
+  
+  "sniper_basic": {
+    "_comment": "狙击步枪 - 高伤害低射速",
+    "weapon_name": "基础狙击枪",
+    "description": "高伤害，精准，但射速极慢",
+    
+    "damage": {
+      "value": 80,
+      "description": "单发伤害",
+      "recommended_range": "50-150",
+      "note": "狙击枪伤害高"
+    },
+    "fire_rate": {
+      "value": 1.5,
+      "description": "射击间隔（秒）",
+      "recommended_range": "1.0-2.5",
+      "note": "狙击枪射速极慢"
+    },
+    "reload_time": {
+      "value": 3.0,
+      "description": "换弹时间（秒）",
+      "recommended_range": "2.5-4.0",
+      "note": "狙击枪换弹慢"
+    },
+    "magazine_size": {
+      "value": 5,
+      "description": "弹匣容量",
+      "recommended_range": "3-10",
+      "note": "狙击枪弹药少"
+    },
+    "max_ammo": {
+      "value": 40,
+      "description": "最大携带弹药",
+      "recommended_range": "30-60",
+      "note": "狙击枪弹药稀缺"
+    },
+    "projectile_speed": {
+      "value": 2500.0,
+      "description": "子弹速度（像素/秒）",
+      "recommended_range": "2000-4000",
+      "note": "狙击弹速度极快"
+    },
+    "spread": {
+      "value": 0.5,
+      "description": "散布角度（度）",
+      "recommended_range": "0-2",
+      "note": "狙击枪几乎精准"
+    },
+    "is_automatic": {
+      "value": false,
+      "description": "是否全自动",
+      "note": "狙击枪是单发"
+    },
+    "recoil_amount": {
+      "value": 15.0,
+      "description": "后坐力强度",
+      "recommended_range": "10-20",
+      "note": "狙击枪后坐力极大"
+    },
+    "screen_shake": {
+      "value": 0.8,
+      "description": "屏幕震动强度",
+      "recommended_range": "0.5-1.0",
+      "note": "狙击枪震动极强"
+    },
+    "pierce_count": {
+      "value": 3,
+      "description": "穿透次数",
+      "recommended_range": "2-5",
+      "note": "狙击弹可穿透多个敌人"
+    },
+    "scope_zoom": {
+      "value": 2.0,
+      "description": "瞄准镜倍率",
+      "recommended_range": "1.5-4.0",
+      "note": "放大倍数"
+    },
+    "unlock_cost": {
+      "value": 1500,
+      "description": "解锁所需金币",
+      "note": "高级武器"
+    }
+  },
+  
+  "smg_basic": {
+    "_comment": "冲锋枪 - 高射速低伤害",
+    "weapon_name": "基础冲锋枪",
+    "description": "极高射速，低单发伤害，适合近距离",
+    
+    "damage": {
+      "value": 8,
+      "description": "单发伤害",
+      "recommended_range": "5-12",
+      "note": "冲锋枪单发伤害低"
+    },
+    "fire_rate": {
+      "value": 0.05,
+      "description": "射击间隔（秒）",
+      "recommended_range": "0.03-0.08",
+      "note": "0.05 = 每秒20发"
+    },
+    "reload_time": {
+      "value": 1.8,
+      "description": "换弹时间（秒）",
+      "recommended_range": "1.2-2.5",
+      "note": "冲锋枪换弹中等"
+    },
+    "magazine_size": {
+      "value": 45,
+      "description": "弹匣容量",
+      "recommended_range": "30-60",
+      "note": "冲锋枪弹药多"
+    },
+    "max_ammo": {
+      "value": 450,
+      "description": "最大携带弹药",
+      "recommended_range": "300-600",
+      "note": "冲锋枪弹药充足"
+    },
+    "projectile_speed": {
+      "value": 1000.0,
+      "description": "子弹速度（像素/秒）",
+      "recommended_range": "800-1500",
+      "note": "冲锋枪子弹速度中等"
+    },
+    "spread": {
+      "value": 8.0,
+      "description": "散布角度（度）",
+      "recommended_range": "5-15",
+      "note": "冲锋枪散布较大"
+    },
+    "is_automatic": {
+      "value": true,
+      "description": "是否全自动",
+      "note": "冲锋枪全自动"
+    },
+    "recoil_amount": {
+      "value": 2.0,
+      "description": "后坐力强度",
+      "recommended_range": "1-5",
+      "note": "冲锋枪后坐力小但累积"
+    },
+    "screen_shake": {
+      "value": 0.1,
+      "description": "屏幕震动强度",
+      "recommended_range": "0.05-0.2",
+      "note": "冲锋枪震动小"
+    },
+    "unlock_cost": {
+      "value": 800,
+      "description": "解锁所需金币",
+      "note": "中级武器"
+    }
+  }
+}
