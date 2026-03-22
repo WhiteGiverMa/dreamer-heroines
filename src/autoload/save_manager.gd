@@ -1,4 +1,4 @@
-extends Node
+extends "res://src/base/game_system.gd"
 
 # SaveManager - GDScript 存档管理器包装器
 # 提供GDScript接口调用C# SaveManager
@@ -16,11 +16,24 @@ var current_slot: int = -1
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	system_name = "save_manager"
+	# 不在这里执行初始化，等待 BootSequence 调用
+
+func initialize() -> void:
+	print("[SaveManager] 开始初始化...")
 	
-	# 尝试获取C# SaveManager实例
+	# 等待 CSharpSaveManager 依赖
+	var csharp_manager = get_node_or_null("/root/CSharpSaveManager")
+	if csharp_manager:
+		# 检查是否已初始化 (C# 属性 IsInitialized)
+		if "IsInitialized" in csharp_manager and not csharp_manager.IsInitialized:
+			print("[SaveManager] 等待 CSharpSaveManager 初始化...")
+			await csharp_manager.SystemReady
+	
 	_initialize_csharp_manager()
 	
-	print("SaveManager (GDScript) initialized")
+	print("[SaveManager] 初始化完成")
+	_mark_ready()
 
 func _initialize_csharp_manager() -> void:
 	# 检查C# SaveManager是否已在autoload中
@@ -35,18 +48,22 @@ func _initialize_csharp_manager() -> void:
 		if script:
 			_csharp_save_manager = script.new()
 			_csharp_save_manager.name = "CSharpSaveManager"
-			get_tree().root.add_child(_csharp_save_manager)
-			_connect_csharp_signals()
+			get_tree().root.add_child.call_deferred(_csharp_save_manager)
+			call_deferred("_connect_csharp_signals")
 
 func _connect_csharp_signals() -> void:
 	if not _csharp_save_manager:
 		return
 	
 	# 连接C#信号
-	_csharp_save_manager.save_completed.connect(_on_csharp_save_completed)
-	_csharp_save_manager.load_completed.connect(_on_csharp_load_completed)
-	_csharp_save_manager.save_deleted.connect(_on_csharp_save_deleted)
-	_csharp_save_manager.auto_save_triggered.connect(_on_auto_save_triggered)
+	if _csharp_save_manager.has_signal("SaveCompleted"):
+		_csharp_save_manager.SaveCompleted.connect(_on_csharp_save_completed)
+	if _csharp_save_manager.has_signal("LoadCompleted"):
+		_csharp_save_manager.LoadCompleted.connect(_on_csharp_load_completed)
+	if _csharp_save_manager.has_signal("SaveDeleted"):
+		_csharp_save_manager.SaveDeleted.connect(_on_csharp_save_deleted)
+	if _csharp_save_manager.has_signal("AutoSaveTriggered"):
+		_csharp_save_manager.AutoSaveTriggered.connect(_on_auto_save_triggered)
 
 # 保存操作
 func save_to_slot(slot: int, show_notification: bool = true) -> void:
@@ -133,14 +150,11 @@ func update_player_data(player_data) -> void:
 
 # 设置
 func save_settings(settings: Dictionary) -> void:
-	if _csharp_save_manager:
-		_csharp_save_manager.SaveSettings(settings)
-	else:
-		_save_settings_to_file(settings)
+	# 始终使用 GDScript 实现，以保持与 load_settings 的格式一致
+	_save_settings_to_file(settings)
 
 func load_settings() -> Dictionary:
-	if _csharp_save_manager:
-		return _csharp_save_manager.LoadSettings()
+	# 始终使用 GDScript 实现，因为 C# LoadSettings 返回 SettingsSaveData 对象而非 Dictionary
 	return _load_settings_from_file()
 
 # 信号回调

@@ -1107,7 +1107,7 @@ func load_weapon_data(path: String) -> WeaponData:
 # project.godot 关键配置
 
 [application]
-config/name="StrikeForceLike"
+config/name="DreamerHeroines"
 config/version="0.1.0"
 run/main_scene="res://scenes/ui/main_menu.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
@@ -1383,7 +1383,7 @@ func _apply_shake(amount: float) -> void:
 using Godot;
 using System;
 
-namespace StrikeForceLike.Data
+namespace DreamerHeroines.Data
 {
     [GlobalClass]
     public partial class PlayerData : Resource
@@ -1427,7 +1427,7 @@ namespace StrikeForceLike.Data
 // src/cs/Utils/MathUtils.cs
 using Godot;
 
-namespace StrikeForceLike.Utils
+namespace DreamerHeroines.Utils
 {
     public static class MathUtils
     {
@@ -1476,9 +1476,9 @@ namespace StrikeForceLike.Utils
 // src/cs/Managers/GameStateManager.cs
 using Godot;
 using System;
-using StrikeForceLike.Data;
+using DreamerHeroines.Data;
 
-namespace StrikeForceLike.Managers
+namespace DreamerHeroines.Managers
 {
     [GlobalClass]
     public partial class GameStateManager : Node
@@ -1540,7 +1540,7 @@ namespace StrikeForceLike.Managers
 // src/cs/Network/NetworkManager.cs
 // 为未来多人模式预留的网络管理器
 
-namespace StrikeForceLike.Network
+namespace DreamerHeroines.Network
 {
     public partial class NetworkManager : Node
     {
@@ -1558,7 +1558,7 @@ namespace StrikeForceLike.Network
 using Godot;
 using System.Collections.Generic;
 
-namespace StrikeForceLike.Systems
+namespace DreamerHeroines.Systems
 {
     public class SpatialHashGrid
     {
@@ -1622,7 +1622,7 @@ namespace StrikeForceLike.Systems
 ```
 project/
 ├── project.godot              # 项目配置文件
-├── StrikeForceLike.csproj     # C# 项目文件
+├── DreamerHeroines.csproj     # C# 项目文件
 ├── icon.svg
 ├── README.md
 │
@@ -1680,7 +1680,7 @@ project/
 
 ```csharp
 // C# 命名空间结构
-namespace StrikeForceLike          // 根命名空间
+namespace DreamerHeroines          // 根命名空间
 {
     namespace Data                 // 数据相关
     {
@@ -1743,7 +1743,7 @@ func add_experience(amount: int) -> void:
 // src/cs/Utils/GDScriptInterop.cs
 using Godot;
 
-namespace StrikeForceLike.Utils
+namespace DreamerHeroines.Utils
 {
     public static class GDScriptInterop
     {
@@ -1899,7 +1899,7 @@ public partial class UIManager : Node
 // src/cs/Data/WeaponData.cs
 using Godot;
 
-namespace StrikeForceLike.Data
+namespace DreamerHeroines.Data
 {
     [GlobalClass]
     [Icon("res://assets/icons/weapon_icon.svg")]
@@ -1986,9 +1986,9 @@ func save_progress() -> void:
 ```csharp
 // src/cs/Systems/EnemySpawner.cs
 using Godot;
-using StrikeForceLike.Utils;
+using DreamerHeroines.Utils;
 
-namespace StrikeForceLike.Systems
+namespace DreamerHeroines.Systems
 {
     [GlobalClass]
     public partial class EnemySpawner : Node
@@ -2051,7 +2051,7 @@ func _on_body_entered(body: Node) -> void:
 using Godot;
 using System.Collections.Generic;
 
-namespace StrikeForceLike.Systems
+namespace DreamerHeroines.Systems
 {
     [GlobalClass]
     public partial class CombatTracker : Node
@@ -2099,7 +2099,7 @@ namespace StrikeForceLike.Systems
 // src/cs/Data/Enums.cs
 // C# 定义枚举，GDScript 使用数值对应
 
-namespace StrikeForceLike.Data
+namespace DreamerHeroines.Data
 {
     public enum DamageType
     {
@@ -2156,15 +2156,15 @@ func _init(p_damage: float, p_type: int, p_source: Node) -> void:
 #### .csproj 配置
 
 ```xml
-<!-- StrikeForceLike.csproj -->
+<!-- DreamerHeroines.csproj -->
 <Project Sdk="Godot.NET.Sdk/4.6.1">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net8.0</TargetFramework>
     <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'ios' ">net8.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
-    <RootNamespace>StrikeForceLike</RootNamespace>
-    <AssemblyName>StrikeForceLike</AssemblyName>
+    <RootNamespace>DreamerHeroines</RootNamespace>
+    <AssemblyName>DreamerHeroines</AssemblyName>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -2232,7 +2232,7 @@ func _init(p_damage: float, p_type: int, p_source: Node) -> void:
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/StrikeForceLike.csproj"
+                "${workspaceFolder}/DreamerHeroines.csproj"
             ],
             "problemMatcher": "$msCompile",
             "group": {
@@ -2246,7 +2246,7 @@ func _init(p_damage: float, p_type: int, p_source: Node) -> void:
             "type": "process",
             "args": [
                 "clean",
-                "${workspaceFolder}/StrikeForceLike.csproj"
+                "${workspaceFolder}/DreamerHeroines.csproj"
             ],
             "problemMatcher": []
         }
@@ -2266,11 +2266,11 @@ func _init(p_damage: float, p_type: int, p_source: Node) -> void:
 
 ```bash
 # 1. 构建 C# 项目
-dotnet build StrikeForceLike.csproj -c Release
+dotnet build DreamerHeroines.csproj -c Release
 
 # 2. 导出 (通过 Godot CLI)
 # 需要先在编辑器中创建导出预设
-godot --headless --export-release "Windows Desktop" ./build/windows/StrikeForceLike.exe
+godot --headless --export-release "Windows Desktop" ./build/windows/DreamerHeroines.exe
 
 # 或手动导出:
 # 编辑器 -> 项目 -> 导出 -> Windows Desktop -> 导出项目
@@ -2300,7 +2300,7 @@ custom_features=""
 export_filter="all_resources"
 include_filter=""
 exclude_filter=""
-export_path="./build/windows/StrikeForceLike.exe"
+export_path="./build/windows/DreamerHeroines.exe"
 encryption_include_filters=""
 encryption_exclude_filters=""
 encrypt_pck=false
@@ -2345,12 +2345,12 @@ jobs:
           use-dotnet: true
       
       - name: Build C#
-        run: dotnet build StrikeForceLike.csproj -c Release
+        run: dotnet build DreamerHeroines.csproj -c Release
       
       - name: Export Windows
         run: |
           mkdir -p build/windows
-          godot --headless --export-release "Windows Desktop" build/windows/StrikeForceLike.exe
+          godot --headless --export-release "Windows Desktop" build/windows/DreamerHeroines.exe
       
       - name: Upload Artifact
         uses: actions/upload-artifact@v4

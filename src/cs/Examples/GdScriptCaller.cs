@@ -1,9 +1,10 @@
-using Godot;
 using System;
-using StrikeForceLike.Systems;
-using StrikeForceLike.Data;
+using System.Linq;
+using DreamerHeroines.Data;
+using DreamerHeroines.Systems;
+using Godot;
 
-namespace StrikeForceLike.Examples
+namespace DreamerHeroines.Examples
 {
     /// <summary>
     /// GDScript 调用 C# 示例
@@ -52,7 +53,7 @@ namespace StrikeForceLike.Examples
                 ["play_time"] = summary.PlayTime,
                 ["formatted_time"] = summary.GetFormattedPlayTime(),
                 ["last_saved"] = summary.LastSavedAt.ToString("yyyy-MM-dd HH:mm"),
-                ["is_empty"] = summary.IsEmpty
+                ["is_empty"] = summary.IsEmpty,
             };
 
             return dict;
@@ -77,7 +78,7 @@ namespace StrikeForceLike.Examples
                     ["level"] = summary.Level,
                     ["play_time"] = summary.PlayTime,
                     ["formatted_time"] = summary.GetFormattedPlayTime(),
-                    ["is_empty"] = summary.IsEmpty
+                    ["is_empty"] = summary.IsEmpty,
                 };
                 array.Add(dict);
             }
@@ -175,8 +176,12 @@ namespace StrikeForceLike.Examples
                 ["gems"] = playerData.Gems,
                 ["total_play_time"] = playerData.TotalPlayTime,
                 ["formatted_play_time"] = playerData.GetFormattedPlayTime(),
-                ["unlocked_weapons"] = new Godot.Collections.Array(playerData.UnlockedWeapons),
-                ["completed_levels"] = new Godot.Collections.Array(playerData.CompletedLevels)
+                ["unlocked_weapons"] = new Godot.Collections.Array(
+                    playerData.UnlockedWeapons.Select(weapon => Variant.From(weapon))
+                ),
+                ["completed_levels"] = new Godot.Collections.Array(
+                    playerData.CompletedLevels.Select(level => Variant.From(level))
+                ),
             };
         }
 

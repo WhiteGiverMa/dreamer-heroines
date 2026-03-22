@@ -1,0 +1,64 @@
+[tool.gdlint]
+# GDScript Linter 配置
+# 参考: https://github.com/Scony/godot-gdscript-toolkit
+
+# 禁用某些规则（根据需要调整）
+disable = [
+    # "max-public-methods",  # 公共方法数量限制
+    # "max-returns",         # 返回语句数量限制
+]
+
+# 缩进设置
+indent = 4  # 使用4空格缩进（与项目一致）
+
+# 最大行长度
+max-line-length = 120
+
+# 函数最大行数
+max-function-lines = 150
+
+# 类最大行数
+max-class-lines = 500
+
+# 最大参数数量
+max-function-arguments = 10
+
+# 最大缩进层级
+max-indentation-level = 8
+
+# 表达式最大复杂度
+max-expression-depth = 10
+
+# 字符串引号风格（单引号或双引号）
+string-quote-style = "double"
+
+# 忽略的文件/目录
+ignore = [
+    "addons/",
+    ".godot/",
+    "**/test_*.gd",
+]
+
+[tool.gdformat]
+# GDScript Formatter 配置
+
+# 每行最大长度
+line-length = 120
+
+# 是否使用空格代替制表符
+use-spaces = false
+
+# 缩进大小
+indent-size = 4
+
+# 表达式换行策略
+# - "smart": 智能换行
+# - "keep": 保持原样
+# - "collapse": 尽可能折叠
+expression-splitting-mode = "smart"
+
+# 忽略的文件/目录
+ignore = [
+    "addons/",
+    ".godot/",
+]

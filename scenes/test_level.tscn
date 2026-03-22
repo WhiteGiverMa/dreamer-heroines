@@ -47,7 +47,7 @@ color = Color(0.1, 0.12, 0.15, 1)
 
 [node name="Ground" type="StaticBody2D" parent="."]
 position = Vector2(960, 1000)
-collision_layer = 8
+collision_layer = 4
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
@@ -61,7 +61,7 @@ texture = SubResource("PlaceholderTexture2D_ground")
 
 [node name="Platform1" type="StaticBody2D" parent="Platforms"]
 position = Vector2(400, 800)
-collision_layer = 8
+collision_layer = 4
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform1"]
@@ -72,7 +72,7 @@ texture = SubResource("PlaceholderTexture2D_platform")
 
 [node name="Platform2" type="StaticBody2D" parent="Platforms"]
 position = Vector2(800, 650)
-collision_layer = 8
+collision_layer = 4
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform2"]
@@ -83,7 +83,7 @@ texture = SubResource("PlaceholderTexture2D_platform")
 
 [node name="Platform3" type="StaticBody2D" parent="Platforms"]
 position = Vector2(1200, 500)
-collision_layer = 8
+collision_layer = 4
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform3"]
@@ -96,7 +96,7 @@ texture = SubResource("PlaceholderTexture2D_platform")
 
 [node name="LeftWall" type="StaticBody2D" parent="Walls"]
 position = Vector2(-32, 500)
-collision_layer = 8
+collision_layer = 4
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/LeftWall"]
@@ -104,7 +104,7 @@ shape = SubResource("RectangleShape2D_wall")
 
 [node name="RightWall" type="StaticBody2D" parent="Walls"]
 position = Vector2(1952, 500)
-collision_layer = 8
+collision_layer = 4
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/RightWall"]
@@ -203,7 +203,7 @@ shape = SubResource("RectangleShape2D_killzone")
 
 [node name="LevelBoundary" type="StaticBody2D" parent="."]
 position = Vector2(960, 1100)
-collision_layer = 8
+collision_layer = 4
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBoundary"]

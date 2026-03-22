@@ -15,9 +15,17 @@ extends Area2D
 
 var direction: Vector2 = Vector2.RIGHT
 var velocity: Vector2 = Vector2.ZERO
-var owner_player: Node2D = null
+var owner_node: Node2D = null
+var faction: String = "player"  # "player" or "enemy"
 var pierced_targets: Array = []
 var current_pierces: int = 0
+
+# Backward compatibility: owner_player is an alias for owner_node
+var owner_player: Node2D:
+	get:
+		return owner_node
+	set(value):
+		owner_node = value
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var trail: GPUParticles2D = $Trail
@@ -43,11 +51,21 @@ func _physics_process(delta: float) -> void:
 	
 	position += velocity * delta
 
+func _is_valid_target(body: Node2D) -> bool:
+	"""Check if body is a valid target based on faction."""
+	match faction:
+		"player":
+			return body.is_in_group("enemy")
+		"enemy":
+			return body.is_in_group("player")
+		_:
+			return false
+
 func _on_body_entered(body: Node2D) -> void:
-	if body == owner_player:
+	if body == owner_node:
 		return
 	
-	if body.is_in_group("enemy"):
+	if _is_valid_target(body):
 		_deal_damage(body)
 		
 		if pierce_count > 0 and current_pierces < pierce_count:
@@ -60,10 +78,10 @@ func _on_body_entered(body: Node2D) -> void:
 		_impact()
 
 func _on_area_entered(area: Area2D) -> void:
-	if area.owner == owner_player:
+	if area.owner == owner_node:
 		return
 	
-	if area.is_in_group("hittable"):
+	if area.is_in_group("hittable") and _is_valid_target(area):
 		_deal_damage(area)
 		_impact()
 

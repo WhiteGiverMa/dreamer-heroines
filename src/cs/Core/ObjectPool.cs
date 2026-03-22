@@ -1,8 +1,8 @@
-using Godot;
 using System;
 using System.Collections.Generic;
+using Godot;
 
-namespace StrikeForceLike.Core
+namespace DreamerHeroines.Core
 {
     /// <summary>
     /// 对象池接口，定义池化对象的基本行为
@@ -29,7 +29,8 @@ namespace StrikeForceLike.Core
     /// 通用对象池 - 用于重用对象以减少GC压力
     /// </summary>
     /// <typeparam name="T">池化对象的类型</typeparam>
-    public class ObjectPool<T> where T : class, IPoolable, new()
+    public class ObjectPool<T>
+        where T : class, IPoolable, new()
     {
         #region Fields
         private readonly Queue<T> _pool;
@@ -119,7 +120,8 @@ namespace StrikeForceLike.Core
         /// </summary>
         public void Return(T obj)
         {
-            if (obj == null) return;
+            if (obj == null)
+                return;
 
             if (!obj.IsActive)
             {
@@ -193,7 +195,8 @@ namespace StrikeForceLike.Core
     /// <summary>
     /// Godot节点对象池 - 专门用于管理Godot节点
     /// </summary>
-    public class NodePool<T> where T : Node, IPoolable, new()
+    public class NodePool<T>
+        where T : Node, IPoolable, new()
     {
         #region Fields
         private readonly Queue<T> _pool;
@@ -237,8 +240,8 @@ namespace StrikeForceLike.Core
             for (int i = 0; i < initialSize; i++)
             {
                 T obj = CreateNew();
-                obj.ProcessMode = ProcessModeEnum.Disabled;
-                obj.Hide();
+                obj.ProcessMode = Node.ProcessModeEnum.Disabled;
+                SetNodeVisible(obj, false);
                 _pool.Enqueue(obj);
             }
         }
@@ -258,8 +261,8 @@ namespace StrikeForceLike.Core
             for (int i = 0; i < initialSize; i++)
             {
                 T obj = CreateNew();
-                obj.ProcessMode = ProcessModeEnum.Disabled;
-                obj.Hide();
+                obj.ProcessMode = Node.ProcessModeEnum.Disabled;
+                SetNodeVisible(obj, false);
                 _pool.Enqueue(obj);
             }
         }
@@ -287,8 +290,8 @@ namespace StrikeForceLike.Core
                 obj = CreateNew();
             }
 
-            obj.ProcessMode = ProcessModeEnum.Inherit;
-            obj.Show();
+            obj.ProcessMode = Node.ProcessModeEnum.Inherit;
+            SetNodeVisible(obj, true);
             obj.IsActive = true;
             obj.OnSpawn();
             _activeCount++;
@@ -301,7 +304,8 @@ namespace StrikeForceLike.Core
         /// </summary>
         public void Return(T obj)
         {
-            if (obj == null) return;
+            if (obj == null)
+                return;
 
             if (!obj.IsActive)
             {
@@ -311,8 +315,8 @@ namespace StrikeForceLike.Core
 
             obj.OnDespawn();
             obj.IsActive = false;
-            obj.ProcessMode = ProcessModeEnum.Disabled;
-            obj.Hide();
+            obj.ProcessMode = Node.ProcessModeEnum.Disabled;
+            SetNodeVisible(obj, false);
 
             // 重置变换
             if (obj is Node2D node2D)
@@ -366,8 +370,8 @@ namespace StrikeForceLike.Core
                 if (_pool.Count < count)
                 {
                     T obj = CreateNew();
-                    obj.ProcessMode = ProcessModeEnum.Disabled;
-                    obj.Hide();
+                    obj.ProcessMode = Node.ProcessModeEnum.Disabled;
+                    SetNodeVisible(obj, false);
                     _pool.Enqueue(obj);
                 }
             }
@@ -396,6 +400,14 @@ namespace StrikeForceLike.Core
                 return obj;
             }
         }
+
+        private static void SetNodeVisible(Node node, bool visible)
+        {
+            if (node is CanvasItem canvasItem)
+            {
+                canvasItem.Visible = visible;
+            }
+        }
         #endregion
     }
 
@@ -417,7 +429,8 @@ namespace StrikeForceLike.Core
         /// <summary>
         /// 注册对象池
         /// </summary>
-        public void RegisterPool<T>(ObjectPool<T> pool) where T : class, IPoolable, new()
+        public void RegisterPool<T>(ObjectPool<T> pool)
+            where T : class, IPoolable, new()
         {
             _pools[typeof(T)] = pool;
         }
@@ -425,7 +438,8 @@ namespace StrikeForceLike.Core
         /// <summary>
         /// 获取对象池
         /// </summary>
-        public ObjectPool<T>? GetPool<T>() where T : class, IPoolable, new()
+        public ObjectPool<T>? GetPool<T>()
+            where T : class, IPoolable, new()
         {
             if (_pools.TryGetValue(typeof(T), out var pool))
             {
@@ -437,7 +451,8 @@ namespace StrikeForceLike.Core
         /// <summary>
         /// 获取或创建对象池
         /// </summary>
-        public ObjectPool<T> GetOrCreatePool<T>(int initialSize = 10, int maxSize = 100) where T : class, IPoolable, new()
+        public ObjectPool<T> GetOrCreatePool<T>(int initialSize = 10, int maxSize = 100)
+            where T : class, IPoolable, new()
         {
             var pool = GetPool<T>();
             if (pool == null)

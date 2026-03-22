@@ -1,7 +1,7 @@
-using Godot;
 using System;
+using Godot;
 
-namespace StrikeForceLike.Examples
+namespace DreamerHeroines.Examples
 {
     /// <summary>
     /// C# 调用 GDScript 示例
@@ -107,7 +107,8 @@ namespace StrikeForceLike.Examples
         /// </summary>
         public void StopMusic()
         {
-            if (_audioManager == null) return;
+            if (_audioManager == null)
+                return;
 
             try
             {
@@ -176,7 +177,8 @@ namespace StrikeForceLike.Examples
         /// </summary>
         public Variant? GetGdScriptProperty(string propertyName)
         {
-            if (_gameManager == null) return null;
+            if (_gameManager == null)
+                return null;
 
             try
             {
@@ -195,7 +197,8 @@ namespace StrikeForceLike.Examples
         /// </summary>
         public void SetGdScriptProperty(string propertyName, Variant value)
         {
-            if (_gameManager == null) return;
+            if (_gameManager == null)
+                return;
 
             try
             {
@@ -252,7 +255,8 @@ namespace StrikeForceLike.Examples
         /// </summary>
         public void ConnectToGdScriptSignal(string signalName, Callable callable)
         {
-            if (_gameManager == null) return;
+            if (_gameManager == null)
+                return;
 
             try
             {
@@ -271,7 +275,8 @@ namespace StrikeForceLike.Examples
         /// </summary>
         public void DisconnectFromGdScriptSignal(string signalName, Callable callable)
         {
-            if (_gameManager == null) return;
+            if (_gameManager == null)
+                return;
 
             try
             {
@@ -424,7 +429,8 @@ namespace StrikeForceLike.Examples
         /// </summary>
         public bool HasMethod(string methodName)
         {
-            if (_gameManager == null) return false;
+            if (_gameManager == null)
+                return false;
 
             try
             {
@@ -441,7 +447,8 @@ namespace StrikeForceLike.Examples
         /// </summary>
         public bool HasSignal(string signalName)
         {
-            if (_gameManager == null) return false;
+            if (_gameManager == null)
+                return false;
 
             try
             {
@@ -467,7 +474,8 @@ namespace StrikeForceLike.Examples
         /// </summary>
         public string[] GetMethodList()
         {
-            if (_gameManager == null) return Array.Empty<string>();
+            if (_gameManager == null)
+                return Array.Empty<string>();
 
             try
             {
@@ -492,7 +500,8 @@ namespace StrikeForceLike.Examples
         /// </summary>
         public void CallDeferredGdScript(string methodName, params Variant[] args)
         {
-            if (_gameManager == null) return;
+            if (_gameManager == null)
+                return;
 
             _gameManager.CallDeferred(methodName, args);
         }

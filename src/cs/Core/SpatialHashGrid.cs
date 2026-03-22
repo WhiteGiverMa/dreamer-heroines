@@ -1,8 +1,8 @@
-using Godot;
 using System;
 using System.Collections.Generic;
+using Godot;
 
-namespace StrikeForceLike.Core
+namespace DreamerHeroines.Core
 {
     /// <summary>
     /// 空间哈希网格 - 用于优化2D空间查询和碰撞检测
@@ -37,7 +37,8 @@ namespace StrikeForceLike.Core
         /// </summary>
         public void Insert(Node2D obj, Rect2 bounds)
         {
-            if (obj == null) return;
+            if (obj == null)
+                return;
 
             // 如果对象已存在，先移除
             if (_objectCells.ContainsKey(obj))
@@ -85,7 +86,8 @@ namespace StrikeForceLike.Core
         /// </summary>
         public void Remove(Node2D obj)
         {
-            if (obj == null || !_objectBounds.ContainsKey(obj)) return;
+            if (obj == null || !_objectBounds.ContainsKey(obj))
+                return;
 
             Rect2 bounds = _objectBounds[obj];
             int minX = (int)MathF.Floor(bounds.Position.X / _cellSize);
@@ -118,7 +120,8 @@ namespace StrikeForceLike.Core
         /// </summary>
         public void Update(Node2D obj, Rect2 newBounds)
         {
-            if (obj == null) return;
+            if (obj == null)
+                return;
 
             // 检查是否真的需要更新
             if (_objectBounds.TryGetValue(obj, out var oldBounds))

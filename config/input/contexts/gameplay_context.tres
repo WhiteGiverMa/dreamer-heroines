@@ -1,0 +1,472 @@
+[gd_resource type="Resource" script_class="GUIDEMappingContext" load_steps=115 format=3 uid="uid://d7g8h2m5n9p3"]
+
+[ext_resource type="Script" path="res://addons/guide/guide_mapping_context.gd" id="1_context"]
+[ext_resource type="Resource" uid="uid://c8a2h5m1n3k9" path="res://config/input/actions/move.tres" id="2_move"]
+[ext_resource type="Script" path="res://addons/guide/inputs/guide_input_key.gd" id="3_key"]
+[ext_resource type="Script" path="res://addons/guide/modifiers/guide_modifier_negate.gd" id="4_negate"]
+[ext_resource type="Script" path="res://addons/guide/modifiers/guide_modifier_input_swizzle.gd" id="5_swizzle"]
+[ext_resource type="Script" path="res://addons/guide/guide_input_mapping.gd" id="6_input_mapping"]
+[ext_resource type="Script" path="res://addons/guide/guide_action_mapping.gd" id="7_action_mapping"]
+[ext_resource type="Resource" uid="uid://d9b3i6n2o4l0" path="res://config/input/actions/jump.tres" id="8_jump"]
+[ext_resource type="Script" path="res://addons/guide/triggers/guide_trigger_pressed.gd" id="9_pressed"]
+[ext_resource type="Resource" uid="uid://e0c4j7o3p5m1" path="res://config/input/actions/shoot.tres" id="10_shoot"]
+[ext_resource type="Script" path="res://addons/guide/inputs/guide_input_mouse_button.gd" id="11_mouse"]
+[ext_resource type="Script" path="res://addons/guide/triggers/guide_trigger_down.gd" id="12_down"]
+[ext_resource type="Resource" uid="uid://f1d5k8p4q6n2" path="res://config/input/actions/reload.tres" id="13_reload"]
+[ext_resource type="Resource" uid="uid://g2e6l9q5r7o3" path="res://config/input/actions/interact.tres" id="14_interact"]
+[ext_resource type="Resource" uid="uid://h3f7m0r6s8p4" path="res://config/input/actions/crouch.tres" id="15_crouch"]
+[ext_resource type="Resource" uid="uid://i4g8n1s7uaq5" path="res://config/input/actions/dash.tres" id="16_sprint"]
+[ext_resource type="Resource" uid="uid://j5h9o2t8u0r6" path="res://config/input/actions/pause.tres" id="17_pause"]
+[ext_resource type="Resource" uid="uid://k6i0p3u9v1s7" path="res://config/input/actions/weapon_switch.tres" id="18_weapon_switch"]
+
+[sub_resource type="Resource" id="Resource_w_key"]
+script = ExtResource("3_key")
+key = 87
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_w_negate"]
+script = ExtResource("4_negate")
+x = true
+y = true
+z = true
+
+[sub_resource type="Resource" id="Resource_w_swizzle"]
+script = ExtResource("5_swizzle")
+order = 0
+
+[sub_resource type="Resource" id="Resource_w_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_w_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([SubResource("Resource_w_negate"), SubResource("Resource_w_swizzle")])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([])
+
+[sub_resource type="Resource" id="Resource_s_key"]
+script = ExtResource("3_key")
+key = 83
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_s_swizzle"]
+script = ExtResource("5_swizzle")
+order = 0
+
+[sub_resource type="Resource" id="Resource_s_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_s_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([SubResource("Resource_s_swizzle")])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([])
+
+[sub_resource type="Resource" id="Resource_a_key"]
+script = ExtResource("3_key")
+key = 65
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_a_negate"]
+script = ExtResource("4_negate")
+x = true
+y = true
+z = true
+
+[sub_resource type="Resource" id="Resource_a_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_a_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([SubResource("Resource_a_negate")])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([])
+
+[sub_resource type="Resource" id="Resource_d_key"]
+script = ExtResource("3_key")
+key = 68
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_d_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_d_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([])
+
+[sub_resource type="Resource" id="Resource_arrow_up_key"]
+script = ExtResource("3_key")
+key = 4194320
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_arrow_up_negate"]
+script = ExtResource("4_negate")
+x = true
+y = true
+z = true
+
+[sub_resource type="Resource" id="Resource_arrow_up_swizzle"]
+script = ExtResource("5_swizzle")
+order = 0
+
+[sub_resource type="Resource" id="Resource_arrow_up_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_arrow_up_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([SubResource("Resource_arrow_up_negate"), SubResource("Resource_arrow_up_swizzle")])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([])
+
+[sub_resource type="Resource" id="Resource_arrow_down_key"]
+script = ExtResource("3_key")
+key = 4194322
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_arrow_down_swizzle"]
+script = ExtResource("5_swizzle")
+order = 0
+
+[sub_resource type="Resource" id="Resource_arrow_down_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_arrow_down_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([SubResource("Resource_arrow_down_swizzle")])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([])
+
+[sub_resource type="Resource" id="Resource_arrow_left_key"]
+script = ExtResource("3_key")
+key = 4194319
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_arrow_left_negate"]
+script = ExtResource("4_negate")
+x = true
+y = true
+z = true
+
+[sub_resource type="Resource" id="Resource_arrow_left_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_arrow_left_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([SubResource("Resource_arrow_left_negate")])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([])
+
+[sub_resource type="Resource" id="Resource_arrow_right_key"]
+script = ExtResource("3_key")
+key = 4194321
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_arrow_right_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_arrow_right_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([])
+
+[sub_resource type="Resource" id="Resource_move_action"]
+script = ExtResource("7_action_mapping")
+action = ExtResource("2_move")
+input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_a_mapping"), SubResource("Resource_d_mapping"), SubResource("Resource_arrow_left_mapping"), SubResource("Resource_arrow_right_mapping")])
+
+[sub_resource type="Resource" id="Resource_space_key"]
+script = ExtResource("3_key")
+key = 32
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_jump_down"]
+script = ExtResource("12_down")
+
+[sub_resource type="Resource" id="Resource_jump_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_space_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_jump_down")])
+
+[sub_resource type="Resource" id="Resource_w_jump_key"]
+script = ExtResource("3_key")
+key = 87
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_w_jump_down"]
+script = ExtResource("12_down")
+
+[sub_resource type="Resource" id="Resource_w_jump_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_w_jump_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_w_jump_down")])
+
+[sub_resource type="Resource" id="Resource_jump_action"]
+script = ExtResource("7_action_mapping")
+action = ExtResource("8_jump")
+input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_jump_mapping"), SubResource("Resource_w_jump_mapping")])
+
+[sub_resource type="Resource" id="Resource_lmb"]
+script = ExtResource("11_mouse")
+button = 1
+
+[sub_resource type="Resource" id="Resource_shoot_down"]
+script = ExtResource("12_down")
+actuation_threshold = 0.5
+
+[sub_resource type="Resource" id="Resource_shoot_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_lmb")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_shoot_down")])
+
+[sub_resource type="Resource" id="Resource_shoot_action"]
+script = ExtResource("7_action_mapping")
+action = ExtResource("10_shoot")
+input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_shoot_mapping")])
+
+[sub_resource type="Resource" id="Resource_r_key"]
+script = ExtResource("3_key")
+key = 82
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_reload_pressed"]
+script = ExtResource("9_pressed")
+actuation_threshold = 0.5
+
+[sub_resource type="Resource" id="Resource_reload_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_r_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_reload_pressed")])
+
+[sub_resource type="Resource" id="Resource_reload_action"]
+script = ExtResource("7_action_mapping")
+action = ExtResource("13_reload")
+input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_reload_mapping")])
+
+[sub_resource type="Resource" id="Resource_e_key"]
+script = ExtResource("3_key")
+key = 69
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_interact_pressed"]
+script = ExtResource("9_pressed")
+actuation_threshold = 0.5
+
+[sub_resource type="Resource" id="Resource_interact_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_e_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_interact_pressed")])
+
+[sub_resource type="Resource" id="Resource_interact_action"]
+script = ExtResource("7_action_mapping")
+action = ExtResource("14_interact")
+input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_interact_mapping")])
+
+[sub_resource type="Resource" id="Resource_ctrl_key"]
+script = ExtResource("3_key")
+key = 4194326
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_crouch_down"]
+script = ExtResource("12_down")
+actuation_threshold = 0.5
+
+[sub_resource type="Resource" id="Resource_crouch_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_ctrl_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_crouch_down")])
+
+[sub_resource type="Resource" id="Resource_s_crouch_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_s_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_crouch_down")])
+
+[sub_resource type="Resource" id="Resource_crouch_action"]
+script = ExtResource("7_action_mapping")
+action = ExtResource("15_crouch")
+input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_crouch_mapping"), SubResource("Resource_s_crouch_mapping")])
+
+[sub_resource type="Resource" id="Resource_shift_key"]
+script = ExtResource("3_key")
+key = 4194325
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_sprint_down"]
+script = ExtResource("12_down")
+actuation_threshold = 0.5
+
+[sub_resource type="Resource" id="Resource_sprint_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_shift_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_sprint_down")])
+
+[sub_resource type="Resource" id="Resource_sprint_action"]
+script = ExtResource("7_action_mapping")
+action = ExtResource("16_sprint")
+input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_sprint_mapping")])
+
+[sub_resource type="Resource" id="Resource_esc_key"]
+script = ExtResource("3_key")
+key = 4194305
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_pause_pressed"]
+script = ExtResource("9_pressed")
+actuation_threshold = 0.5
+
+[sub_resource type="Resource" id="Resource_pause_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_esc_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_pause_pressed")])
+
+[sub_resource type="Resource" id="Resource_pause_action"]
+script = ExtResource("7_action_mapping")
+action = ExtResource("17_pause")
+input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_pause_mapping")])
+
+[sub_resource type="Resource" id="Resource_q_key"]
+script = ExtResource("3_key")
+key = 81
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_weapon_switch_pressed"]
+script = ExtResource("9_pressed")
+actuation_threshold = 0.5
+
+[sub_resource type="Resource" id="Resource_weapon_switch_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_q_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_weapon_switch_pressed")])
+
+[sub_resource type="Resource" id="Resource_weapon_switch_action"]
+script = ExtResource("7_action_mapping")
+action = ExtResource("18_weapon_switch")
+input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_weapon_switch_mapping")])
+
+[resource]
+script = ExtResource("1_context")
+display_name = "Gameplay"
+mappings = Array[ExtResource("7_action_mapping")]([SubResource("Resource_move_action"), SubResource("Resource_jump_action"), SubResource("Resource_shoot_action"), SubResource("Resource_reload_action"), SubResource("Resource_interact_action"), SubResource("Resource_crouch_action"), SubResource("Resource_sprint_action"), SubResource("Resource_pause_action"), SubResource("Resource_weapon_switch_action")])

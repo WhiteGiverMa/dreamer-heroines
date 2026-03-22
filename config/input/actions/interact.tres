@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="GUIDEAction" load_steps=2 format=3 uid="uid://g2e6l9q5r7o3"]
+
+[ext_resource type="Script" path="res://addons/guide/guide_action.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+name = &"interact"
+action_value_type = 0
+emit_as_godot_actions = false

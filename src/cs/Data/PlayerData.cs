@@ -1,10 +1,10 @@
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Godot;
 
-namespace StrikeForceLike.Data
+namespace DreamerHeroines.Data
 {
     /// <summary>
     /// 玩家数据类 - 包含玩家进度、等级、装备等信息
@@ -409,7 +409,7 @@ namespace StrikeForceLike.Data
                 CompletedLevels = new List<string>(this.CompletedLevels),
                 WeaponKills = new Dictionary<string, int>(this.WeaponKills),
                 Stats = this.Stats.Clone(),
-                Settings = this.Settings.Clone()
+                Settings = this.Settings.Clone(),
             };
         }
         #endregion
@@ -454,49 +454,83 @@ namespace StrikeForceLike.Data
         public int TotalKills
         {
             get => _totalKills;
-            set { _totalKills = value; OnPropertyChanged(); }
+            set
+            {
+                _totalKills = value;
+                OnPropertyChanged();
+            }
         }
 
         public int TotalDeaths
         {
             get => _totalDeaths;
-            set { _totalDeaths = value; OnPropertyChanged(); }
+            set
+            {
+                _totalDeaths = value;
+                OnPropertyChanged();
+            }
         }
 
         public int ShotsFired
         {
             get => _shotsFired;
-            set { _shotsFired = value; OnPropertyChanged(); OnPropertyChanged(nameof(Accuracy)); }
+            set
+            {
+                _shotsFired = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Accuracy));
+            }
         }
 
         public int ShotsHit
         {
             get => _shotsHit;
-            set { _shotsHit = value; OnPropertyChanged(); OnPropertyChanged(nameof(Accuracy)); }
+            set
+            {
+                _shotsHit = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(Accuracy));
+            }
         }
 
         public float TotalDamageDealt
         {
             get => _totalDamageDealt;
-            set { _totalDamageDealt = value; OnPropertyChanged(); }
+            set
+            {
+                _totalDamageDealt = value;
+                OnPropertyChanged();
+            }
         }
 
         public float TotalDamageTaken
         {
             get => _totalDamageTaken;
-            set { _totalDamageTaken = value; OnPropertyChanged(); }
+            set
+            {
+                _totalDamageTaken = value;
+                OnPropertyChanged();
+            }
         }
 
         public int MissionsCompleted
         {
             get => _missionsCompleted;
-            set { _missionsCompleted = value; OnPropertyChanged(); }
+            set
+            {
+                _missionsCompleted = value;
+                OnPropertyChanged();
+            }
         }
 
         public int MissionsFailed
         {
             get => _missionsFailed;
-            set { _missionsFailed = value; OnPropertyChanged(); }
+            set
+            {
+                _missionsFailed = value;
+                OnPropertyChanged();
+            }
         }
 
         /// <summary>
@@ -527,7 +561,7 @@ namespace StrikeForceLike.Data
                 TotalDamageDealt = this.TotalDamageDealt,
                 TotalDamageTaken = this.TotalDamageTaken,
                 MissionsCompleted = this.MissionsCompleted,
-                MissionsFailed = this.MissionsFailed
+                MissionsFailed = this.MissionsFailed,
             };
         }
     }
@@ -551,61 +585,101 @@ namespace StrikeForceLike.Data
         public float MasterVolume
         {
             get => _masterVolume;
-            set { _masterVolume = value; OnPropertyChanged(); }
+            set
+            {
+                _masterVolume = value;
+                OnPropertyChanged();
+            }
         }
 
         public float MusicVolume
         {
             get => _musicVolume;
-            set { _musicVolume = value; OnPropertyChanged(); }
+            set
+            {
+                _musicVolume = value;
+                OnPropertyChanged();
+            }
         }
 
         public float SFXVolume
         {
             get => _sfxVolume;
-            set { _sfxVolume = value; OnPropertyChanged(); }
+            set
+            {
+                _sfxVolume = value;
+                OnPropertyChanged();
+            }
         }
 
         public float MouseSensitivity
         {
             get => _mouseSensitivity;
-            set { _mouseSensitivity = value; OnPropertyChanged(); }
+            set
+            {
+                _mouseSensitivity = value;
+                OnPropertyChanged();
+            }
         }
 
         public bool InvertMouseY
         {
             get => _invertMouseY;
-            set { _invertMouseY = value; OnPropertyChanged(); }
+            set
+            {
+                _invertMouseY = value;
+                OnPropertyChanged();
+            }
         }
 
         public bool ShowDamageNumbers
         {
             get => _showDamageNumbers;
-            set { _showDamageNumbers = value; OnPropertyChanged(); }
+            set
+            {
+                _showDamageNumbers = value;
+                OnPropertyChanged();
+            }
         }
 
         public bool ScreenShake
         {
             get => _screenShake;
-            set { _screenShake = value; OnPropertyChanged(); }
+            set
+            {
+                _screenShake = value;
+                OnPropertyChanged();
+            }
         }
 
         public int TargetFrameRate
         {
             get => _targetFrameRate;
-            set { _targetFrameRate = value; OnPropertyChanged(); }
+            set
+            {
+                _targetFrameRate = value;
+                OnPropertyChanged();
+            }
         }
 
         public bool VSync
         {
             get => _vsync;
-            set { _vsync = value; OnPropertyChanged(); }
+            set
+            {
+                _vsync = value;
+                OnPropertyChanged();
+            }
         }
 
         public bool Fullscreen
         {
             get => _fullscreen;
-            set { _fullscreen = value; OnPropertyChanged(); }
+            set
+            {
+                _fullscreen = value;
+                OnPropertyChanged();
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -628,7 +702,7 @@ namespace StrikeForceLike.Data
                 ScreenShake = this.ScreenShake,
                 TargetFrameRate = this.TargetFrameRate,
                 VSync = this.VSync,
-                Fullscreen = this.Fullscreen
+                Fullscreen = this.Fullscreen,
             };
         }
     }

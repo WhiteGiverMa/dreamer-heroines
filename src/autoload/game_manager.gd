@@ -1,4 +1,4 @@
-extends Node
+extends "res://src/base/game_system.gd"
 
 # GameManager - 游戏核心管理器
 # 负责游戏状态、分数、关卡切换等全局管理
@@ -35,9 +35,28 @@ var is_game_paused: bool = false:
 		else:
 			change_state(GameState.PLAYING)
 
-func _ready():
+func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	print("GameManager initialized")
+	system_name = "game_manager"
+	# 不在这里执行初始化，等待 BootSequence 调用
+
+func initialize() -> void:
+	print("[GameManager] 开始初始化...")
+	
+	# 等待 SaveManager 依赖
+	var save_mgr = get_node_or_null("/root/SaveManager")
+	if save_mgr and not save_mgr.is_initialized:
+		print("[GameManager] 等待 SaveManager 初始化...")
+		await save_mgr.system_ready
+	
+	# 等待 LevelManager 依赖
+	var level_mgr = get_node_or_null("/root/LevelManager")
+	if level_mgr and not level_mgr.is_initialized:
+		print("[GameManager] 等待 LevelManager 初始化...")
+		await level_mgr.system_ready
+	
+	print("[GameManager] 初始化完成")
+	_mark_ready()
 
 func _input(event: InputEvent):
 	if event.is_action_pressed("pause") and current_state in [GameState.PLAYING, GameState.PAUSED]:
@@ -73,10 +92,6 @@ func toggle_pause() -> void:
 func add_score(points: int) -> void:
 	current_score += points
 	score_changed.emit(current_score)
-	
-	# 更新HUD
-	if hud:
-		hud.update_score(current_score)
 
 func reset_game() -> void:
 	current_score = 0
@@ -120,12 +135,24 @@ func register_player(player: Node2D) -> void:
 	# 连接玩家信号
 	if player.has_signal("health_changed"):
 		player.health_changed.connect(_on_player_health_changed)
+	if player.has_signal("ammo_changed"):
+		player.ammo_changed.connect(_on_player_ammo_changed)
 	if player.has_signal("died"):
 		player.died.connect(on_player_death)
 
 func _on_player_health_changed(current: int, max: int) -> void:
 	if hud:
 		hud.update_health(current, max)
+
+func _on_player_ammo_changed(current: int, max: int) -> void:
+	if hud:
+		# 获取备用弹药
+		var reserve = -1
+		if player_instance:
+			var weapon = player_instance.get("current_weapon")
+			if weapon and "current_reserve_ammo" in weapon:
+				reserve = weapon.current_reserve_ammo
+		hud.update_ammo(current, max, reserve)
 
 func get_player() -> Node2D:
 	return player_instance
@@ -170,6 +197,15 @@ func continue_game() -> void:
 # UI管理
 func register_hud(hud_instance: CanvasLayer) -> void:
 	hud = hud_instance
+	
+	# 如果玩家已存在，主动获取弹药状态（解决初始化顺序问题）
+	if player_instance:
+		var weapon = player_instance.get("current_weapon")
+		if weapon:
+			var current = weapon.current_ammo_in_mag if "current_ammo_in_mag" in weapon else 0
+			var max_val = weapon.magazine_size if "magazine_size" in weapon else 0
+			var reserve = weapon.current_reserve_ammo if "current_reserve_ammo" in weapon else -1
+			hud.update_ammo(current, max_val, reserve)
 
 func register_pause_menu(menu: Control) -> void:
 	pause_menu = menu

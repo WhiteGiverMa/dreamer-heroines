@@ -1,4 +1,4 @@
-extends Node
+extends "res://src/base/game_system.gd"
 
 # AudioManager - 音频管理器
 # 统一管理游戏音效和背景音乐
@@ -23,11 +23,17 @@ var default_volumes: Dictionary = {
 	"UI": 0.7
 }
 
-func _ready():
+func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	system_name = "audio_manager"
+	# 不在这里执行初始化，等待 BootSequence 调用
+
+func initialize() -> void:
+	print("[AudioManager] 开始初始化...")
 	_setup_audio_players()
 	_setup_default_bus_volumes()
-	print("AudioManager initialized")
+	print("[AudioManager] 初始化完成")
+	_mark_ready()
 
 func _setup_audio_players():
 	# 创建背景音乐播放器

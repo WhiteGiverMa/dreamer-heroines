@@ -33,3 +33,15 @@ Thumbs.db
 build/
 dist/
 *.tmp
+
+# Sessions
+sessions/
+
+# OMO
+.sisyphus/
+conversations/
+
+# Temp/test files
+nul
+test_*.gd
+!tests/

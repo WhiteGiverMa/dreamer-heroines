@@ -1,0 +1,27 @@
+# CSharpier 忽略文件
+# 这些文件不会被格式化
+
+# Godot 生成的文件
+.godot/
+
+# 第三方库
+addons/
+
+# 构建输出
+bin/
+obj/
+
+# 资源文件
+assets/
+
+# 场景文件
+scenes/
+
+# 配置文件
+config/
+
+# 文档
+docs/
+
+# 测试数据
+test-data/

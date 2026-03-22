@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://boot_sequence_001"]
+
+[ext_resource type="Script" path="res://src/autoload/boot_sequence.gd" id="1_boot"]
+[ext_resource type="PackedScene" uid="uid://loading_screen_001" path="res://src/ui/loading_screen.tscn" id="2_loading"]
+
+[node name="BootSequence" type="Node"]
+script = ExtResource("1_boot")
+
+[node name="LoadingScreen" parent="." instance=ExtResource("2_loading")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

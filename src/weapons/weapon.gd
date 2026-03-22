@@ -1,0 +1,205 @@
+class_name Weapon
+extends Node2D
+
+# Weapon - 组合式武器组件
+# 零依赖设计：不引用持有者，通过信号通信
+# 可被玩家、敌人或其他实体复用
+
+# === 信号定义 ===
+# 射击信号：通知外部投射物生成参数
+signal shot_fired(position: Vector2, direction: Vector2, faction: String)
+signal reload_started
+signal reload_finished
+signal ammo_changed(current: int, max: int)
+signal out_of_ammo
+
+# === 配置 ===
+@export var stats: WeaponStats
+
+# 阵营标识（由持有者设置）
+# "player" = 玩家阵营，子弹命中敌人
+# "enemy" = 敌人阵营，子弹命中玩家
+var faction: String = "player"
+
+# === 运行时状态 ===
+var current_ammo_in_mag: int = 0
+var current_reserve_ammo: int = 0
+var can_shoot: bool = true
+var is_reloading: bool = false
+
+# 计时器
+var _fire_cooldown_timer: float = 0.0
+
+# 子节点引用
+@onready var muzzle: Marker2D = $Muzzle
+
+
+func _ready() -> void:
+	_initialize_stats()
+
+
+func _process(delta: float) -> void:
+	if _fire_cooldown_timer > 0:
+		_fire_cooldown_timer -= delta
+		if _fire_cooldown_timer <= 0:
+			can_shoot = true
+
+
+func _initialize_stats() -> void:
+	if not stats:
+		return
+	
+	# 初始化弹药
+	if stats.use_ammo_system:
+		current_ammo_in_mag = stats.magazine_size
+		current_reserve_ammo = stats.max_ammo
+	else:
+		# 无限弹药模式（敌人）
+		current_ammo_in_mag = 999
+		current_reserve_ammo = 999
+
+
+# === 主要接口 ===
+
+## 尝试射击
+## @param muzzle_pos: 枪口世界坐标
+## @param aim_dir: 瞄准方向（归一化向量）
+## @return: 是否成功射击
+func try_shoot(muzzle_pos: Vector2, aim_dir: Vector2) -> bool:
+	if not can_shoot or is_reloading:
+		return false
+	
+	# 检查弹药（无限弹药模式跳过）
+	if stats and stats.use_ammo_system:
+		if current_ammo_in_mag <= 0:
+			out_of_ammo.emit()
+			AudioManager.play_sfx("empty_click")
+			return false
+	
+	_fire(muzzle_pos, aim_dir)
+	return true
+
+
+## 执行射击
+func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
+	# 消耗弹药
+	if stats and stats.use_ammo_system:
+		current_ammo_in_mag -= 1
+		ammo_changed.emit(current_ammo_in_mag, stats.magazine_size)
+	
+	# 设置冷却
+	can_shoot = false
+	_fire_cooldown_timer = stats.fire_rate if stats else 0.1
+	
+	# 应用散布
+	var final_dir := aim_dir
+	if stats and stats.spread > 0:
+		var random_angle = randf_range(-stats.spread, stats.spread)
+		final_dir = aim_dir.rotated(deg_to_rad(random_angle))
+	
+	# 发射信号 - 让外部决定如何处理投射物
+	shot_fired.emit(muzzle_pos, final_dir, faction)
+	
+	# 视觉特效
+	_spawn_muzzle_flash(muzzle_pos, final_dir)
+	_spawn_shell_casing()
+	
+	# 音效
+	if stats:
+		AudioManager.play_sfx(stats.weapon_name + "_shoot")
+	else:
+		AudioManager.play_sfx("shoot")
+
+
+## 换弹
+func reload() -> void:
+	if is_reloading:
+		return
+	if not stats or not stats.use_ammo_system:
+		return
+	if current_ammo_in_mag >= stats.magazine_size:
+		return
+	if current_reserve_ammo <= 0:
+		return
+	
+	is_reloading = true
+	reload_started.emit()
+	
+	if stats:
+		AudioManager.play_sfx(stats.weapon_name + "_reload")
+	
+	# 使用 await 等待换弹时间
+	await get_tree().create_timer(stats.reload_time).timeout
+	
+	if is_reloading:  # 检查是否被取消
+		_finish_reload()
+
+
+## 完成换弹
+func _finish_reload() -> void:
+	if not stats:
+		return
+	
+	var ammo_needed := stats.magazine_size - current_ammo_in_mag
+	var ammo_to_reload := mini(ammo_needed, current_reserve_ammo)
+	
+	current_ammo_in_mag += ammo_to_reload
+	current_reserve_ammo -= ammo_to_reload
+	
+	is_reloading = false
+	ammo_changed.emit(current_ammo_in_mag, stats.magazine_size)
+	reload_finished.emit()
+
+
+## 取消换弹
+func cancel_reload() -> void:
+	is_reloading = false
+
+
+## 添加弹药
+func add_ammo(amount: int) -> void:
+	if not stats:
+		return
+	current_reserve_ammo = mini(current_reserve_ammo + amount, stats.max_ammo)
+
+
+## 获取枪口位置
+func get_muzzle_position() -> Vector2:
+	if muzzle:
+		return muzzle.global_position
+	return global_position
+
+
+## 获取当前弹药状态
+func get_ammo_info() -> Dictionary:
+	return {
+		"current": current_ammo_in_mag,
+		"reserve": current_reserve_ammo,
+		"max": stats.magazine_size if stats else 0
+	}
+
+
+## 检查是否需要换弹
+func needs_reload() -> bool:
+	if not stats or not stats.use_ammo_system:
+		return false
+	return current_ammo_in_mag < stats.magazine_size and current_reserve_ammo > 0
+
+
+# === 内部方法 ===
+
+func _spawn_muzzle_flash(pos: Vector2, dir: Vector2) -> void:
+	if not stats or stats.muzzle_flash_effect.is_empty():
+		return
+	
+	if EffectManager:
+		EffectManager.play_muzzle_flash(pos, dir.angle(), stats.muzzle_flash_effect)
+
+
+func _spawn_shell_casing() -> void:
+	if not stats or not stats.shell_casing_scene:
+		return
+	
+	var casing := stats.shell_casing_scene.instantiate()
+	get_tree().current_scene.add_child(casing)
+	casing.global_position = global_position

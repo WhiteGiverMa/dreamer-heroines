@@ -1,6 +1,14 @@
-[gd_scene load_steps=5 format=3 uid="uid://player12345"]
+[gd_scene load_steps=13 format=3 uid="uid://player12345"]
 
 [ext_resource type="Script" path="res://src/characters/player.gd" id="1_player"]
+[ext_resource type="Resource" uid="uid://c8a2h5m1n3k9" path="res://config/input/actions/move.tres" id="2_move"]
+[ext_resource type="Resource" uid="uid://d9b3i6n2o4l0" path="res://config/input/actions/jump.tres" id="3_jump"]
+[ext_resource type="Resource" uid="uid://e0c4j7o3p5m1" path="res://config/input/actions/shoot.tres" id="4_shoot"]
+[ext_resource type="Resource" uid="uid://f1d5k8p4q6n2" path="res://config/input/actions/reload.tres" id="5_reload"]
+[ext_resource type="Resource" uid="uid://i4g8n1s7uaq5" path="res://config/input/actions/dash.tres" id="6_sprint"]
+[ext_resource type="Resource" uid="uid://h3f7m0r6s8p4" path="res://config/input/actions/crouch.tres" id="7_crouch"]
+[ext_resource type="Resource" uid="uid://k6i0p3u9v1s7" path="res://config/input/actions/weapon_switch.tres" id="8_weapon_switch"]
+[ext_resource type="Script" path="res://src/utils/camera_shake.gd" id="9_camera_shake"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(32, 64)
@@ -11,10 +19,156 @@ size = Vector2(32, 64)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_feet"]
 size = Vector2(30, 4)
 
+[sub_resource type="Animation" id="Animation_idle"]
+resource_name = "idle"
+length = 1.0
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Body:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(0, -32), Vector2(0, -34), Vector2(0, -32)]
+}
+
+[sub_resource type="Animation" id="Animation_run"]
+resource_name = "run"
+length = 0.6
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Body:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.15, 0.3, 0.45, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(0, -32), Vector2(0, -30), Vector2(0, -32), Vector2(0, -34), Vector2(0, -32)]
+}
+
+[sub_resource type="Animation" id="Animation_sprint"]
+resource_name = "sprint"
+length = 0.4
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Body:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(0, -32), Vector2(0, -28), Vector2(0, -32), Vector2(0, -34), Vector2(0, -32)]
+}
+
+[sub_resource type="Animation" id="Animation_jump"]
+resource_name = "jump"
+length = 0.3
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Body:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.15, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(0.9, 1.1), Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_fall"]
+resource_name = "fall"
+length = 0.3
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Body:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.15, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.1, 0.9), Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_crouch"]
+resource_name = "crouch"
+length = 0.2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Body:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.1, 0.7)]
+}
+
+[sub_resource type="Animation" id="Animation_death"]
+resource_name = "death"
+length = 0.5
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Body:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Body:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0.0, 1.5708]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_player"]
+_data = {
+"crouch": SubResource("Animation_crouch"),
+"death": SubResource("Animation_death"),
+"fall": SubResource("Animation_fall"),
+"idle": SubResource("Animation_idle"),
+"jump": SubResource("Animation_jump"),
+"run": SubResource("Animation_run"),
+"sprint": SubResource("Animation_sprint")
+}
+
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 1
 collision_mask = 54
 script = ExtResource("1_player")
+move_action = ExtResource("2_move")
+jump_action = ExtResource("3_jump")
+shoot_action = ExtResource("4_shoot")
+reload_action = ExtResource("5_reload")
+dash_action = ExtResource("6_sprint")
+crouch_action = ExtResource("7_crouch")
+weapon_switch_action = ExtResource("8_weapon_switch")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -32)
@@ -34,13 +188,14 @@ position = Vector2(24, 0)
 
 [node name="GroundCheck" type="Area2D" parent="."]
 collision_layer = 0
-collision_mask = 8
+collision_mask = 36
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="GroundCheck"]
 position = Vector2(0, -2)
 shape = SubResource("RectangleShape2D_feet")
 
 [node name="Camera2D" type="Camera2D" parent="."]
+script = ExtResource("9_camera_shake")
 position = Vector2(0, -50)
 offset = Vector2(100, 0)
 limit_smoothed = true
@@ -56,10 +211,14 @@ drag_bottom_margin = 0.1
 [node name="HealthComponent" type="Node" parent="."]
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+"": SubResource("AnimationLibrary_player")
+}
 
 [node name="InvulnerabilityTimer" type="Timer" parent="."]
 wait_time = 0.5
 one_shot = true
 
-[connection signal="body_entered" from="GroundCheck" to="." method="_on_ground_check_body_entered"]
-[connection signal="body_exited" from="GroundCheck" to="." method="_on_ground_check_body_exited"]
+[node name="DashIframeTimer" type="Timer" parent="."]
+wait_time = 0.2
+one_shot = true

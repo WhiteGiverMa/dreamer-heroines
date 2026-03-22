@@ -10,11 +10,11 @@ config_version=5
 
 [application]
 
-config/name="WarHeroesStyleShooter"
+config/name="DreamerHeroines"
 config/description="2D横板射击游戏 - 战火英雄风格硬核射击"
 config/version="0.1.0"
 config/tags=PackedStringArray("2d", "shooter", "platformer", "hardcore")
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/ui/main_menu.tscn"
 config/features=PackedStringArray("4.6", "C#", "GL Compatibility")
 boot_splash/bg_color=Color(0.141176, 0.141176, 0.141176, 1)
 config/icon="res://assets/sprites/icon.svg"
@@ -25,12 +25,24 @@ buses/default_bus_layout="res://resources/default_bus_layout.tres"
 
 [autoload]
 
+
+
+
+
+
+
+
+BootSequence="*res://src/autoload/boot_sequence.tscn"
 GameManager="*res://src/autoload/game_manager.gd"
 AudioManager="*res://src/autoload/audio_manager.gd"
-InputManager="*res://src/autoload/input_manager.gd"
+GameStateManager="*res://src/cs/Systems/GameStateManager.cs"
 SaveManager="*res://src/autoload/save_manager.gd"
+CSharpSaveManager="*res://src/cs/Systems/SaveManager.cs"
 LevelManager="*res://src/levels/level_manager.gd"
 EffectManager="*res://src/autoload/effect_manager.gd"
+ProjectileSpawner="*res://src/autoload/projectile_spawner.gd"
+EnhancedInput="*res://src/autoload/enhanced_input.gd"
+GUIDE="*res://addons/guide/guide.gd"
 
 [debug]
 
@@ -47,7 +59,11 @@ window/canvas_textures/default_texture_filter=0
 
 [dotnet]
 
-project/assembly_name="StrikeForceLike"
+project/assembly_name="DreamerHeroines"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/guide/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/godot_mcp/plugin.cfg")
 
 [input]
 

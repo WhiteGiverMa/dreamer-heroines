@@ -1,10 +1,10 @@
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Godot;
 
-namespace StrikeForceLike.Data
+namespace DreamerHeroines.Data
 {
     /// <summary>
     /// 存档数据容器 - 包含所有需要保存的游戏数据
@@ -72,7 +72,7 @@ namespace StrikeForceLike.Data
                 Version = "1.0.0",
                 Player = new PlayerSaveData(),
                 Progress = new ProgressSaveData(),
-                Settings = new SettingsSaveData()
+                Settings = new SettingsSaveData(),
             };
         }
 
@@ -96,7 +96,7 @@ namespace StrikeForceLike.Data
                 Level = Player.Level,
                 PlayTime = Player.TotalPlayTime,
                 LastSavedAt = LastSavedAt,
-                CurrentLevel = Progress.CurrentLevelId
+                CurrentLevel = Progress.CurrentLevelId,
             };
         }
     }
@@ -118,7 +118,8 @@ namespace StrikeForceLike.Data
         public Dictionary<string, int> WeaponKills { get; set; } = new Dictionary<string, int>();
         public PlayerStatsSaveData Stats { get; set; } = new PlayerStatsSaveData();
         public string? CurrentWeapon { get; set; }
-        public Dictionary<string, WeaponUpgradeData> WeaponUpgrades { get; set; } = new Dictionary<string, WeaponUpgradeData>();
+        public Dictionary<string, WeaponUpgradeData> WeaponUpgrades { get; set; } =
+            new Dictionary<string, WeaponUpgradeData>();
     }
 
     /// <summary>
@@ -158,7 +159,8 @@ namespace StrikeForceLike.Data
     {
         public string CurrentLevelId { get; set; } = "level_1";
         public string? CheckPointId { get; set; }
-        public Dictionary<string, LevelProgressData> LevelProgress { get; set; } = new Dictionary<string, LevelProgressData>();
+        public Dictionary<string, LevelProgressData> LevelProgress { get; set; } =
+            new Dictionary<string, LevelProgressData>();
         public List<string> UnlockedLevels { get; set; } = new List<string>();
         public Dictionary<string, bool> CollectiblesFound { get; set; } = new Dictionary<string, bool>();
         public Dictionary<string, bool> SecretsFound { get; set; } = new Dictionary<string, bool>();
@@ -179,6 +181,16 @@ namespace StrikeForceLike.Data
     }
 
     /// <summary>
+    /// 窗口模式枚举
+    /// </summary>
+    public enum WindowMode
+    {
+        Windowed = 0,
+        Fullscreen = 1,
+        Borderless = 2,
+    }
+
+    /// <summary>
     /// 设置存档数据
     /// </summary>
     [Serializable]
@@ -196,6 +208,11 @@ namespace StrikeForceLike.Data
         public bool Fullscreen { get; set; } = false;
         public string Language { get; set; } = "zh_CN";
         public Dictionary<string, string> KeyBindings { get; set; } = new Dictionary<string, string>();
+
+        // 分辨率设置
+        public int ResolutionWidth { get; set; } = 1920;
+        public int ResolutionHeight { get; set; } = 1080;
+        public WindowMode WindowMode { get; set; } = WindowMode.Windowed;
     }
 
     /// <summary>
@@ -256,7 +273,7 @@ namespace StrikeForceLike.Data
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            IncludeFields = true
+            IncludeFields = true,
         };
 
         /// <summary>
@@ -288,10 +305,14 @@ namespace StrikeForceLike.Data
         /// </summary>
         public static bool Validate(SaveData? data)
         {
-            if (data == null) return false;
-            if (string.IsNullOrEmpty(data.Version)) return false;
-            if (data.Player == null) return false;
-            if (data.Progress == null) return false;
+            if (data == null)
+                return false;
+            if (string.IsNullOrEmpty(data.Version))
+                return false;
+            if (data.Player == null)
+                return false;
+            if (data.Progress == null)
+                return false;
             return true;
         }
     }

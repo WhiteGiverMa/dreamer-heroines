@@ -1,0 +1,71 @@
+# EditorConfig 配置
+# 统一代码风格，支持多种编辑器
+# https://editorconfig.org
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# GDScript 文件
+[*.gd]
+indent_style = tab
+indent_size = 4
+max_line_length = 120
+
+# C# 文件
+[*.cs]
+indent_style = space
+indent_size = 4
+max_line_length = 120
+
+# JSON 配置文件
+[*.json]
+indent_style = space
+indent_size = 2
+
+# TOML 配置文件
+[*.toml]
+indent_style = space
+indent_size = 2
+
+# YAML 文件
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown 文档
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# Godot 项目文件
+[*.godot]
+indent_style = space
+indent_size = 2
+
+# Godot 资源文件
+[*.tres]
+indent_style = space
+indent_size = 2
+
+# Godot 场景文件
+[*.tscn]
+indent_style = space
+indent_size = 2
+
+# C# 项目文件
+[*.csproj]
+indent_style = space
+indent_size = 2
+
+# 批处理脚本
+[*.{bat,cmd}]
+end_of_line = crlf
+
+# PowerShell 脚本
+[*.ps1]
+end_of_line = crlf

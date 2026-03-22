@@ -1,4 +1,4 @@
-extends Node
+extends "res://src/base/game_system.gd"
 
 # LevelManager - 关卡管理器
 # 负责关卡加载、进度追踪、检查点管理
@@ -33,7 +33,20 @@ var player: Node2D = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	print("LevelManager initialized")
+	system_name = "level_manager"
+	# 不在这里执行初始化，等待 BootSequence 调用
+
+func initialize() -> void:
+	print("[LevelManager] 开始初始化...")
+	
+	# 等待 SaveManager 依赖
+	var save_mgr = get_node_or_null("/root/SaveManager")
+	if save_mgr and not save_mgr.is_initialized:
+		print("[LevelManager] 等待 SaveManager 初始化...")
+		await save_mgr.system_ready
+	
+	print("[LevelManager] 初始化完成")
+	_mark_ready()
 
 func _process(delta: float) -> void:
 	if current_state == LevelState.PLAYING:

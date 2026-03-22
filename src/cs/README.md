@@ -42,12 +42,12 @@ GameStateManager="*res://src/cs/Systems/GameStateManager.cs"
 SaveManager="*res://src/cs/Systems/SaveManager.cs"
 
 [dotnet]
-project/assembly_name="StrikeForceLike"
+project/assembly_name="DreamerHeroines"
 ```
 
 ### .csproj 配置
 
-- **项目名**: StrikeForceLike
+- **项目名**: DreamerHeroines
 - **目标框架**: .NET 8.0
 - **Godot SDK**: 4.6.1
 - **可空引用类型**: 已启用

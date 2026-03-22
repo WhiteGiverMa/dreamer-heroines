@@ -1,21 +1,22 @@
-using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Godot;
 
-namespace StrikeForceLike.Utils
+namespace DreamerHeroines.Utils
 {
     /// <summary>
     /// Godot和C#扩展方法集合
     /// </summary>
-    public static class Extensions
+    public static partial class Extensions
     {
         #region Node Extensions
         /// <summary>
         /// 安全获取节点，如果不存在返回null
         /// </summary>
-        public static T? GetNodeOrNull<T>(this Node node, NodePath path) where T : Node
+        public static T? GetNodeOrNull<T>(this Node node, NodePath path)
+            where T : Node
         {
             if (node.HasNode(path))
             {
@@ -27,7 +28,8 @@ namespace StrikeForceLike.Utils
         /// <summary>
         /// 获取或创建子节点
         /// </summary>
-        public static T GetOrCreateChild<T>(this Node node, string name) where T : Node, new()
+        public static T GetOrCreateChild<T>(this Node node, string name)
+            where T : Node, new()
         {
             var existing = node.FindChild(name, false, false);
             if (existing is T typedNode)
@@ -43,7 +45,8 @@ namespace StrikeForceLike.Utils
         /// <summary>
         /// 递归查找所有指定类型的子节点
         /// </summary>
-        public static IEnumerable<T> FindChildrenOfType<T>(this Node node, bool recursive = true) where T : Node
+        public static IEnumerable<T> FindChildrenOfType<T>(this Node node, bool recursive = true)
+            where T : Node
         {
             foreach (Node child in node.GetChildren())
             {
@@ -79,7 +82,7 @@ namespace StrikeForceLike.Utils
             {
                 WaitTime = delaySeconds,
                 OneShot = true,
-                Autostart = true
+                Autostart = true,
             };
             node.AddChild(timer);
             timer.Timeout += () =>
@@ -97,7 +100,7 @@ namespace StrikeForceLike.Utils
             node.CallDeferred(Node.MethodName.AddChild, new DeferredAction(action));
         }
 
-        private class DeferredAction : Node
+        private partial class DeferredAction : Node
         {
             private readonly Action _action;
 
@@ -168,14 +171,16 @@ namespace StrikeForceLike.Utils
         /// <summary>
         /// 在指定范围内查找最近的节点
         /// </summary>
-        public static T? FindNearest<T>(this Node2D node, IEnumerable<T> candidates) where T : Node2D
+        public static T? FindNearest<T>(this Node2D node, IEnumerable<T> candidates)
+            where T : Node2D
         {
             T? nearest = null;
             float nearestDist = float.MaxValue;
 
             foreach (var candidate in candidates)
             {
-                if (candidate == node) continue;
+                if (candidate == node)
+                    continue;
 
                 float dist = node.GlobalPosition.DistanceSquaredTo(candidate.GlobalPosition);
                 if (dist < nearestDist)
@@ -227,10 +232,7 @@ namespace StrikeForceLike.Utils
         {
             float cos = Mathf.Cos(angle);
             float sin = Mathf.Sin(angle);
-            return new Vector2(
-                vector.X * cos - vector.Y * sin,
-                vector.X * sin + vector.Y * cos
-            );
+            return new Vector2(vector.X * cos - vector.Y * sin, vector.X * sin + vector.Y * cos);
         }
 
         /// <summary>
@@ -272,7 +274,14 @@ namespace StrikeForceLike.Utils
         /// <summary>
         /// 带阻尼的向量移动
         /// </summary>
-        public static Vector2 SmoothDamp(this Vector2 current, Vector2 target, ref Vector2 velocity, float smoothTime, float deltaTime, float maxSpeed = float.PositiveInfinity)
+        public static Vector2 SmoothDamp(
+            this Vector2 current,
+            Vector2 target,
+            ref Vector2 velocity,
+            float smoothTime,
+            float deltaTime,
+            float maxSpeed = float.PositiveInfinity
+        )
         {
             smoothTime = Math.Max(0.0001f, smoothTime);
             float omega = 2f / smoothTime;
@@ -331,8 +340,10 @@ namespace StrikeForceLike.Utils
         /// </summary>
         public static string Truncate(this string value, int maxLength, string suffix = "...")
         {
-            if (string.IsNullOrEmpty(value)) return value;
-            if (value.Length <= maxLength) return value;
+            if (string.IsNullOrEmpty(value))
+                return value;
+            if (value.Length <= maxLength)
+                return value;
             return value.Substring(0, maxLength - suffix.Length) + suffix;
         }
 
@@ -341,7 +352,8 @@ namespace StrikeForceLike.Utils
         /// </summary>
         public static string Capitalize(this string value)
         {
-            if (string.IsNullOrEmpty(value)) return value;
+            if (string.IsNullOrEmpty(value))
+                return value;
             return char.ToUpper(value[0]) + value.Substring(1);
         }
 
@@ -350,9 +362,10 @@ namespace StrikeForceLike.Utils
         /// </summary>
         public static string ToDisplayName(this string value)
         {
-            if (string.IsNullOrEmpty(value)) return value;
+            if (string.IsNullOrEmpty(value))
+                return value;
 
-            var result = System.Text.StringBuilderCache.Acquire();
+            var result = new System.Text.StringBuilder(value.Length + 8);
             result.Append(char.ToUpper(value[0]));
 
             for (int i = 1; i < value.Length; i++)
@@ -364,13 +377,14 @@ namespace StrikeForceLike.Utils
                 result.Append(value[i]);
             }
 
-            return System.Text.StringBuilderCache.GetStringAndRelease(result);
+            return result.ToString();
         }
 
         /// <summary>
         /// 解析为枚举值
         /// </summary>
-        public static bool TryParseEnum<T>(this string value, out T result) where T : struct, Enum
+        public static bool TryParseEnum<T>(this string value, out T result)
+            where T : struct, Enum
         {
             return Enum.TryParse(value, true, out result);
         }
@@ -408,7 +422,8 @@ namespace StrikeForceLike.Utils
         /// </summary>
         public static T? RandomElement<T>(this IList<T> list)
         {
-            if (list.Count == 0) return default;
+            if (list.Count == 0)
+                return default;
             return list[new Random().Next(list.Count)];
         }
 
@@ -417,7 +432,8 @@ namespace StrikeForceLike.Utils
         /// </summary>
         public static T? RandomElementWeighted<T>(this IList<T> list, Func<T, float> weightSelector)
         {
-            if (list.Count == 0) return default;
+            if (list.Count == 0)
+                return default;
 
             float totalWeight = list.Sum(weightSelector);
             float random = (float)new Random().NextDouble() * totalWeight;
@@ -460,7 +476,12 @@ namespace StrikeForceLike.Utils
         /// <summary>
         /// 安全获取字典值
         /// </summary>
-        public static TValue? GetValueOrDefault<TKey, TValue>(this Dictionary<TKey, TValue> dict, TKey key, TValue? defaultValue = default) where TKey : notnull
+        public static TValue? GetValueOrDefault<TKey, TValue>(
+            this Dictionary<TKey, TValue> dict,
+            TKey key,
+            TValue? defaultValue = default
+        )
+            where TKey : notnull
         {
             if (dict.TryGetValue(key, out var value))
             {
@@ -472,7 +493,8 @@ namespace StrikeForceLike.Utils
         /// <summary>
         /// 添加或更新字典值
         /// </summary>
-        public static void AddOrUpdate<TKey, TValue>(this Dictionary<TKey, TValue> dict, TKey key, TValue value) where TKey : notnull
+        public static void AddOrUpdate<TKey, TValue>(this Dictionary<TKey, TValue> dict, TKey key, TValue value)
+            where TKey : notnull
         {
             dict[key] = value;
         }
@@ -503,7 +525,7 @@ namespace StrikeForceLike.Utils
             var array = new Godot.Collections.Array();
             foreach (var item in enumerable)
             {
-                array.Add(item);
+                array.Add(Variant.From(item));
             }
             return array;
         }
@@ -511,12 +533,13 @@ namespace StrikeForceLike.Utils
         /// <summary>
         /// 将C#字典转换为Godot字典
         /// </summary>
-        public static Godot.Collections.Dictionary ToGodotDictionary<TKey, TValue>(this Dictionary<TKey, TValue> dict) where TKey : notnull
+        public static Godot.Collections.Dictionary ToGodotDictionary<TKey, TValue>(this Dictionary<TKey, TValue> dict)
+            where TKey : notnull
         {
             var godotDict = new Godot.Collections.Dictionary();
             foreach (var kvp in dict)
             {
-                godotDict[kvp.Key] = kvp.Value;
+                godotDict[Variant.From(kvp.Key)] = Variant.From(kvp.Value);
             }
             return godotDict;
         }
@@ -528,12 +551,7 @@ namespace StrikeForceLike.Utils
         /// </summary>
         public static Color WithBrightness(this Color color, float brightness)
         {
-            return new Color(
-                color.R * brightness,
-                color.G * brightness,
-                color.B * brightness,
-                color.A
-            );
+            return new Color(color.R * brightness, color.G * brightness, color.B * brightness, color.A);
         }
 
         /// <summary>
@@ -586,8 +604,10 @@ namespace StrikeForceLike.Utils
         /// </summary>
         public static bool ContainsInclusive(this Rect2 rect, Vector2 point)
         {
-            return point.X >= rect.Position.X && point.X <= rect.End.X &&
-                   point.Y >= rect.Position.Y && point.Y <= rect.End.Y;
+            return point.X >= rect.Position.X
+                && point.X <= rect.End.X
+                && point.Y >= rect.Position.Y
+                && point.Y <= rect.End.Y;
         }
         #endregion
 
@@ -601,7 +621,7 @@ namespace StrikeForceLike.Utils
             {
                 WaitTime = waitTime,
                 OneShot = true,
-                Autostart = true
+                Autostart = true,
             };
 
             timer.Timeout += () =>
@@ -647,8 +667,10 @@ namespace StrikeForceLike.Utils
         public static float NormalizeAngle180(this float angle)
         {
             angle = angle % 360f;
-            if (angle > 180f) angle -= 360f;
-            if (angle < -180f) angle += 360f;
+            if (angle > 180f)
+                angle -= 360f;
+            if (angle < -180f)
+                angle += 360f;
             return angle;
         }
 
@@ -658,7 +680,8 @@ namespace StrikeForceLike.Utils
         public static float NormalizeAngle360(this float angle)
         {
             angle = angle % 360f;
-            if (angle < 0f) angle += 360f;
+            if (angle < 0f)
+                angle += 360f;
             return angle;
         }
         #endregion

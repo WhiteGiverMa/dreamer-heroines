@@ -4,7 +4,7 @@ extends RefCounted
 # ResourceLoaderUtils - 资源加载工具类
 # 提供带 fallback 的资源加载功能
 
-const PLACEHOLDER_COLORS = {
+const PLACEHOLDER_COLORS: Dictionary[String, Color] = {
 	"hit_effect": Color(1, 0.8, 0.2, 0.8),      # 黄色 - 命中
 	"impact_effect": Color(0.8, 0.6, 0.4, 0.7), # 棕色 - 撞击
 	"muzzle_flash": Color(1, 0.9, 0.5, 0.9),    # 亮黄 - 枪口火焰
@@ -60,7 +60,11 @@ static func create_runtime_effect(effect_type: String) -> Node2D:
 	effect.name = "Runtime" + effect_type.capitalize()
 	
 	# 添加视觉效果
-	var color := PLACEHOLDER_COLORS.get(effect_type, PLACEHOLDER_COLORS.default)
+	var color: Color
+	if PLACEHOLDER_COLORS.has(effect_type):
+		color = PLACEHOLDER_COLORS[effect_type]
+	else:
+		color = PLACEHOLDER_COLORS["default"]
 	var visual := _create_visual_for_type(effect_type, color)
 	effect.add_child(visual)
 	

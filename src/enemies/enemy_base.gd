@@ -34,6 +34,9 @@ var patrol_start_position: Vector2 = Vector2.ZERO
 var patrol_direction: int = 1
 var can_attack: bool = true
 
+# Weapon support (use untyped to avoid circular dependency)
+var equipped_weapon = null
+
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var detection_area: Area2D = $DetectionArea
@@ -276,3 +279,28 @@ func _update_animation() -> void:
 		State.DEAD:
 			if not animation_player.is_playing() or animation_player.current_animation != "death":
 				animation_player.play("death")
+
+
+# === Weapon Support Methods ===
+
+func equip_weapon(weapon) -> void:
+	equipped_weapon = weapon
+	weapon.faction = "enemy"
+	weapon.shot_fired.connect(_on_weapon_shot_fired)
+
+
+func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction: String) -> void:
+	if equipped_weapon and equipped_weapon.stats:
+		ProjectileSpawner.spawn_enemy_projectile(pos, dir, equipped_weapon.stats, self)
+
+
+func try_shoot_weapon(muzzle_pos: Vector2, aim_dir: Vector2) -> bool:
+	if equipped_weapon:
+		return equipped_weapon.try_shoot(muzzle_pos, aim_dir)
+	return false
+
+
+func get_weapon_muzzle_position() -> Vector2:
+	if equipped_weapon:
+		return equipped_weapon.get_muzzle_position()
+	return global_position

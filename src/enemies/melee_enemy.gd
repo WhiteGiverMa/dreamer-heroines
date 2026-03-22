@@ -176,20 +176,26 @@ func _update_animation() -> void:
 	
 	match current_state:
 		State.IDLE:
-			animation_player.play("idle")
+			if animation_player.has_animation("idle"):
+				animation_player.play("idle")
 		State.PATROL, State.CHASE:
 			if is_charging:
-				animation_player.play("charge_run")
+				if animation_player.has_animation("charge_run"):
+					animation_player.play("charge_run")
 			else:
-				animation_player.play("run")
+				if animation_player.has_animation("run"):
+					animation_player.play("run")
 		State.ATTACK:
 			if not animation_player.is_playing():
-				animation_player.play("idle")
+				if animation_player.has_animation("idle"):
+					animation_player.play("idle")
 		State.HURT:
-			animation_player.play("hurt")
+			if animation_player.has_animation("hurt"):
+				animation_player.play("hurt")
 		State.DEAD:
 			if not animation_player.is_playing() or animation_player.current_animation != "death":
-				animation_player.play("death")
+				if animation_player.has_animation("death"):
+					animation_player.play("death")
 
 func get_enemy_type() -> String:
 	return "melee"

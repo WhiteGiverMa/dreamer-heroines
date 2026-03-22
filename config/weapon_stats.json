@@ -43,6 +43,12 @@
       "recommended_range": "800-2000",
       "note": "影响命中判定"
     },
+    "max_range": {
+      "value": 1500.0,
+      "description": "最大射程（像素）",
+      "recommended_range": "500-3000",
+      "note": "子弹飞行最大距离，lifetime = max_range / projectile_speed"
+    },
     "spread": {
       "value": 3.0,
       "description": "散布角度（度）",
@@ -126,6 +132,12 @@
       "recommended_range": "600-1200",
       "note": "霰弹通常较慢"
     },
+    "max_range": {
+      "value": 800.0,
+      "description": "最大射程（像素）",
+      "recommended_range": "400-1000",
+      "note": "霰弹枪射程较短"
+    },
     "spread": {
       "value": 15.0,
       "description": "散布角度（度）",
@@ -202,6 +214,12 @@
       "description": "子弹速度（像素/秒）",
       "recommended_range": "2000-4000",
       "note": "狙击弹速度极快"
+    },
+    "max_range": {
+      "value": 3000.0,
+      "description": "最大射程（像素）",
+      "recommended_range": "2000-5000",
+      "note": "狙击枪射程极远"
     },
     "spread": {
       "value": 0.5,
@@ -285,6 +303,12 @@
       "description": "子弹速度（像素/秒）",
       "recommended_range": "800-1500",
       "note": "冲锋枪子弹速度中等"
+    },
+    "max_range": {
+      "value": 1200.0,
+      "description": "最大射程（像素）",
+      "recommended_range": "800-1500",
+      "note": "冲锋枪射程中等"
     },
     "spread": {
       "value": 8.0,

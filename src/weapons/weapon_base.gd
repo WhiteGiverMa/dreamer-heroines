@@ -18,6 +18,7 @@ signal out_of_ammo
 @export var magazine_size: int = 30
 @export var max_ammo: int = 300
 @export var projectile_speed: float = 1000.0
+@export var max_range: float = 1000.0  # 最大射程（像素）
 @export var spread: float = 0.0  # 散布角度
 @export var is_automatic: bool = true
 @export var can_aim_down_sights: bool = false
@@ -102,7 +103,7 @@ func _spawn_projectile() -> void:
 	if not owner_player:
 		return
 	
-	var projectile_scene = load("res://src/weapons/projectile.tscn")
+	var projectile_scene = load("res://scenes/weapons/projectile.tscn")
 	if not projectile_scene:
 		return
 	
@@ -120,6 +121,9 @@ func _spawn_projectile() -> void:
 	projectile.speed = projectile_speed
 	projectile.damage = damage
 	projectile.owner_player = owner_player
+	
+	# 根据射程计算子弹存活时间
+	projectile.lifetime = max_range / projectile_speed
 	
 	get_tree().current_scene.add_child(projectile)
 

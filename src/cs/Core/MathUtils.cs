@@ -1,7 +1,7 @@
-using Godot;
 using System;
+using Godot;
 
-namespace StrikeForceLike.Core
+namespace DreamerHeroines.Core
 {
     /// <summary>
     /// 游戏数学工具类，提供常用的数学函数和缓动函数
@@ -62,7 +62,14 @@ namespace StrikeForceLike.Core
         /// <summary>
         /// 平滑插值（适用于每帧调用）
         /// </summary>
-        public static float SmoothDamp(float current, float target, ref float velocity, float smoothTime, float deltaTime, float maxSpeed = float.PositiveInfinity)
+        public static float SmoothDamp(
+            float current,
+            float target,
+            ref float velocity,
+            float smoothTime,
+            float deltaTime,
+            float maxSpeed = float.PositiveInfinity
+        )
         {
             smoothTime = Math.Max(0.0001f, smoothTime);
             float omega = 2f / smoothTime;
@@ -138,7 +145,9 @@ namespace StrikeForceLike.Core
         public static float EaseOutElastic(float t)
         {
             const float c4 = (2f * PI) / 3f;
-            return t == 0f ? 0f : t == 1f ? 1f : MathF.Pow(2f, -10f * t) * MathF.Sin((t * 10f - 0.75f) * c4) + 1f;
+            return t == 0f ? 0f
+                : t == 1f ? 1f
+                : MathF.Pow(2f, -10f * t) * MathF.Sin((t * 10f - 0.75f) * c4) + 1f;
         }
 
         /// <summary>
@@ -219,10 +228,7 @@ namespace StrikeForceLike.Core
         /// </summary>
         public static Vector2 RandomPointInRect(Rect2 rect)
         {
-            return new Vector2(
-                RandomRange(rect.Position.X, rect.End.X),
-                RandomRange(rect.Position.Y, rect.End.Y)
-            );
+            return new Vector2(RandomRange(rect.Position.X, rect.End.X), RandomRange(rect.Position.Y, rect.End.Y));
         }
 
         /// <summary>
@@ -254,8 +260,10 @@ namespace StrikeForceLike.Core
         /// </summary>
         public static float NormalizeAngle(float angle)
         {
-            while (angle < 0f) angle += 360f;
-            while (angle >= 360f) angle -= 360f;
+            while (angle < 0f)
+                angle += 360f;
+            while (angle >= 360f)
+                angle -= 360f;
             return angle;
         }
 
@@ -265,7 +273,8 @@ namespace StrikeForceLike.Core
         public static float DeltaAngle(float current, float target)
         {
             float delta = NormalizeAngle(target - current);
-            if (delta > 180f) delta -= 360f;
+            if (delta > 180f)
+                delta -= 360f;
             return delta;
         }
 
@@ -314,8 +323,10 @@ namespace StrikeForceLike.Core
         /// </summary>
         public static bool PointInRect(Vector2 point, Rect2 rect)
         {
-            return point.X >= rect.Position.X && point.X <= rect.End.X &&
-                   point.Y >= rect.Position.Y && point.Y <= rect.End.Y;
+            return point.X >= rect.Position.X
+                && point.X <= rect.End.X
+                && point.Y >= rect.Position.Y
+                && point.Y <= rect.End.Y;
         }
 
         /// <summary>

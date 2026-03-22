@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeaponStats" load_steps=2 format=3 uid="uid://rifle_basic_stats"]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_stats.gd" id="1_stats"]
+
+[resource]
+script = ExtResource("1_stats")
+weapon_id = &"rifle_basic"
+weapon_name = "基础步枪"
+description = "标准突击步枪，射速快，精度高"
+damage = 15.0
+fire_rate = 0.1
+reload_time = 1.5
+magazine_size = 30
+max_ammo = 300
+projectile_speed = 1200.0
+max_range = 1500.0
+spread = 3.0
+is_automatic = true
+recoil_amount = 3.0
+screen_shake_amount = 0.2
+muzzle_flash_effect = "muzzle_rifle"
+shell_casing_scene = null
+pierce_count = 0
+use_ammo_system = true

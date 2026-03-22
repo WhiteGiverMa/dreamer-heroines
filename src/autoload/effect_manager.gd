@@ -1,11 +1,11 @@
-extends Node
+extends "res://src/base/game_system.gd"
 
 # EffectManager - 特效管理器
 # 统一管理游戏中所有特效的创建、缓存和回收
 # 支持多级 fallback：正式资源 -> 占位符资源 -> 运行时创建
 
 # 特效路径配置
-const EFFECT_PATHS = {
+const EFFECT_PATHS: Dictionary[String, Dictionary] = {
 	# 命中特效
 	"hit_bullet": {
 		"primary": "res://assets/effects/hit_bullet.tscn",
@@ -92,10 +92,10 @@ const EFFECT_PATHS = {
 }
 
 # 缓存的特效场景
-var _cached_scenes: Dictionary = {}
+var _cached_scenes: Dictionary[String, PackedScene] = {}
 
 # 对象池
-var _effect_pools: Dictionary = {}
+var _effect_pools: Dictionary[String, Array] = {}
 
 # 是否使用运行时占位符（当没有文件时）
 @export var use_runtime_placeholders: bool = true
@@ -103,15 +103,19 @@ var _effect_pools: Dictionary = {}
 # 最大池大小
 @export var max_pool_size: int = 20
 
-func _ready():
+func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	print("EffectManager initialized")
-	
-	# 预加载常用特效
+	system_name = "effect_manager"
+	# 不在这里执行初始化，等待 BootSequence 调用
+
+func initialize() -> void:
+	print("[EffectManager] 开始初始化...")
 	_preload_common_effects()
+	print("[EffectManager] 初始化完成")
+	_mark_ready()
 
 # 预加载常用特效
-func _preload_common_effects():
+func _preload_common_effects() -> void:
 	var common_effects = ["hit_bullet", "impact_ground", "muzzle_rifle"]
 	for effect_name in common_effects:
 		_cache_effect(effect_name)
@@ -121,11 +125,11 @@ func _cache_effect(effect_name: String) -> bool:
 	if effect_name in _cached_scenes:
 		return true
 	
-	var config = EFFECT_PATHS.get(effect_name)
+	var config: Dictionary = EFFECT_PATHS.get(effect_name, {})
 	if not config:
 		return false
 	
-	var scene = ResourceLoaderUtils.load_scene_with_fallback(
+	var scene: PackedScene = ResourceLoaderUtils.load_scene_with_fallback(
 		config.primary,
 		config.placeholder
 	)
@@ -161,7 +165,7 @@ func play_effect(
 
 # 创建特效实例
 func _create_effect(effect_name: String) -> Node:
-	var config = EFFECT_PATHS.get(effect_name)
+	var config: Dictionary = EFFECT_PATHS.get(effect_name, {})
 	if not config:
 		push_warning("Unknown effect: " + effect_name)
 		return null
@@ -194,7 +198,7 @@ func get_effect_from_pool(effect_name: String) -> Node:
 			return effect
 	
 	# 创建新的特效
-	var new_effect = _create_effect(effect_name)
+	var new_effect: Node = _create_effect(effect_name)
 	if new_effect:
 		pool.append(new_effect)
 		
@@ -207,7 +211,7 @@ func get_effect_from_pool(effect_name: String) -> Node:
 	return new_effect
 
 # 回收特效到对象池
-func return_effect_to_pool(effect: Node, effect_name: String):
+func return_effect_to_pool(effect: Node, effect_name: String) -> void:
 	if not effect:
 		return
 	
@@ -219,7 +223,7 @@ func return_effect_to_pool(effect: Node, effect_name: String):
 	_effect_pools[effect_name].append(effect)
 
 # 清理对象池
-func clear_pools():
+func clear_pools() -> void:
 	for pool_name in _effect_pools:
 		var pool: Array = _effect_pools[pool_name]
 		for effect in pool:
@@ -230,7 +234,7 @@ func clear_pools():
 	_effect_pools.clear()
 
 # 清理缓存
-func clear_cache():
+func clear_cache() -> void:
 	_cached_scenes.clear()
 
 # 快捷方法：播放命中特效

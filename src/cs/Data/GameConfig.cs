@@ -1,8 +1,8 @@
-using Godot;
 using System;
 using System.Collections.Generic;
+using Godot;
 
-namespace StrikeForceLike.Data
+namespace DreamerHeroines.Data
 {
     /// <summary>
     /// 游戏配置管理器 - 管理所有游戏内配置数据
@@ -32,8 +32,8 @@ namespace StrikeForceLike.Data
             public static float HealthRegenDelay { get; set; } = 5f;
             public static float InvulnerabilityTime { get; set; } = 1f;
             public static int MaxWeapons { get; set; } = 3;
-            public float AimAssistStrength { get; set; } = 0.3f;
-            public float AimAssistRange { get; set; } = 300f;
+            public static float AimAssistStrength { get; set; } = 0.3f;
+            public static float AimAssistRange { get; set; } = 300f;
         }
         #endregion
 
@@ -89,12 +89,21 @@ namespace StrikeForceLike.Data
             public static int[] MaxLives { get; set; } = new int[] { 5, 3, 2, 1, 1 };
             public static bool[] Permadeath { get; set; } = new bool[] { false, false, false, false, true };
 
-            public static float GetEnemyHealthMultiplier(int difficulty) => EnemyHealthMultipliers[Mathf.Clamp(difficulty, 0, 4)];
-            public static float GetEnemyDamageMultiplier(int difficulty) => EnemyDamageMultipliers[Mathf.Clamp(difficulty, 0, 4)];
-            public static float GetEnemySpeedMultiplier(int difficulty) => EnemySpeedMultipliers[Mathf.Clamp(difficulty, 0, 4)];
+            public static float GetEnemyHealthMultiplier(int difficulty) =>
+                EnemyHealthMultipliers[Mathf.Clamp(difficulty, 0, 4)];
+
+            public static float GetEnemyDamageMultiplier(int difficulty) =>
+                EnemyDamageMultipliers[Mathf.Clamp(difficulty, 0, 4)];
+
+            public static float GetEnemySpeedMultiplier(int difficulty) =>
+                EnemySpeedMultipliers[Mathf.Clamp(difficulty, 0, 4)];
+
             public static float GetXPMultiplier(int difficulty) => XPMultipliers[Mathf.Clamp(difficulty, 0, 4)];
+
             public static float GetGoldMultiplier(int difficulty) => GoldMultipliers[Mathf.Clamp(difficulty, 0, 4)];
+
             public static int GetMaxLives(int difficulty) => MaxLives[Mathf.Clamp(difficulty, 0, 4)];
+
             public static bool IsPermadeath(int difficulty) => Permadeath[Mathf.Clamp(difficulty, 0, 4)];
         }
         #endregion
@@ -319,9 +328,13 @@ namespace StrikeForceLike.Data
             Engine.MaxFps = Visual.TargetFPS;
             Engine.TimeScale = Gameplay.TimeScale;
             // 应用窗口设置
-            DisplayServer.WindowSetMode(Visual.Fullscreen ? DisplayServer.WindowMode.Fullscreen : DisplayServer.WindowMode.Windowed);
+            DisplayServer.WindowSetMode(
+                Visual.Fullscreen ? DisplayServer.WindowMode.Fullscreen : DisplayServer.WindowMode.Windowed
+            );
             // 应用VSync
-            DisplayServer.WindowSetVsyncMode(Visual.VSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled);
+            DisplayServer.WindowSetVsyncMode(
+                Visual.VSync ? DisplayServer.VSyncMode.Enabled : DisplayServer.VSyncMode.Disabled
+            );
 
             GD.Print("Config applied to game");
         }

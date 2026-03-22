@@ -1,8 +1,8 @@
-using Godot;
 using System;
 using System.Collections.Generic;
+using Godot;
 
-namespace StrikeForceLike.Data
+namespace DreamerHeroines.Data
 {
     /// <summary>
     /// 武器数据定义 - 包含武器的所有属性和行为配置
@@ -233,15 +233,28 @@ namespace StrikeForceLike.Data
         /// <summary>
         /// 获取指定等级的属性
         /// </summary>
-        public WeaponStats GetStatsAtLevel(int damageLevel, int fireRateLevel, int magazineLevel, int reloadLevel, int accuracyLevel)
+        public WeaponStats GetStatsAtLevel(
+            int damageLevel,
+            int fireRateLevel,
+            int magazineLevel,
+            int reloadLevel,
+            int accuracyLevel
+        )
         {
             return new WeaponStats
             {
                 Damage = CalculateUpgradedValue(BaseDamage, UpgradeConfig.DamageMultiplier, damageLevel),
                 FireRate = CalculateUpgradedValue(FireRate, UpgradeConfig.FireRateMultiplier, fireRateLevel),
-                MagazineSize = (int)CalculateUpgradedValue(MagazineSize, UpgradeConfig.MagazineMultiplier, magazineLevel),
+                MagazineSize = (int)CalculateUpgradedValue(
+                    MagazineSize,
+                    UpgradeConfig.MagazineMultiplier,
+                    magazineLevel
+                ),
                 ReloadTime = CalculateUpgradedValue(ReloadTime, UpgradeConfig.ReloadMultiplier, reloadLevel, true),
-                Accuracy = Math.Min(1f, CalculateUpgradedValue(BaseAccuracy, UpgradeConfig.AccuracyMultiplier, accuracyLevel))
+                Accuracy = Math.Min(
+                    1f,
+                    CalculateUpgradedValue(BaseAccuracy, UpgradeConfig.AccuracyMultiplier, accuracyLevel)
+                ),
             };
         }
 
@@ -328,7 +341,7 @@ namespace StrikeForceLike.Data
                 IsHoming = this.IsHoming,
                 HomingStrength = this.HomingStrength,
                 Effects = new List<WeaponEffect>(this.Effects),
-                UpgradeConfig = this.UpgradeConfig.Clone()
+                UpgradeConfig = this.UpgradeConfig.Clone(),
             };
         }
         #endregion
@@ -339,15 +352,15 @@ namespace StrikeForceLike.Data
     /// </summary>
     public enum WeaponType
     {
-        Pistol,         // 手枪
-        Rifle,          // 步枪
-        SMG,            // 冲锋枪
-        Shotgun,        // 霰弹枪
-        Sniper,         // 狙击枪
-        LMG,            // 轻机枪
-        Rocket,         // 火箭筒
-        Melee,          // 近战
-        Special         // 特殊
+        Pistol, // 手枪
+        Rifle, // 步枪
+        SMG, // 冲锋枪
+        Shotgun, // 霰弹枪
+        Sniper, // 狙击枪
+        LMG, // 轻机枪
+        Rocket, // 火箭筒
+        Melee, // 近战
+        Special, // 特殊
     }
 
     /// <summary>
@@ -355,12 +368,12 @@ namespace StrikeForceLike.Data
     /// </summary>
     public enum WeaponRarity
     {
-        Common,         // 普通（白色）
-        Uncommon,       // 优秀（绿色）
-        Rare,           // 稀有（蓝色）
-        Epic,           // 史诗（紫色）
-        Legendary,      // 传说（橙色）
-        Mythic          // 神话（红色）
+        Common, // 普通（白色）
+        Uncommon, // 优秀（绿色）
+        Rare, // 稀有（蓝色）
+        Epic, // 史诗（紫色）
+        Legendary, // 传说（橙色）
+        Mythic, // 神话（红色）
     }
 
     /// <summary>
@@ -368,10 +381,10 @@ namespace StrikeForceLike.Data
     /// </summary>
     public enum FireMode
     {
-        SemiAuto,       // 半自动
-        FullAuto,       // 全自动
-        Burst,          // 连发
-        Single          // 单发（栓动）
+        SemiAuto, // 半自动
+        FullAuto, // 全自动
+        Burst, // 连发
+        Single, // 单发（栓动）
     }
 
     /// <summary>
@@ -390,15 +403,15 @@ namespace StrikeForceLike.Data
     /// </summary>
     public enum EffectType
     {
-        Burn,           // 燃烧
-        Poison,         // 中毒
-        Slow,           // 减速
-        Stun,           // 眩晕
-        Freeze,         // 冰冻
-        Shock,          // 电击
-        LifeSteal,      // 吸血
-        ArmorPierce,    // 破甲
-        CriticalBoost   // 暴击提升
+        Burn, // 燃烧
+        Poison, // 中毒
+        Slow, // 减速
+        Stun, // 眩晕
+        Freeze, // 冰冻
+        Shock, // 电击
+        LifeSteal, // 吸血
+        ArmorPierce, // 破甲
+        CriticalBoost, // 暴击提升
     }
 
     /// <summary>
@@ -412,11 +425,11 @@ namespace StrikeForceLike.Data
         public int MaxReloadLevel { get; set; } = 5;
         public int MaxAccuracyLevel { get; set; } = 5;
 
-        public float DamageMultiplier { get; set; } = 1.15f;      // 每级+15%
-        public float FireRateMultiplier { get; set; } = 1.1f;     // 每级+10%
-        public float MagazineMultiplier { get; set; } = 1.2f;     // 每级+20%
-        public float ReloadMultiplier { get; set; } = 0.9f;       // 每级-10%
-        public float AccuracyMultiplier { get; set; } = 1.05f;    // 每级+5%
+        public float DamageMultiplier { get; set; } = 1.15f; // 每级+15%
+        public float FireRateMultiplier { get; set; } = 1.1f; // 每级+10%
+        public float MagazineMultiplier { get; set; } = 1.2f; // 每级+20%
+        public float ReloadMultiplier { get; set; } = 0.9f; // 每级-10%
+        public float AccuracyMultiplier { get; set; } = 1.05f; // 每级+5%
 
         public int BaseUpgradeCost { get; set; } = 100;
         public float CostMultiplier { get; set; } = 1.5f;
@@ -436,7 +449,7 @@ namespace StrikeForceLike.Data
                 ReloadMultiplier = this.ReloadMultiplier,
                 AccuracyMultiplier = this.AccuracyMultiplier,
                 BaseUpgradeCost = this.BaseUpgradeCost,
-                CostMultiplier = this.CostMultiplier
+                CostMultiplier = this.CostMultiplier,
             };
         }
     }

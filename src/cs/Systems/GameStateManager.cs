@@ -1,25 +1,25 @@
-using Godot;
 using System;
 using System.Collections.Generic;
+using Godot;
 
-namespace StrikeForceLike.Systems
+namespace DreamerHeroines.Systems
 {
     /// <summary>
     /// 游戏状态枚举
     /// </summary>
     public enum GameState
     {
-        None,           // 无状态/初始化中
-        MainMenu,       // 主菜单
-        Loading,        // 加载中
-        Playing,        // 游戏中
-        Paused,         // 暂停
-        GameOver,       // 游戏结束
-        Victory,        // 胜利
-        Cutscene,       // 过场动画
-        Shop,           // 商店
-        Inventory,      // 背包
-        Dialog          // 对话
+        None, // 无状态/初始化中
+        MainMenu, // 主菜单
+        Loading, // 加载中
+        Playing, // 游戏中
+        Paused, // 暂停
+        GameOver, // 游戏结束
+        Victory, // 胜利
+        Cutscene, // 过场动画
+        Shop, // 商店
+        Inventory, // 背包
+        Dialog, // 对话
     }
 
     /// <summary>
@@ -47,8 +47,10 @@ namespace StrikeForceLike.Systems
         private GameState _currentState = GameState.None;
         private GameState _previousState = GameState.None;
         private readonly Stack<GameState> _stateHistory = new Stack<GameState>();
-        private readonly Dictionary<GameState, List<Action>> _stateEnterCallbacks = new Dictionary<GameState, List<Action>>();
-        private readonly Dictionary<GameState, List<Action>> _stateExitCallbacks = new Dictionary<GameState, List<Action>>();
+        private readonly Dictionary<GameState, List<Action>> _stateEnterCallbacks =
+            new Dictionary<GameState, List<Action>>();
+        private readonly Dictionary<GameState, List<Action>> _stateExitCallbacks =
+            new Dictionary<GameState, List<Action>>();
         private readonly Dictionary<string, object> _stateData = new Dictionary<string, object>();
 
         private bool _isTransitioning = false;
@@ -135,6 +137,31 @@ namespace StrikeForceLike.Systems
         /// 是否可以暂停
         /// </summary>
         public bool CanPause => _currentState == GameState.Playing || _currentState == GameState.Shop;
+
+        /// <summary>
+        /// 系统是否已初始化
+        /// </summary>
+        public bool IsInitialized { get; private set; } = false;
+
+        /// <summary>
+        /// 初始化完成事件，参数为系统名称
+        /// </summary>
+        public event Action<string>? SystemReady;
+        #endregion
+
+        #region Initialization
+        /// <summary>
+        /// 初始化系统 - 由 BootSequence 调用
+        /// </summary>
+        public void Initialize()
+        {
+            if (IsInitialized)
+                return;
+
+            IsInitialized = true;
+            SystemReady?.Invoke("game_state_manager");
+            GD.Print("[GameStateManager] 初始化完成");
+        }
         #endregion
 
         #region Signals
@@ -214,7 +241,9 @@ namespace StrikeForceLike.Systems
         {
             if (_isTransitioning)
             {
-                GD.PushWarning($"Cannot change state while transitioning. Current: {_currentState}, Requested: {newState}");
+                GD.PushWarning(
+                    $"Cannot change state while transitioning. Current: {_currentState}, Requested: {newState}"
+                );
                 return;
             }
 
@@ -466,7 +495,7 @@ namespace StrikeForceLike.Systems
                 foreach (var callback in callbacks)
                 {
                     try
-                                       {
+                    {
                         callback?.Invoke();
                     }
                     catch (Exception ex)
@@ -564,7 +593,7 @@ namespace StrikeForceLike.Systems
                 GameState.Shop => "Shop",
                 GameState.Inventory => "Inventory",
                 GameState.Dialog => "Dialog",
-                _ => "Unknown"
+                _ => "Unknown",
             };
         }
 

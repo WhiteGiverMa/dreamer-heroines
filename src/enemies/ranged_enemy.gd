@@ -16,6 +16,8 @@ var aim_timer: float = 0.0
 
 @onready var muzzle: Marker2D = $Muzzle
 @onready var aim_line: Line2D = $AimLine
+# Use untyped to avoid circular dependency with Weapon class
+@onready var weapon = $WeaponPivot/Weapon if has_node("WeaponPivot/Weapon") else null
 
 func _ready() -> void:
 	# 从配置加载属性
@@ -26,6 +28,12 @@ func _ready() -> void:
 	
 	# 设置远程敌人特性
 	can_shoot = true
+	
+	# 初始化武器组件
+	if weapon:
+		equip_weapon(weapon)
+		if weapon.stats:
+			weapon.stats.use_ammo_system = false
 	
 	# 隐藏瞄准线
 	if aim_line:
@@ -177,30 +185,39 @@ func _fire_projectile() -> void:
 	
 	AudioManager.play_sfx("enemy_shoot")
 	
-	# 创建投射物
-	var projectile = _create_projectile()
-	if projectile:
-		get_tree().current_scene.add_child(projectile)
+	# 使用武器组件或回退到传统方式
+	if equipped_weapon:
+		var muzzle_pos = muzzle.global_position if muzzle else global_position
+		var aim_dir = (player.global_position - muzzle_pos).normalized()
+		try_shoot_weapon(muzzle_pos, aim_dir)
+	else:
+		# 回退：直接创建投射物
+		var projectile = _create_projectile()
+		if projectile:
+			get_tree().current_scene.add_child(projectile)
 
 func _create_projectile() -> Node:
+	var muzzle_pos = muzzle.global_position if muzzle else global_position
+	var aim_direction = (player.global_position - muzzle_pos).normalized()
+	return _create_projectile_at(muzzle_pos, aim_direction)
+
+
+func _create_projectile_at(spawn_pos: Vector2, direction: Vector2) -> Node:
 	var scene = projectile_scene
 	if not scene:
-		scene = load("res://src/weapons/projectile.tscn")
+		scene = load("res://scenes/weapons/projectile.tscn")
 	
 	if not scene:
 		return null
 	
 	var projectile = scene.instantiate()
 	
-	var muzzle_pos = muzzle.global_position if muzzle else global_position
-	var aim_direction = (player.global_position - muzzle_pos).normalized()
-	
 	# 添加一点随机散布
 	var spread_angle = randf_range(-5.0, 5.0)
-	aim_direction = aim_direction.rotated(deg_to_rad(spread_angle))
+	var final_dir = direction.rotated(deg_to_rad(spread_angle))
 	
-	projectile.global_position = muzzle_pos
-	projectile.direction = aim_direction
+	projectile.global_position = spawn_pos
+	projectile.direction = final_dir
 	projectile.speed = projectile_speed
 	projectile.damage = attack_damage
 	
@@ -216,21 +233,28 @@ func _update_animation() -> void:
 	
 	match current_state:
 		State.IDLE:
-			animation_player.play("idle")
+			if animation_player.has_animation("idle"):
+				animation_player.play("idle")
 		State.PATROL:
-			animation_player.play("run")
+			if animation_player.has_animation("run"):
+				animation_player.play("run")
 		State.CHASE:
-			animation_player.play("run")
+			if animation_player.has_animation("run"):
+				animation_player.play("run")
 		State.ATTACK:
 			if is_aiming:
-				animation_player.play("aim")
+				if animation_player.has_animation("aim"):
+					animation_player.play("aim")
 			else:
-				animation_player.play("idle")
+				if animation_player.has_animation("idle"):
+					animation_player.play("idle")
 		State.HURT:
-			animation_player.play("hurt")
+			if animation_player.has_animation("hurt"):
+				animation_player.play("hurt")
 		State.DEAD:
 			if not animation_player.is_playing() or animation_player.current_animation != "death":
-				animation_player.play("death")
+				if animation_player.has_animation("death"):
+					animation_player.play("death")
 
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
@@ -241,3 +265,12 @@ func _physics_process(delta: float) -> void:
 
 func get_enemy_type() -> String:
 	return "ranged"
+
+
+# === Weapon Integration ===
+
+func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction: String) -> void:
+	# 武器发射信号回调 - 创建投射物
+	var projectile = _create_projectile_at(pos, dir)
+	if projectile:
+		get_tree().current_scene.add_child(projectile)

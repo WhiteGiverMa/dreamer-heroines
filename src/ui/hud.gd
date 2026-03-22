@@ -6,34 +6,30 @@ extends CanvasLayer
 signal weapon_switched(index: int)
 signal pause_requested
 
-@export_group("Health Display")
-@export var health_bar: ProgressBar
-@export var health_label: Label
-@export var health_warning_threshold: float = 0.3
+# 生命值显示
+@onready var health_bar: ProgressBar = $MainContainer/TopBar/HealthSection/HealthBar
+@onready var health_label: Label = $MainContainer/TopBar/HealthSection/HealthLabel
+var health_warning_threshold: float = 0.3
 
-@export_group("Ammo Display")
-@export var ammo_label: Label
-@export var reserve_ammo_label: Label
-@export var reload_progress: ProgressBar
+# 弹药显示
+@onready var ammo_label: Label = $MainContainer/BottomBar/WeaponSection/AmmoLabel
+@onready var reload_progress: ProgressBar = $MainContainer/BottomBar/WeaponSection/ReloadProgress
 
-@export_group("Weapon Display")
-@export var weapon_name_label: Label
-@export var weapon_icon: TextureRect
-@export var weapon_slots: HBoxContainer
+# 武器显示
+@onready var weapon_name_label: Label = $MainContainer/BottomBar/WeaponSection/WeaponNameLabel
+@onready var weapon_slots: HBoxContainer = $MainContainer/BottomBar/WeaponSection/WeaponSlots
 
-@export_group("Score Display")
-@export var score_label: Label
-@export var lives_label: Label
+# 分数显示
+@onready var score_label: Label = $MainContainer/TopBar/ScoreSection/ScoreLabel
+@onready var lives_label: Label = $MainContainer/TopBar/ScoreSection/LivesLabel
 
-@export_group("Objective Display")
-@export var objective_label: Label
-@export var objective_progress: ProgressBar
-@export var timer_label: Label
+# 目标显示
+@onready var objective_label: Label = $MainContainer/TopBar/ObjectiveSection/ObjectiveLabel
+@onready var timer_label: Label = $MainContainer/TopBar/ObjectiveSection/TimerLabel
 
-@export_group("Damage Feedback")
-@export var damage_overlay: ColorRect
-@export var damage_direction_indicator: Control
-@export var hit_marker: TextureRect
+# 伤害反馈
+@onready var damage_overlay: ColorRect = $DamageOverlay
+@onready var hit_marker: TextureRect = $MainContainer/BottomBar/CenterSection/HitMarker
 
 # 内部状态
 var current_health: int = 100
@@ -41,10 +37,18 @@ var max_health: int = 100
 var current_weapon_index: int = 0
 var is_reload_animating: bool = false
 
+# 换弹进度状态
+var reload_duration: float = 0.0
+var reload_elapsed: float = 0.0
+var is_reloading: bool = false
+
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var hit_marker_timer: Timer = $HitMarkerTimer
 
 func _ready() -> void:
+	# 注册到 GameManager
+	GameManager.register_hud(self)
+	
 	# 连接游戏管理器信号
 	GameManager.score_changed.connect(_on_score_changed)
 	GameManager.state_changed.connect(_on_game_state_changed)
@@ -64,13 +68,16 @@ func _ready() -> void:
 	
 	print("HUD initialized")
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	# 更新计时器
 	if timer_label and LevelManager.current_state == LevelManager.LevelState.PLAYING:
 		timer_label.text = LevelManager.get_formatted_time()
 	
 	# 更新目标进度
 	_update_objective_display()
+	
+	# 更新换弹进度
+	_update_reload_progress(delta)
 
 # 生命值更新
 func update_health(current: int, max: int) -> void:
@@ -111,16 +118,16 @@ func _show_damage_feedback(damage_amount: int) -> void:
 # 弹药更新
 func update_ammo(current: int, max: int, reserve: int = -1) -> void:
 	if ammo_label:
-		ammo_label.text = "%d / %d" % [current, max]
+		if reserve >= 0:
+			ammo_label.text = "%d / %d  [%d]" % [current, max, reserve]
+		else:
+			ammo_label.text = "%d / %d" % [current, max]
 		
 		# 低弹药警告
 		if current <= max * 0.2:
 			ammo_label.modulate = Color(1, 0.3, 0.3, 1)
 		else:
 			ammo_label.modulate = Color(1, 1, 1, 1)
-	
-	if reserve_ammo_label and reserve >= 0:
-		reserve_ammo_label.text = " Reserve: %d" % reserve
 
 func show_reload_progress(duration: float) -> void:
 	if not reload_progress:
@@ -142,6 +149,47 @@ func hide_reload_progress() -> void:
 	if reload_progress:
 		reload_progress.visible = false
 	is_reload_animating = false
+
+# 换弹进度控制（被 Player 信号调用）
+func start_reload_progress(duration: float) -> void:
+	reload_duration = duration
+	reload_elapsed = 0.0
+	is_reloading = true
+	
+	if reload_progress:
+		reload_progress.visible = true
+		reload_progress.max_value = duration
+		reload_progress.value = 0.0
+	
+	# 显示换弹中文本
+	if ammo_label:
+		ammo_label.modulate = Color(1, 0.8, 0.2, 1)  # 黄色表示换弹中
+
+func finish_reload_progress() -> void:
+	is_reloading = false
+	reload_duration = 0.0
+	reload_elapsed = 0.0
+	
+	if reload_progress:
+		reload_progress.visible = false
+	
+	# 恢复弹药颜色
+	if ammo_label:
+		ammo_label.modulate = Color(1, 1, 1, 1)
+
+func _update_reload_progress(delta: float) -> void:
+	if not is_reloading:
+		return
+	
+	reload_elapsed += delta
+	
+	if reload_progress:
+		reload_progress.value = reload_elapsed
+	
+	# 更新弹药标签显示进度
+	if ammo_label and reload_duration > 0:
+		var progress = reload_elapsed / reload_duration
+		ammo_label.text = "Reloading... %d%%" % int(progress * 100)
 
 # 武器更新
 func update_weapon(weapon_name: String, weapon_index: int, total_weapons: int) -> void:
@@ -190,8 +238,9 @@ func set_objective(text: String) -> void:
 		objective_label.text = text
 
 func update_objective_progress(progress: float) -> void:
-	if objective_progress:
-		objective_progress.value = progress * 100
+	# 目标进度暂时显示在标签中
+	if objective_label:
+		objective_label.text = objective_label.text + " (%d%%)" % int(progress * 100)
 
 func _update_objective_display() -> void:
 	if not LevelManager.current_level_data:
@@ -218,19 +267,9 @@ func _on_hit_marker_timer_timeout() -> void:
 	if hit_marker:
 		hit_marker.visible = false
 
-# 伤害方向指示
+# 伤害方向指示（暂时禁用 - 节点不存在）
 func show_damage_direction(direction: Vector2) -> void:
-	if not damage_direction_indicator:
-		return
-	
-	# 计算角度
-	var angle = direction.angle()
-	damage_direction_indicator.rotation = angle
-	
-	# 显示动画
-	var tween = create_tween()
-	damage_direction_indicator.modulate.a = 1.0
-	tween.tween_property(damage_direction_indicator, "modulate:a", 0.0, 1.0)
+	pass
 
 # 游戏状态
 func _on_game_state_changed(new_state: GameManager.GameState) -> void:

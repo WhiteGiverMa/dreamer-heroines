@@ -1,12 +1,11 @@
-using Godot;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using StrikeForceLike.Data;
+using DreamerHeroines.Data;
+using Godot;
 
-namespace StrikeForceLike.Systems
+namespace DreamerHeroines.Systems
 {
     /// <summary>
     /// 保存管理器 - 单例模式
@@ -51,6 +50,16 @@ namespace StrikeForceLike.Systems
         #endregion
 
         #region Properties
+        /// <summary>
+        /// 系统是否已初始化
+        /// </summary>
+        public bool IsInitialized { get; private set; } = false;
+
+        /// <summary>
+        /// 初始化完成事件，参数为系统名称
+        /// </summary>
+        public event Action<string>? SystemReady;
+
         /// <summary>
         /// 当前存档数据
         /// </summary>
@@ -117,6 +126,23 @@ namespace StrikeForceLike.Systems
 
         [Signal]
         public delegate void SaveDataChangedEventHandler();
+        #endregion
+
+        #region Initialization
+        /// <summary>
+        /// 初始化系统 - 由 BootSequence 调用
+        /// </summary>
+        public void Initialize()
+        {
+            if (IsInitialized)
+                return;
+
+            // 执行任何必要的初始化逻辑
+
+            IsInitialized = true;
+            SystemReady?.Invoke("csharp_save_manager");
+            GD.Print("[CSharpSaveManager] 初始化完成");
+        }
         #endregion
 
         #region Godot Lifecycle
@@ -528,7 +554,7 @@ namespace StrikeForceLike.Systems
                     ["targetFrameRate"] = settings.TargetFrameRate,
                     ["vsync"] = settings.VSync,
                     ["fullscreen"] = settings.Fullscreen,
-                    ["language"] = settings.Language
+                    ["language"] = settings.Language,
                 };
 
                 string json = dict.ToString();
@@ -572,6 +598,68 @@ namespace StrikeForceLike.Systems
             }
 
             return settings;
+        }
+
+        /// <summary>
+        /// 应用窗口分辨率
+        /// </summary>
+        /// <param name="width">窗口宽度</param>
+        /// <param name="height">窗口高度</param>
+        public void ApplyResolution(int width, int height)
+        {
+            try
+            {
+                DisplayServer.WindowSetSize(new Vector2I(width, height));
+                GD.Print($"Resolution applied: {width}x{height}");
+            }
+            catch (Exception ex)
+            {
+                GD.PushError($"Failed to apply resolution: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 应用窗口模式
+        /// </summary>
+        /// <param name="mode">窗口模式: 0=窗口化, 1=全屏, 2=无边框全屏</param>
+        public void ApplyWindowMode(int mode)
+        {
+            try
+            {
+                DisplayServer.WindowMode windowMode = mode switch
+                {
+                    0 => DisplayServer.WindowMode.Windowed,
+                    1 => DisplayServer.WindowMode.Fullscreen,
+                    2 => DisplayServer.WindowMode.ExclusiveFullscreen,
+                    _ => DisplayServer.WindowMode.Windowed,
+                };
+
+                DisplayServer.WindowSetMode(windowMode);
+                GD.Print($"Window mode applied: {windowMode}");
+            }
+            catch (Exception ex)
+            {
+                GD.PushError($"Failed to apply window mode: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 应用主音量
+        /// </summary>
+        /// <param name="volume">音量值 (0.0 - 1.0 线性)</param>
+        public void ApplyVolume(float volume)
+        {
+            try
+            {
+                // 将线性音量转换为分贝
+                float volumeDb = Mathf.LinearToDb(volume);
+                AudioServer.SetBusVolumeDb(0, volumeDb);
+                GD.Print($"Master volume applied: {volume} (linear) = {volumeDb} dB");
+            }
+            catch (Exception ex)
+            {
+                GD.PushError($"Failed to apply volume: {ex.Message}");
+            }
         }
         #endregion
 
@@ -626,7 +714,8 @@ namespace StrikeForceLike.Systems
 
         private void UpdateSaveData()
         {
-            if (_currentSaveData == null) return;
+            if (_currentSaveData == null)
+                return;
 
             // 更新玩家数据
             if (_cachedPlayerData != null)
@@ -643,7 +732,8 @@ namespace StrikeForceLike.Systems
 
         private void ApplySaveData()
         {
-            if (_currentSaveData == null) return;
+            if (_currentSaveData == null)
+                return;
 
             // 转换并缓存玩家数据
             _cachedPlayerData = ConvertToPlayerData(_currentSaveData.Player);
@@ -674,8 +764,8 @@ namespace StrikeForceLike.Systems
                     TotalDamageDealt = playerData.Stats.TotalDamageDealt,
                     TotalDamageTaken = playerData.Stats.TotalDamageTaken,
                     MissionsCompleted = playerData.Stats.MissionsCompleted,
-                    MissionsFailed = playerData.Stats.MissionsFailed
-                }
+                    MissionsFailed = playerData.Stats.MissionsFailed,
+                },
             };
         }
 
@@ -701,8 +791,8 @@ namespace StrikeForceLike.Systems
                     TotalDamageDealt = saveData.Stats.TotalDamageDealt,
                     TotalDamageTaken = saveData.Stats.TotalDamageTaken,
                     MissionsCompleted = saveData.Stats.MissionsCompleted,
-                    MissionsFailed = saveData.Stats.MissionsFailed
-                }
+                    MissionsFailed = saveData.Stats.MissionsFailed,
+                },
             };
 
             return playerData;
@@ -710,7 +800,8 @@ namespace StrikeForceLike.Systems
 
         private void ProcessSaveQueue()
         {
-            if (_isSaving || _saveQueue.Count == 0) return;
+            if (_isSaving || _saveQueue.Count == 0)
+                return;
 
             var operation = _saveQueue.Dequeue();
             SaveToSlot(operation.Slot, operation.ShowNotification);

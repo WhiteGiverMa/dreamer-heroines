@@ -26,7 +26,7 @@
 DreamerHeroines/
 ├── project.godot                 # Godot项目配置文件
 ├── icon.svg                      # 项目图标
-├── StrikeForceLike.csproj        # C#项目文件
+├── DreamerHeroines.csproj        # C#项目文件
 ├── README.md                     # 项目说明文档
 ├── .gitignore                    # Git忽略配置
 │
@@ -178,7 +178,7 @@ godot --scene scenes/main.tscn
 godot --scene scenes/test_level.tscn
 
 # 构建C#项目
-dotnet build StrikeForceLike.csproj
+dotnet build DreamerHeroines.csproj
 ```
 
 ### 输入控制
@@ -225,7 +225,7 @@ dotnet build StrikeForceLike.csproj
 ### 代码组织
 
 - **GDScript**: `src/` 目录，按功能模块组织
-- **C#**: `src/cs/` 目录，使用命名空间 `StrikeForceLike.*`
+- **C#**: `src/cs/` 目录，使用命名空间 `DreamerHeroines.*`
 - **场景**: `scenes/` 目录，按类型分子文件夹
 - **资源**: `assets/` 目录，按类型分类
 
@@ -249,10 +249,56 @@ dotnet build StrikeForceLike.csproj
 
 ---
 
+## 自动化测试
+
+### 快速运行
+
+```bash
+# 运行集成测试（完整游戏环境）
+godot tests/scenes/test_launcher.tscn
+
+# 运行单元测试（无需图形界面）
+godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -ginclude_subdirs -gexit
+```
+
+### 测试类型
+
+| 类型 | 命令 | 说明 |
+|------|------|------|
+| 集成测试 | `godot tests/scenes/test_launcher.tscn` | 完整功能测试，自动验证 |
+| 单元测试 | `godot --headless -s addons/gut/gut_cmdln.gd` | 纯逻辑测试 |
+| 编辑器测试 | GUT 面板 | 在 Godot 编辑器中运行 |
+
+### 添加新测试
+
+编辑 `tests/scripts/test_launcher.gd`，在 `_get_test_cases()` 添加：
+
+```gdscript
+{
+    "name": "test_your_feature",
+    "description": "测试描述",
+},
+```
+
+然后在 `_run_test()` 的 `match` 语句中添加执行逻辑。
+
+### 测试目录
+
+```
+tests/
+├── scenes/test_launcher.tscn    # 自动化测试场景
+├── scripts/test_launcher.gd     # 测试运行器
+├── unit/                        # 单元测试
+├── integration/                 # 集成测试
+└── README.md                    # 详细文档
+```
+
+---
+
 ## 许可证
 
 本项目为内部开发项目。
 
 ---
 
-*最后更新: 2026-03-15*
+*最后更新: 2026-03-16*
