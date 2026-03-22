@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://mainmenu12345"]
+[gd_scene load_steps=3 format=3 uid="uid://mainmenu12345"]
 
 [ext_resource type="Script" path="res://src/ui/main_menu.gd" id="1_main_menu"]
+[ext_resource type="PackedScene" path="res://scenes/ui/settings_panel.tscn" id="2_settings_panel"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -159,104 +160,8 @@ grow_horizontal = 2
 grow_vertical = 0
 text = "Back"
 
-[node name="SettingsPanel" type="Panel" parent="."]
+[node name="SettingsPanel" parent="." instance=ExtResource("2_settings_panel")]
 visible = false
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -250.0
-offset_top = -280.0
-offset_right = 250.0
-offset_bottom = 280.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Title" type="Label" parent="SettingsPanel"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -100.0
-offset_top = 20.0
-offset_right = 100.0
-offset_bottom = 50.0
-grow_horizontal = 2
-theme_override_font_sizes/font_size = 24
-text = "Settings"
-horizontal_alignment = 1
-
-[node name="VBoxContainer" type="VBoxContainer" parent="SettingsPanel"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -200.0
-offset_right = 200.0
-offset_bottom = 80.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 12
-
-[node name="ResolutionLabel" type="Label" parent="SettingsPanel/VBoxContainer"]
-layout_mode = 2
-text = "Resolution"
-
-[node name="ResolutionOption" type="OptionButton" parent="SettingsPanel/VBoxContainer"]
-layout_mode = 2
-text = "1080p"
-alignment = 1
-
-[node name="WindowModeLabel" type="Label" parent="SettingsPanel/VBoxContainer"]
-layout_mode = 2
-text = "Window Mode"
-
-[node name="WindowModeOption" type="OptionButton" parent="SettingsPanel/VBoxContainer"]
-layout_mode = 2
-text = "Windowed"
-alignment = 1
-
-[node name="VolumeLabel" type="Label" parent="SettingsPanel/VBoxContainer"]
-layout_mode = 2
-text = "Master Volume"
-
-[node name="VolumeSlider" type="HSlider" parent="SettingsPanel/VBoxContainer"]
-layout_mode = 2
-max_value = 100.0
-value = 80.0
-
-[node name="SensitivityLabel" type="Label" parent="SettingsPanel/VBoxContainer"]
-layout_mode = 2
-text = "Mouse Sensitivity"
-
-[node name="SensitivitySlider" type="HSlider" parent="SettingsPanel/VBoxContainer"]
-layout_mode = 2
-max_value = 200.0
-value = 100.0
-
-[node name="VSyncCheck" type="CheckBox" parent="SettingsPanel/VBoxContainer"]
-layout_mode = 2
-text = "VSync"
-
-[node name="BackButton" type="Button" parent="SettingsPanel"]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -50.0
-offset_top = -60.0
-offset_right = 50.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 0
-text = "Back"
 
 [node name="CreditsPanel" type="Panel" parent="."]
 visible = false

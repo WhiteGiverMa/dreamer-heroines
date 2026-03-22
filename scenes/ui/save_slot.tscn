@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://c8saveslot001"]
+
+[ext_resource type="Script" path="res://src/ui/save_slot.gd" id="1_save_slot"]
+
+[node name="SaveSlot" type="PanelContainer"]
+custom_minimum_size = Vector2(400, 80)
+script = ExtResource("1_save_slot")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SlotNumber" type="Label" parent="HBoxContainer"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "槽位 1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VSeparator" type="VSeparator" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="SlotInfo" type="VBoxContainer" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="LevelLabel" type="Label" parent="HBoxContainer/SlotInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "关卡名称"
+vertical_alignment = 1
+
+[node name="TimeLabel" type="Label" parent="HBoxContainer/SlotInfo"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 12
+text = "游玩时间: 0分0秒"
+vertical_alignment = 1
+
+[node name="Spacer" type="Control" parent="HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LoadButton" type="Button" parent="HBoxContainer"]
+custom_minimum_size = Vector2(80, 40)
+layout_mode = 2
+text = "加载"
+
+[node name="DeleteButton" type="Button" parent="HBoxContainer"]
+visible = false
+custom_minimum_size = Vector2(60, 40)
+layout_mode = 2
+text = "删除"

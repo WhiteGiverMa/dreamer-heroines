@@ -27,8 +27,6 @@ namespace DreamerHeroines.Examples
             {
                 GD.PushWarning("[C#] GameManager not found! Make sure it's added to autoload.");
             }
-
-            GD.Print("[C#] CSharpToGdScript initialized");
         }
         #endregion
 
@@ -48,8 +46,7 @@ namespace DreamerHeroines.Examples
             try
             {
                 // 使用 Call 方法调用 GDScript 函数
-                var result = _gameManager.Call(methodName, args);
-                GD.Print($"[C#] Called GameManager.{methodName}(), result: {result}");
+                _gameManager.Call(methodName, args);
             }
             catch (Exception ex)
             {
@@ -72,7 +69,6 @@ namespace DreamerHeroines.Examples
             {
                 // 假设 GDScript AudioManager 有 play_sound 方法
                 _audioManager.Call("play_sound", soundName);
-                GD.Print($"[C#] Called AudioManager.play_sound('{soundName}')");
             }
             catch (Exception ex)
             {
@@ -94,7 +90,6 @@ namespace DreamerHeroines.Examples
             try
             {
                 _audioManager.Call("play_music", musicName, loop);
-                GD.Print($"[C#] Called AudioManager.play_music('{musicName}', {loop})");
             }
             catch (Exception ex)
             {
@@ -113,7 +108,6 @@ namespace DreamerHeroines.Examples
             try
             {
                 _audioManager.Call("stop_music");
-                GD.Print("[C#] Called AudioManager.stop_music()");
             }
             catch (Exception ex)
             {
@@ -204,7 +198,6 @@ namespace DreamerHeroines.Examples
             {
                 // 使用 Set 方法设置属性
                 _gameManager.Set(propertyName, value);
-                GD.Print($"[C#] Set GameManager.{propertyName} = {value}");
             }
             catch (Exception ex)
             {
@@ -262,7 +255,6 @@ namespace DreamerHeroines.Examples
             {
                 // 连接信号
                 _gameManager.Connect(signalName, callable);
-                GD.Print($"[C#] Connected to signal: {signalName}");
             }
             catch (Exception ex)
             {
@@ -281,7 +273,6 @@ namespace DreamerHeroines.Examples
             try
             {
                 _gameManager.Disconnect(signalName, callable);
-                GD.Print($"[C#] Disconnected from signal: {signalName}");
             }
             catch (Exception ex)
             {
@@ -304,22 +295,22 @@ namespace DreamerHeroines.Examples
         // 信号回调方法
         private void OnLevelStarted(int levelNumber)
         {
-            GD.Print($"[C#] Level started: {levelNumber}");
+            // Level started callback
         }
 
         private void OnLevelCompleted(int levelNumber, float completionTime)
         {
-            GD.Print($"[C#] Level completed: {levelNumber} in {completionTime}s");
+            // Level completed callback
         }
 
         private void OnPlayerDied(Vector2 deathPosition)
         {
-            GD.Print($"[C#] Player died at: {deathPosition}");
+            // Player died callback
         }
 
         private void OnScoreChanged(int newScore, int delta)
         {
-            GD.Print($"[C#] Score changed: {newScore} (delta: {delta})");
+            // Score changed callback
         }
 
         #endregion
@@ -349,7 +340,6 @@ namespace DreamerHeroines.Examples
                     return null;
                 }
 
-                GD.Print($"[C#] Instantiated GDScript node: {scriptPath}");
                 return instance;
             }
             catch (Exception ex)
@@ -374,7 +364,6 @@ namespace DreamerHeroines.Examples
                 }
 
                 var instance = packedScene.Instantiate();
-                GD.Print($"[C#] Instantiated scene: {scenePath}");
                 return instance;
             }
             catch (Exception ex)
@@ -396,7 +385,6 @@ namespace DreamerHeroines.Examples
             {
                 enemy2D.Position = position;
                 GetTree().CurrentScene.AddChild(enemy);
-                GD.Print($"[C#] Spawned enemy '{enemyType}' at {position}");
             }
 
             return enemy;
@@ -414,7 +402,6 @@ namespace DreamerHeroines.Examples
             {
                 effect2D.Position = position;
                 GetTree().CurrentScene.AddChild(effect);
-                GD.Print($"[C#] Spawned effect '{effectName}' at {position}");
             }
 
             return effect;

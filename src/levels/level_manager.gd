@@ -99,8 +99,6 @@ func _initialize_level() -> void:
 	var players = get_tree().get_nodes_in_group("player")
 	if players.size() > 0:
 		player = players[0] as Node2D
-		if player.has_signal("died"):
-			player.died.connect(_on_player_died)
 	
 	# 查找检查点
 	_find_checkpoints()
@@ -147,12 +145,12 @@ func start_level() -> void:
 func pause_level() -> void:
 	if current_state == LevelState.PLAYING:
 		current_state = LevelState.PAUSED
-		get_tree().paused = true
+		GameManager.set_paused(true)
 
 func resume_level() -> void:
 	if current_state == LevelState.PAUSED:
 		current_state = LevelState.PLAYING
-		get_tree().paused = false
+		GameManager.set_paused(false)
 
 func restart_level() -> void:
 	if current_level_data:
@@ -198,7 +196,7 @@ func respawn_player() -> void:
 		else:
 			player.respawn(Vector2.ZERO)
 
-func _on_checkpoint_activated(checkpoint: Checkpoint) -> void:
+func _on_checkpoint_activated(_checkpoint: Checkpoint) -> void:
 	# 自动保存
 	if SaveManager.has_current_save():
 		SaveManager.save_current_game()
@@ -243,7 +241,7 @@ func _check_time_limit() -> void:
 				fail_level("时间耗尽")
 
 # 敌人管理
-func on_enemy_killed(enemy: Node) -> void:
+func on_enemy_killed(_enemy: Node) -> void:
 	enemies_killed += 1
 	GameManager.add_score(100)
 
@@ -257,8 +255,9 @@ func get_level_progress() -> Dictionary:
 	}
 
 func get_formatted_time() -> String:
-	var minutes = int(elapsed_time) / 60
-	var seconds = int(elapsed_time) % 60
+	@warning_ignore("integer_division")
+	var minutes := int(elapsed_time) / 60
+	var seconds := int(elapsed_time) % 60
 	return "%02d:%02d" % [minutes, seconds]
 
 # 保存/加载

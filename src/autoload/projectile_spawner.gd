@@ -1,7 +1,7 @@
 extends "res://src/base/game_system.gd"
 
 # 预加载 WeaponStats 类型（autoload 加载顺序问题）
-const WeaponStats = preload("res://src/weapons/weapon_stats.gd")
+const WeaponStatsClass = preload("res://src/weapons/weapon_stats.gd")
 
 # ProjectileSpawner - 投射物生成器
 # 统一管理游戏中所有投射物的创建、缓存和回收
@@ -69,7 +69,7 @@ func _preload_pool() -> void:
 func spawn_projectile(
 	position: Vector2,
 	direction: Vector2,
-	stats: WeaponStats,
+	stats: WeaponStatsClass,
 	faction: String,
 	owner_node: Node2D = null
 ) -> Node:
@@ -206,7 +206,7 @@ func get_pool_info() -> Dictionary:
 func spawn_player_projectile(
 	position: Vector2,
 	direction: Vector2,
-	stats: WeaponStats,
+	stats: WeaponStatsClass,
 	owner_node: Node2D = null
 ) -> Node:
 	return spawn_projectile(position, direction, stats, "player", owner_node)
@@ -215,7 +215,7 @@ func spawn_player_projectile(
 func spawn_enemy_projectile(
 	position: Vector2,
 	direction: Vector2,
-	stats: WeaponStats,
+	stats: WeaponStatsClass,
 	owner_node: Node2D = null
 ) -> Node:
 	return spawn_projectile(position, direction, stats, "enemy", owner_node)

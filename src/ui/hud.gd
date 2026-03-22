@@ -281,10 +281,7 @@ func _on_game_state_changed(new_state: GameManager.GameState) -> void:
 		GameManager.GameState.MENU, GameManager.GameState.GAME_OVER:
 			visible = false
 
-# 输入处理
-func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause"):
-		pause_requested.emit()
+# 输入处理 - pause已由GameManager统一处理，此处移除重复处理
 
 # 显示/隐藏
 func show_hud() -> void:

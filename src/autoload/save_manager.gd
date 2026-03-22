@@ -117,11 +117,8 @@ func delete_save(slot: int) -> bool:
 
 # 存档摘要
 func get_save_summary(slot: int) -> Dictionary:
-	if _csharp_save_manager:
-		var summary = _csharp_save_manager.GetSaveSummary(slot)
-		return _convert_csharp_summary(summary)
-	else:
-		return _get_file_summary(slot)
+	# 直接使用GDScript文件实现，避免C#互操作问题
+	return _get_file_summary(slot)
 
 func get_all_save_summaries() -> Array:
 	var summaries = []
@@ -321,7 +318,8 @@ func _get_default_settings() -> Dictionary:
 		"sfx_volume": 1.0,
 		"mouse_sensitivity": 1.0,
 		"fullscreen": false,
-		"vsync": true
+		"vsync": true,
+		"window_mode": 0  # 0=Windowed, 1=Fullscreen, 2=Borderless
 	}
 
 func _convert_csharp_summary(summary) -> Dictionary:

@@ -10,6 +10,8 @@ signal settings_requested
 signal credits_requested
 signal quit_requested
 
+const SaveSlotScene = preload("res://scenes/ui/save_slot.tscn")
+
 @export_group("Menu Buttons")
 @export var continue_button: Button
 @export var new_game_button: Button
@@ -42,6 +44,8 @@ signal quit_requested
 @export var animation_player: AnimationPlayer
 
 var current_panel: Control = null
+var _pending_delete_slot: int = -1
+var _pending_new_game_slot: int = -1
 
 # 分辨率预设
 const RESOLUTIONS := [
@@ -148,9 +152,9 @@ func _connect_back_buttons() -> void:
 	if load_back:
 		load_back.pressed.connect(_on_back_to_main)
 	
-	var settings_back = get_node_or_null("SettingsPanel/BackButton")
-	if settings_back:
-		settings_back.pressed.connect(_on_back_to_main)
+	# SettingsPanel 使用 close_requested 信号
+	if settings_panel and settings_panel.has_signal("close_requested"):
+		settings_panel.close_requested.connect(_on_back_to_main)
 	
 	var credits_back = get_node_or_null("CreditsPanel/BackButton")
 	if credits_back:
@@ -168,9 +172,13 @@ func _input(event: InputEvent) -> void:
 
 # 存档检查
 func _check_save_files() -> void:
-	var has_save = false
+	var has_save := false
+	# Check all slots for any save
+	for i in range(SaveManager.MAX_SLOTS if SaveManager.get("MAX_SLOTS") else 10):
+		if SaveManager.has_save_in_slot(i):
+			has_save = true
+			break
 	
-	# 检查是否有存档
 	if continue_button:
 		continue_button.disabled = not has_save
 
@@ -205,7 +213,7 @@ func _on_credits_pressed() -> void:
 		animation_player.play("credits_roll")
 
 func _on_quit_pressed() -> void:
-	quit_requested.emit()
+	get_tree().quit()
 
 # 面板管理
 func _show_panel(panel: Control) -> void:
@@ -237,26 +245,37 @@ func _populate_save_slots() -> void:
 		var slot = _create_save_slot(i, summaries[i])
 		save_slot_container.add_child(slot)
 
-func _create_save_slot(slot_index: int, summary) -> Control:
-	var slot_button = Button.new()
+func _create_save_slot(slot_index: int, summary: Dictionary) -> Control:
+	var slot = SaveSlotScene.instantiate()
+	slot.setup(summary, slot_index)
 	
-	if summary.has_save:
-		var date_str = summary.save_time if summary.save_time else "Unknown"
-		var level_str = summary.level_name if summary.level_name else "Unknown"
-		slot_button.text = "Slot %d - %s\nLevel: %s" % [slot_index + 1, date_str, level_str]
-		slot_button.pressed.connect(func(): _on_save_slot_selected(slot_index))
-	else:
-		slot_button.text = "Slot %d - Empty" % (slot_index + 1)
-		slot_button.disabled = true
+	# Connect signals
+	slot.load_requested.connect(_on_slot_load_requested)
+	slot.delete_requested.connect(_on_slot_delete_requested)
+	slot.slot_clicked.connect(_on_slot_clicked)
 	
-	slot_button.custom_minimum_size = Vector2(400, 80)
-	slot_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	
-	return slot_button
+	return slot
 
-func _on_save_slot_selected(slot_index: int) -> void:
+func _on_slot_load_requested(slot_index: int) -> void:
+	## Handle load button click on an occupied slot
 	SaveManager.load_from_slot(slot_index)
 	continue_game_requested.emit()
+
+func _on_slot_delete_requested(slot_index: int) -> void:
+	## Handle delete button click - show confirmation
+	_pending_delete_slot = slot_index
+	_show_delete_confirmation(slot_index)
+
+func _on_slot_clicked(slot_index: int) -> void:
+	## Handle click on slot main area (not buttons)
+	var summary = SaveManager.get_save_summary(slot_index)
+	if summary.get("has_save", false):
+		# Occupied slot - load it
+		_on_slot_load_requested(slot_index)
+	else:
+		# Empty slot - show new game confirmation
+		_pending_new_game_slot = slot_index
+		_show_new_game_slot_confirmation()
 
 # 新游戏确认
 func _show_new_game_confirmation() -> void:
@@ -269,6 +288,49 @@ func _show_new_game_confirmation() -> void:
 	)
 	add_child(dialog)
 	dialog.popup_centered()
+
+func _show_delete_confirmation(slot_index: int) -> void:
+	## Show confirmation dialog before deleting a save
+	var dialog = ConfirmationDialog.new()
+	dialog.title = "删除存档"
+	dialog.dialog_text = "确定要删除槽位 %d 的存档吗？\n此操作不可撤销。" % (slot_index + 1)
+	dialog.confirmed.connect(_on_delete_confirmed)
+	dialog.canceled.connect(_on_delete_canceled)
+	add_child(dialog)
+	dialog.popup_centered()
+
+func _on_delete_confirmed() -> void:
+	## Handle delete confirmation
+	if _pending_delete_slot >= 0:
+		SaveManager.delete_save(_pending_delete_slot)
+		_populate_save_slots()  # Refresh the slot list
+		_pending_delete_slot = -1
+
+func _on_delete_canceled() -> void:
+	## Handle delete cancellation
+	_pending_delete_slot = -1
+
+func _show_new_game_slot_confirmation() -> void:
+	## Show confirmation dialog for starting new game in an empty slot
+	var dialog = ConfirmationDialog.new()
+	dialog.title = "开始新游戏"
+	dialog.dialog_text = "在槽位 %d 开始新游戏？" % (_pending_new_game_slot + 1)
+	dialog.confirmed.connect(_on_new_game_slot_confirmed)
+	dialog.canceled.connect(_on_new_game_slot_canceled)
+	add_child(dialog)
+	dialog.popup_centered()
+
+func _on_new_game_slot_confirmed() -> void:
+	## Handle new game in empty slot confirmation
+	if _pending_new_game_slot >= 0:
+		# Set the current slot and start new game
+		SaveManager.current_slot = _pending_new_game_slot
+		_pending_new_game_slot = -1
+		start_game_requested.emit()
+
+func _on_new_game_slot_canceled() -> void:
+	## Handle new game cancellation
+	_pending_new_game_slot = -1
 
 # 公共方法
 func show_menu() -> void:
@@ -354,29 +416,39 @@ func _on_resolution_selected(index: int) -> void:
 		width = screen_size.x
 		height = screen_size.y
 	
-	# 调用 C# SaveManager 应用分辨率
-	_call_csharp_save_manager("ApplyResolution", [width, height])
+	# 直接调用 DisplayServer 应用分辨率
+	DisplayServer.window_set_size(Vector2i(width, height))
+	print("[MainMenu] Resolution changed to: %dx%d" % [width, height])
 	
 	# 保存设置
 	_save_current_settings()
 
 func _on_window_mode_selected(index: int) -> void:
-	# 调用 C# SaveManager 应用窗口模式
+	# 直接调用 DisplayServer API 应用窗口模式
 	# 0=Windowed, 1=Fullscreen, 2=Borderless(ExclusiveFullscreen)
-	_call_csharp_save_manager("ApplyWindowMode", [index])
+	match index:
+		0:  # Windowed
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		1:  # Fullscreen
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		2:  # Borderless (ExclusiveFullscreen)
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+	
+	print("[MainMenu] Window mode changed to: %d" % index)
 	
 	# 保存设置
 	_save_current_settings()
 
 func _on_volume_changed(value: float) -> void:
-	# 调用 C# SaveManager 应用音量
+	# 直接调用 AudioManager 应用音量
 	# value 范围 0-100，转换为 0-1
-	_call_csharp_save_manager("ApplyVolume", [value / 100.0])
+	if AudioManager:
+		AudioManager.set_bus_volume(AudioManager.BusType.MASTER, value / 100.0)
 	
 	# 保存设置
 	_save_current_settings()
 
-func _on_sensitivity_changed(value: float) -> void:
+func _on_sensitivity_changed(_value: float) -> void:
 	# 保存设置
 	_save_current_settings()
 

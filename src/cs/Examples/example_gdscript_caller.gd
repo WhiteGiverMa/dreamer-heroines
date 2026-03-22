@@ -8,8 +8,6 @@ extends Node
 @onready var cs_caller: Node = $"../GdScriptCaller"
 
 func _ready():
-	print("[GDScript] Save example ready")
-	
 	# 示例：检查 C# 节点是否存在
 	if cs_caller == null:
 		push_error("[GDScript] GdScriptCaller node not found!")
@@ -17,11 +15,9 @@ func _ready():
 	
 	# 示例：获取所有存档摘要
 	var summaries = cs_caller.get_all_save_summaries()
-	print("[GDScript] Save summaries: ", summaries)
 	
 	# 示例：获取特定槽位的存档信息
 	var summary = cs_caller.get_save_summary(0)
-	print("[GDScript] Slot 0 summary: ", summary)
 
 # 创建新存档
 func create_new_save(slot_index: int, save_name: String) -> void:
@@ -29,7 +25,6 @@ func create_new_save(slot_index: int, save_name: String) -> void:
 		push_error("[GDScript] C# caller not available")
 		return
 	
-	print("[GDScript] Creating new save in slot ", slot_index)
 	cs_caller.create_new_save(slot_index, save_name)
 
 # 保存游戏
@@ -38,7 +33,6 @@ func save_game(slot_index: int) -> void:
 		push_error("[GDScript] C# caller not available")
 		return
 	
-	print("[GDScript] Saving game to slot ", slot_index)
 	cs_caller.save_game(slot_index)
 
 # 加载游戏
@@ -47,7 +41,6 @@ func load_game(slot_index: int) -> void:
 		push_error("[GDScript] C# caller not available")
 		return
 	
-	print("[GDScript] Loading game from slot ", slot_index)
 	cs_caller.load_game(slot_index)
 
 # 删除存档
@@ -55,7 +48,6 @@ func delete_save(slot_index: int) -> bool:
 	if cs_caller == null:
 		return false
 	
-	print("[GDScript] Deleting save in slot ", slot_index)
 	return cs_caller.delete_save(slot_index)
 
 # 检查存档槽是否有存档
@@ -77,7 +69,6 @@ func add_gold(amount: int) -> void:
 	if cs_caller == null:
 		return
 	
-	print("[GDScript] Adding gold: ", amount)
 	cs_caller.add_gold(amount)
 
 # 添加经验值
@@ -85,7 +76,6 @@ func add_experience(amount: int) -> bool:
 	if cs_caller == null:
 		return false
 	
-	print("[GDScript] Adding experience: ", amount)
 	return cs_caller.add_experience(amount)
 
 # 解锁武器
@@ -93,7 +83,6 @@ func unlock_weapon(weapon_id: String) -> bool:
 	if cs_caller == null:
 		return false
 	
-	print("[GDScript] Unlocking weapon: ", weapon_id)
 	return cs_caller.unlock_weapon(weapon_id)
 
 # 检查武器是否已解锁
@@ -108,7 +97,6 @@ func complete_level(level_id: String) -> bool:
 	if cs_caller == null:
 		return false
 	
-	print("[GDScript] Completing level: ", level_id)
 	return cs_caller.complete_level(level_id)
 
 # 记录武器击杀
@@ -137,7 +125,6 @@ func change_game_state(state_name: String) -> void:
 	if cs_caller == null:
 		return
 	
-	print("[GDScript] Changing game state to: ", state_name)
 	cs_caller.change_game_state(state_name)
 
 # 获取当前游戏状态
@@ -194,47 +181,32 @@ func _connect_signals() -> void:
 
 # 保存完成回调
 func _on_save_completed(slot: int, success: bool) -> void:
-	print("[GDScript] Save completed - slot: ", slot, ", success: ", success)
-	
-	if success:
-		# 显示保存成功提示
-		print("[GDScript] Game saved successfully!")
-	else:
-		# 显示保存失败提示
+	if not success:
 		push_error("[GDScript] Failed to save game!")
 
 # 加载完成回调
 func _on_load_completed(slot: int, success: bool) -> void:
-	print("[GDScript] Load completed - slot: ", slot, ", success: ", success)
-	
 	if success:
-		# 更新UI显示
 		_update_ui_after_load()
 	else:
 		push_error("[GDScript] Failed to load game!")
 
 # 玩家升级回调
 func _on_player_leveled_up(new_level: int) -> void:
-	print("[GDScript] Player leveled up to: ", new_level)
-	
-	# 播放升级特效
 	_play_level_up_effect()
-	
-	# 显示升级提示
 	_show_level_up_notification(new_level)
 
 # 加载后更新UI
 func _update_ui_after_load() -> void:
 	var player_data = get_player_data()
-	print("[GDScript] Updating UI with player data: ", player_data)
 	# TODO: 更新UI元素
 
 # 播放升级特效
 func _play_level_up_effect() -> void:
-	print("[GDScript] Playing level up effect")
 	# TODO: 实例化升级特效
+	pass
 
 # 显示升级提示
 func _show_level_up_notification(level: int) -> void:
-	print("[GDScript] Showing level up notification: Level ", level)
 	# TODO: 显示UI提示
+	pass

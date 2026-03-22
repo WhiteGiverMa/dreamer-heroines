@@ -166,24 +166,23 @@ func _wait_for_system(system: Node, system_name: String) -> void:
 		signal_name = "system_ready"
 	else:
 		# 没有初始化信号，轮询等待
-		var timeout_timer := get_tree().create_timer(INIT_TIMEOUT)
+		var polling_timer := get_tree().create_timer(INIT_TIMEOUT)
 		while not _check_initialized(system):
 			await get_tree().process_frame
-			if timeout_timer.time_left <= 0:
+			if polling_timer.time_left <= 0:
 				_on_system_timeout(system_name)
 				return
 		initialized_count += 1
 		system_initialized.emit(system_name)
 		return
 	
-	# 连接信号等待
-	var init_completed := false
-	system.connect(signal_name, func(_name): init_completed = true, CONNECT_ONE_SHOT)
-	
-	# 设置超时
+	# 连接信号等待 - 使用数组包装器解决 lambda 捕获问题
+	var init_completed := [false]
 	var timeout_timer := get_tree().create_timer(INIT_TIMEOUT)
 	
-	while not init_completed:
+	system.connect(signal_name, func(_name): init_completed[0] = true, CONNECT_ONE_SHOT)
+	
+	while not init_completed[0]:
 		await get_tree().process_frame
 		if timeout_timer.time_left <= 0:
 			_on_system_timeout(system_name)

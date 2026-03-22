@@ -91,8 +91,9 @@ func get_objective_description() -> String:
 func get_formatted_time_limit() -> String:
 	if time_limit <= 0:
 		return "无限制"
-	var minutes = int(time_limit) / 60
-	var seconds = int(time_limit) % 60
+	@warning_ignore("integer_division")
+	var minutes := int(time_limit) / 60
+	var seconds := int(time_limit) % 60
 	return "%02d:%02d" % [minutes, seconds]
 
 func create_default_checkpoints() -> void:

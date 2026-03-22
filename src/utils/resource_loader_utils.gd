@@ -20,7 +20,7 @@ const PLACEHOLDER_COLORS: Dictionary[String, Color] = {
 static func load_scene_with_fallback(
 	primary_path: String,
 	placeholder_path: String = "",
-	effect_type: String = "default"
+	_effect_type: String = "default"
 ) -> PackedScene:
 	# 1. 尝试加载正式资源
 	if ResourceLoader.exists(primary_path):
@@ -231,7 +231,7 @@ func _ready():
 # 加载纹理，带颜色占位符 fallback
 static func load_texture_with_fallback(
 	path: String,
-	placeholder_color: Color = Color(0.5, 0.5, 0.5, 1),
+	_placeholder_color: Color = Color(0.5, 0.5, 0.5, 1),
 	size: Vector2 = Vector2(32, 32)
 ) -> Texture2D:
 	if ResourceLoader.exists(path):

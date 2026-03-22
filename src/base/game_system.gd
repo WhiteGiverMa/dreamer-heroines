@@ -18,7 +18,7 @@ func initialize() -> void:
 
 ## 异步初始化版本（用于需要 await 的场景）
 func initialize_async() -> void:
-	await initialize()
+	initialize()
 
 ## 标记初始化完成
 func _mark_ready() -> void:

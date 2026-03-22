@@ -50,7 +50,7 @@ func _ready() -> void:
 func show_game_over(type: GameOverType, stats: Dictionary = {}) -> void:
 	game_over_type = type
 	visible = true
-	get_tree().paused = true
+	GameManager.set_paused(true)
 	
 	# 设置标题和背景
 	_setup_for_type(type)
@@ -146,7 +146,7 @@ func _hide_and_emit(signal_to_emit: Signal) -> void:
 	tween.tween_property(self, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(func():
 		visible = false
-		get_tree().paused = false
+		GameManager.set_paused(false)
 		signal_to_emit.emit()
 	)
 
@@ -168,5 +168,5 @@ func hide_game_over() -> void:
 	tween.tween_property(self, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(func():
 		visible = false
-		get_tree().paused = false
+		GameManager.set_paused(false)
 	)

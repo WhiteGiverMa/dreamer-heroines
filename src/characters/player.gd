@@ -286,7 +286,6 @@ func _handle_shooting() -> void:
 	
 	var is_pressed = EnhancedInput.instance.is_action_pressed(shoot_action)
 	if is_pressed:
-		print("SHOOT detected! value_bool=%s" % shoot_action.value_bool)
 		# 根据武器类型调用不同的射击方法
 		if current_weapon is Weapon:
 			# 新 Weapon 组件：传递枪口位置和瞄准方向

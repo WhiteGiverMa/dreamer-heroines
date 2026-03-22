@@ -232,39 +232,6 @@ godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -ginclude_subdirs -ge
 
 ---
 
-## Git 工作流
+## Git
 
-### 提交策略
-
-**频繁提交**: 每完成一个功能单元或修复一个 bug，立即提交。不要积累大量更改。
-
-```bash
-# 好的提交习惯
-git add src/ui/main_menu.gd scenes/ui/main_menu.tscn
-git commit -m "feat(ui): add settings panel with resolution controls"
-
-# 不好的做法 - 积累太多更改
-git add .
-git commit -m "update"  # 太模糊，太多更改
-```
-
-### 提交信息格式
-
-```
-<type>(<scope>): <description>
-
-类型:
-- feat: 新功能
-- fix: bug 修复
-- refactor: 重构
-- docs: 文档更新
-- style: 代码格式
-- test: 测试
-- chore: 构建/工具
-```
-
-### 分支策略
-
-- `main`: 稳定版本
-- `feature/*`: 新功能开发
-- `fix/*`: bug 修复
+**频繁提交**: 每完成一个功能单元或修复一个bug立即提交

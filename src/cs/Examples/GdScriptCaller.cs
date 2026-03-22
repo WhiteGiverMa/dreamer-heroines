@@ -21,7 +21,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public void SaveGame(int slotIndex)
         {
-            GD.Print($"[C#] SaveGame called from GDScript with slot: {slotIndex}");
             SaveManager.Instance.SaveToSlot(slotIndex);
         }
 
@@ -31,7 +30,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public void LoadGame(int slotIndex)
         {
-            GD.Print($"[C#] LoadGame called from GDScript with slot: {slotIndex}");
             SaveManager.Instance.LoadFromSlot(slotIndex);
         }
 
@@ -41,7 +39,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public Godot.Collections.Dictionary GetSaveSummary(int slotIndex)
         {
-            GD.Print($"[C#] GetSaveSummary called from GDScript for slot: {slotIndex}");
             var summary = SaveManager.Instance.GetSaveSummary(slotIndex);
 
             // 转换为 Godot Dictionary
@@ -65,7 +62,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public Godot.Collections.Array GetAllSaveSummaries()
         {
-            GD.Print("[C#] GetAllSaveSummaries called from GDScript");
             var summaries = SaveManager.Instance.GetAllSaveSummaries();
             var array = new Godot.Collections.Array();
 
@@ -92,7 +88,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public void CreateNewSave(int slotIndex, string displayName)
         {
-            GD.Print($"[C#] CreateNewSave called from GDScript: slot={slotIndex}, name={displayName}");
             SaveManager.Instance.CreateNewSave(slotIndex, displayName);
         }
 
@@ -102,7 +97,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public bool DeleteSave(int slotIndex)
         {
-            GD.Print($"[C#] DeleteSave called from GDScript for slot: {slotIndex}");
             return SaveManager.Instance.DeleteSave(slotIndex);
         }
 
@@ -121,8 +115,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public void ChangeGameState(string stateName)
         {
-            GD.Print($"[C#] ChangeGameState called from GDScript: {stateName}");
-
             if (Enum.TryParse<GameState>(stateName, true, out var state))
             {
                 GameStateManager.Instance.ChangeState(state);
@@ -148,7 +140,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public void TogglePause()
         {
-            GD.Print("[C#] TogglePause called from GDScript");
             GameStateManager.Instance.TogglePause();
         }
 
@@ -191,7 +182,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public void AddGold(int amount)
         {
-            GD.Print($"[C#] AddGold called from GDScript: {amount}");
             var playerData = SaveManager.Instance.GetPlayerData();
             if (playerData != null)
             {
@@ -206,7 +196,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public bool AddExperience(int amount)
         {
-            GD.Print($"[C#] AddExperience called from GDScript: {amount}");
             var playerData = SaveManager.Instance.GetPlayerData();
             if (playerData != null)
             {
@@ -223,7 +212,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public bool UnlockWeapon(string weaponId)
         {
-            GD.Print($"[C#] UnlockWeapon called from GDScript: {weaponId}");
             var playerData = SaveManager.Instance.GetPlayerData();
             if (playerData != null)
             {
@@ -253,7 +241,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public bool CompleteLevel(string levelId)
         {
-            GD.Print($"[C#] CompleteLevel called from GDScript: {levelId}");
             var playerData = SaveManager.Instance.GetPlayerData();
             if (playerData != null)
             {
@@ -316,7 +303,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public void TriggerAutoSave()
         {
-            GD.Print("[C#] TriggerAutoSave called from GDScript");
             SaveManager.Instance.ResetAutoSaveTimer();
         }
 
@@ -326,7 +312,6 @@ namespace DreamerHeroines.Examples
         /// </summary>
         public void SetAutoSaveEnabled(bool enabled)
         {
-            GD.Print($"[C#] SetAutoSaveEnabled called from GDScript: {enabled}");
             SaveManager.Instance.AutoSaveEnabled = enabled;
         }
 

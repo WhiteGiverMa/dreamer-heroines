@@ -61,6 +61,7 @@ func initialize() -> void:
 func _input(event: InputEvent):
 	if event.is_action_pressed("pause") and current_state in [GameState.PLAYING, GameState.PAUSED]:
 		toggle_pause()
+		get_viewport().set_input_as_handled()
 
 func change_state(new_state: GameState) -> void:
 	if current_state == new_state:
@@ -71,23 +72,28 @@ func change_state(new_state: GameState) -> void:
 	
 	match new_state:
 		GameState.MENU:
-			print("State: MENU")
 			_show_menu()
 		GameState.PLAYING:
-			print("State: PLAYING")
 			_hide_menus()
 		GameState.PAUSED:
-			print("State: PAUSED")
 			_show_pause_menu()
 		GameState.GAME_OVER:
-			print("State: GAME_OVER")
 			_show_game_over(false)
 		GameState.VICTORY:
-			print("State: VICTORY")
 			_show_game_over(true)
+	
+	_sync_state_to_csharp()
 
 func toggle_pause() -> void:
 	is_game_paused = !is_game_paused
+	_sync_state_to_csharp()
+
+func set_paused(paused: bool) -> void:
+	is_game_paused = paused
+	_sync_state_to_csharp()
+
+func is_playing() -> bool:
+	return current_state == GameState.PLAYING
 
 func add_score(points: int) -> void:
 	current_score += points
@@ -134,17 +140,20 @@ func register_player(player: Node2D) -> void:
 	
 	# 连接玩家信号
 	if player.has_signal("health_changed"):
-		player.health_changed.connect(_on_player_health_changed)
+		if not player.health_changed.is_connected(_on_player_health_changed):
+			player.health_changed.connect(_on_player_health_changed)
 	if player.has_signal("ammo_changed"):
-		player.ammo_changed.connect(_on_player_ammo_changed)
+		if not player.ammo_changed.is_connected(_on_player_ammo_changed):
+			player.ammo_changed.connect(_on_player_ammo_changed)
 	if player.has_signal("died"):
-		player.died.connect(on_player_death)
+		if not player.died.is_connected(on_player_death):
+			player.died.connect(on_player_death)
 
-func _on_player_health_changed(current: int, max: int) -> void:
+func _on_player_health_changed(current: int, max_val: int) -> void:
 	if hud:
-		hud.update_health(current, max)
+		hud.update_health(current, max_val)
 
-func _on_player_ammo_changed(current: int, max: int) -> void:
+func _on_player_ammo_changed(current: int, max_val: int) -> void:
 	if hud:
 		# 获取备用弹药
 		var reserve = -1
@@ -152,7 +161,7 @@ func _on_player_ammo_changed(current: int, max: int) -> void:
 			var weapon = player_instance.get("current_weapon")
 			if weapon and "current_reserve_ammo" in weapon:
 				reserve = weapon.current_reserve_ammo
-		hud.update_ammo(current, max, reserve)
+		hud.update_ammo(current, max_val, reserve)
 
 func get_player() -> Node2D:
 	return player_instance
@@ -170,7 +179,10 @@ func restart_game() -> void:
 
 func quit_to_menu() -> void:
 	change_state(GameState.MENU)
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+
+func quit_to_desktop() -> void:
+	get_tree().quit()
 
 func start_new_game() -> void:
 	# 创建新存档
@@ -213,6 +225,7 @@ func register_pause_menu(menu: Control) -> void:
 		pause_menu.resume_requested.connect(_on_resume_requested)
 		pause_menu.restart_requested.connect(restart_game)
 		pause_menu.quit_to_menu_requested.connect(quit_to_menu)
+		pause_menu.quit_to_desktop_requested.connect(quit_to_desktop)
 
 func register_game_over_screen(screen: Control) -> void:
 	game_over_screen = screen
@@ -250,3 +263,19 @@ func change_scene(scene_path: String) -> void:
 
 func reload_current_scene() -> void:
 	get_tree().reload_current_scene()
+
+# C# 状态同步
+func _sync_state_to_csharp() -> void:
+	var gsm = get_node_or_null("/root/GameStateManager")
+	if gsm:
+		var csharp_state = _map_state_to_csharp(current_state)
+		gsm.call("SetStateWithoutPause", csharp_state)
+
+func _map_state_to_csharp(gd_state: GameState) -> int:
+	match gd_state:
+		GameState.MENU: return 1
+		GameState.PLAYING: return 3
+		GameState.PAUSED: return 4
+		GameState.GAME_OVER: return 5
+		GameState.VICTORY: return 6
+		_: return 0

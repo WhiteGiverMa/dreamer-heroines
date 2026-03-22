@@ -23,9 +23,10 @@ namespace DreamerHeroines.Systems
     }
 
     /// <summary>
-    /// 游戏状态管理器 - 单例模式
-    /// 管理游戏整体状态，处理状态转换，跨场景持久化
+    /// 游戏状态管理器 - 已被 GameManager.gd 取代
+    /// 保留此类仅用于向后兼容
     /// </summary>
+    [Obsolete("Use GameManager (GDScript) instead. This class is kept for backward compatibility.")]
     public partial class GameStateManager : Node
     {
         #region Singleton
@@ -223,13 +224,17 @@ namespace DreamerHeroines.Systems
             _stateTimer += delta;
         }
 
-        public override void _Input(InputEvent @event)
+        // 暂停输入处理已移至 GameManager.gd，避免重复处理
+        // GameManager.gd 负责统一管理暂停状态和暂停菜单显示
+
+        /// <summary>
+        /// 从 GDScript 同步状态（不触发暂停逻辑）
+        /// </summary>
+        public void SetStateWithoutPause(int state)
         {
-            // 处理暂停输入
-            if (@event.IsActionPressed("pause") && CanPause)
-            {
-                TogglePause();
-            }
+            _previousState = _currentState;
+            _currentState = (GameState)state;
+            _stateTimer = 0.0;
         }
         #endregion
 

@@ -176,7 +176,9 @@ namespace DreamerHeroines.Systems
         public override void _Process(double delta)
         {
             // 处理自动保存
-            if (_autoSaveEnabled && _currentSaveData != null && GameStateManager.Instance.IsPlaying)
+            var gameManager = GetNode<Node>("/root/GameManager");
+            bool isPlaying = gameManager?.Call("is_playing").AsBool() ?? false;
+            if (_autoSaveEnabled && _currentSaveData != null && isPlaying)
             {
                 _autoSaveTimer += delta;
                 if (_autoSaveTimer >= AutoSaveInterval)
