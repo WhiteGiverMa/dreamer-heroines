@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WeaponStats" load_steps=2 format=3 uid="uid://sniper_stats_001"]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_stats.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+weapon_id = "sniper_basic"
+weapon_name = "sniper_basic"
+description = "高精度狙击步枪，高伤害低射速"
+damage = 50.0
+fire_rate = 1.5
+reload_time = 3.0
+magazine_size = 5
+max_ammo = 25
+projectile_speed = 1200.0
+max_range = 2000.0
+spread = 0.0
+is_automatic = false
+recoil_amount = 20.0
+screen_shake_amount = 0.8
+muzzle_flash_effect = "sniper"
+shell_casing_scene = null
+pierce_count = 1
+use_ammo_system = true
+pellet_count = 1
+pellet_spread = 0.0

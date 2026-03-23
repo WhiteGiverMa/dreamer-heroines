@@ -34,6 +34,8 @@ func _ready() -> void:
 		_load_button.pressed.connect(_on_load_button_pressed)
 	if _delete_button:
 		_delete_button.pressed.connect(_on_delete_button_pressed)
+	if LocalizationManager:
+		LocalizationManager.locale_changed.connect(_on_locale_changed)
 	
 	# 连接面板点击信号 (通过 gui_input)
 	gui_input.connect(_on_gui_input)
@@ -69,12 +71,12 @@ func _set_empty_state() -> void:
 	
 	# 槽位编号
 	if _slot_number_label:
-		_slot_number_label.text = "槽位 %d" % (slot_index + 1)
+		_slot_number_label.text = LocalizationManager.call("tr", "ui.save_slot.slot_number", {"slot": slot_index + 1})
 		_slot_number_label.add_theme_color_override("font_color", EMPTY_TEXT_COLOR)
 	
 	# 关卡名称
 	if _level_label:
-		_level_label.text = "空槽位"
+		_level_label.text = LocalizationManager.tr("ui.save_slot.empty")
 		_level_label.add_theme_color_override("font_color", EMPTY_TEXT_COLOR)
 	
 	# 时间标签隐藏
@@ -83,7 +85,7 @@ func _set_empty_state() -> void:
 	
 	# 加载按钮
 	if _load_button:
-		_load_button.text = "开始游戏"
+		_load_button.text = LocalizationManager.tr("ui.save_slot.button.start_game")
 		_load_button.disabled = false
 	
 	# 删除按钮隐藏
@@ -103,12 +105,12 @@ func _set_occupied_state(summary: Dictionary) -> void:
 	
 	# 槽位编号
 	if _slot_number_label:
-		_slot_number_label.text = "槽位 %d" % (slot_index + 1)
+		_slot_number_label.text = LocalizationManager.call("tr", "ui.save_slot.slot_number", {"slot": slot_index + 1})
 		_slot_number_label.add_theme_color_override("font_color", OCCUPIED_TEXT_COLOR)
 	
 	# 关卡名称
 	if _level_label:
-		var level_name = summary.get("level_name", "未知关卡")
+		var level_name = summary.get("level_name", LocalizationManager.tr("ui.save_slot.unknown_level"))
 		_level_label.text = level_name
 		_level_label.add_theme_color_override("font_color", OCCUPIED_TEXT_COLOR)
 	
@@ -117,12 +119,12 @@ func _set_occupied_state(summary: Dictionary) -> void:
 		_time_label.visible = true
 		var play_time_seconds = summary.get("play_time", 0)
 		var formatted_time = _format_play_time(play_time_seconds)
-		_time_label.text = "游玩时间: %s" % formatted_time
+		_time_label.text = LocalizationManager.call("tr", "ui.save_slot.play_time", {"time": formatted_time})
 		_time_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 	
 	# 加载按钮
 	if _load_button:
-		_load_button.text = "加载"
+		_load_button.text = LocalizationManager.tr("ui.save_slot.button.load")
 		_load_button.disabled = false
 	
 	# 删除按钮显示
@@ -135,7 +137,7 @@ func _set_occupied_state(summary: Dictionary) -> void:
 ## 将秒数转换为 "X小时Y分" 或 "X分Y秒" 格式
 func _format_play_time(seconds: int) -> String:
 	if seconds <= 0:
-		return "0分"
+		return LocalizationManager.call("tr", "ui.save_slot.time.minutes", {"minutes": 0})
 	
 	@warning_ignore("integer_division")
 	var hours: int = seconds / 3600
@@ -144,11 +146,18 @@ func _format_play_time(seconds: int) -> String:
 	var secs: int = seconds % 60
 	
 	if hours > 0:
-		return "%d小时%d分" % [hours, minutes]
+		return LocalizationManager.call("tr", "ui.save_slot.time.hours_minutes", {"hours": hours, "minutes": minutes})
 	elif minutes > 0:
-		return "%d分%d秒" % [minutes, secs]
+		return LocalizationManager.call("tr", "ui.save_slot.time.minutes_seconds", {"minutes": minutes, "seconds": secs})
 	else:
-		return "%d秒" % secs
+		return LocalizationManager.call("tr", "ui.save_slot.time.seconds", {"seconds": secs})
+
+
+func _on_locale_changed(_new_locale: String) -> void:
+	if is_occupied:
+		_set_occupied_state(SaveManager.get_save_summary(slot_index))
+	else:
+		_set_empty_state()
 
 
 ## 加载按钮点击回调

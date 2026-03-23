@@ -4,7 +4,7 @@
   
   "rifle_basic": {
     "_comment": "基础突击步枪 - 均衡型武器",
-    "weapon_name": "基础步枪",
+    "weapon_name": "rifle_basic",
     "description": "标准突击步枪，射速快，精度高",
     
     "damage": {
@@ -87,7 +87,7 @@
   
   "shotgun_basic": {
     "_comment": "基础霰弹枪 - 近战高伤害",
-    "weapon_name": "基础霰弹枪",
+    "weapon_name": "shotgun_basic",
     "description": "近距离高伤害，远距离衰减严重",
     
     "damage": {
@@ -176,7 +176,7 @@
   
   "sniper_basic": {
     "_comment": "狙击步枪 - 高伤害低射速",
-    "weapon_name": "基础狙击枪",
+    "weapon_name": "sniper_basic",
     "description": "高伤害，精准，但射速极慢",
     
     "damage": {
@@ -265,7 +265,7 @@
   
   "smg_basic": {
     "_comment": "冲锋枪 - 高射速低伤害",
-    "weapon_name": "基础冲锋枪",
+    "weapon_name": "smg_basic",
     "description": "极高射速，低单发伤害，适合近距离",
     
     "damage": {

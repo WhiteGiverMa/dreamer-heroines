@@ -1,0 +1,149 @@
+# Chinese (Simplified) translations for DreamerHeroines
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: zh_CN\n"
+
+msgid "weapon.rifle_basic.name"
+msgstr "基础步枪"
+
+msgid "weapon.rifle_basic.description"
+msgstr "标准突击步枪，射速快，精度高"
+
+msgid "weapon.shotgun_basic.name"
+msgstr "基础霰弹枪"
+
+msgid "weapon.shotgun_basic.description"
+msgstr "近距离高伤害，远距离衰减严重"
+
+msgid "weapon.smg_basic.name"
+msgstr "基础冲锋枪"
+
+msgid "weapon.smg_basic.description"
+msgstr "极高射速，低单发伤害，适合近距离"
+
+msgid "weapon.sniper_basic.name"
+msgstr "基础狙击枪"
+
+msgid "weapon.sniper_basic.description"
+msgstr "高伤害，精准，但射速极慢"
+
+msgid "ui.main_menu.button.continue"
+msgstr "继续游戏"
+
+msgid "ui.main_menu.button.new_game"
+msgstr "新游戏"
+
+msgid "ui.main_menu.button.load_game"
+msgstr "加载游戏"
+
+msgid "ui.main_menu.button.settings"
+msgstr "设置"
+
+msgid "ui.main_menu.button.credits"
+msgstr "制作人员"
+
+msgid "ui.main_menu.button.quit"
+msgstr "退出"
+
+msgid "ui.main_menu.button.back"
+msgstr "返回"
+
+msgid "ui.main_menu.window_mode.0"
+msgstr "窗口模式"
+
+msgid "ui.main_menu.window_mode.1"
+msgstr "全屏"
+
+msgid "ui.main_menu.window_mode.2"
+msgstr "无边框"
+
+msgid "ui.main_menu.settings.vsync"
+msgstr "垂直同步"
+
+msgid "ui.main_menu.dialog.new_game_overwrite.title"
+msgstr "新的开始"
+
+msgid "ui.main_menu.dialog.new_game_overwrite.text"
+msgstr "开始新游戏将覆盖现有存档。\n是否继续？"
+
+msgid "ui.main_menu.dialog.delete_save.title"
+msgstr "删除存档"
+
+msgid "ui.main_menu.dialog.delete_save.text"
+msgstr "确定要删除槽位 {slot} 的存档吗？\n此操作不可撤销。"
+
+msgid "ui.main_menu.dialog.new_game_slot.title"
+msgstr "开始新游戏"
+
+msgid "ui.main_menu.dialog.new_game_slot.text"
+msgstr "在槽位 {slot} 开始新游戏？"
+
+msgid "ui.save_slot.slot_number"
+msgstr "槽位 {slot}"
+
+msgid "ui.save_slot.empty"
+msgstr "空槽位"
+
+msgid "ui.save_slot.unknown_level"
+msgstr "未知关卡"
+
+msgid "ui.save_slot.play_time"
+msgstr "游玩时间: {time}"
+
+msgid "ui.save_slot.button.start_game"
+msgstr "开始游戏"
+
+msgid "ui.save_slot.button.load"
+msgstr "加载"
+
+msgid "ui.save_slot.time.hours_minutes"
+msgstr "{hours}小时{minutes}分"
+
+msgid "ui.save_slot.time.minutes_seconds"
+msgstr "{minutes}分{seconds}秒"
+
+msgid "ui.save_slot.time.seconds"
+msgstr "{seconds}秒"
+
+msgid "ui.save_slot.time.minutes"
+msgstr "{minutes}分"
+
+msgid "ui.game_over.title.victory"
+msgstr "胜利"
+
+msgid "ui.game_over.title.defeat"
+msgstr "失败"
+
+msgid "ui.game_over.title.timeout"
+msgstr "时间到"
+
+msgid "ui.game_over.subtitle.victory"
+msgstr "任务完成！"
+
+msgid "ui.game_over.subtitle.defeat"
+msgstr "任务失败"
+
+msgid "ui.game_over.subtitle.timeout"
+msgstr "时间耗尽"
+
+msgid "ui.game_over.stats.score"
+msgstr "最终分数: {value}"
+
+msgid "ui.game_over.stats.kills"
+msgstr "击杀数: {value}"
+
+msgid "ui.game_over.stats.time"
+msgstr "用时: {value}"
+
+msgid "ui.game_over.stats.accuracy"
+msgstr "命中率: {value}%"
+
+msgid "ui.game_over.button.restart"
+msgstr "重新开始"
+
+msgid "ui.game_over.button.continue"
+msgstr "继续"
+
+msgid "ui.game_over.button.menu"
+msgstr "返回菜单"

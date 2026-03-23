@@ -81,6 +81,8 @@ func _ready() -> void:
 	
 	# 连接内部信号
 	start_game_requested.connect(_on_start_game)
+	if LocalizationManager:
+		LocalizationManager.locale_changed.connect(_on_locale_changed)
 	
 	# 初始化设置控件
 	_init_settings_controls()
@@ -95,8 +97,8 @@ func _ready() -> void:
 	# 播放开场动画
 	if animation_player:
 		animation_player.play("intro")
-	
-	print("MainMenu initialized")
+
+	_apply_localized_texts()
 
 func _auto_get_node_references() -> void:
 	"""自动获取节点引用，解决 export 变量未赋值的问题"""
@@ -196,7 +198,6 @@ func _on_new_game_pressed() -> void:
 
 func _on_start_game() -> void:
 	"""处理开始游戏：切换场景并更新游戏状态"""
-	print("Starting game...")
 	# 切换到游戏场景（GameStateManager 会在游戏场景中自动更新状态）
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
 
@@ -280,8 +281,8 @@ func _on_slot_clicked(slot_index: int) -> void:
 # 新游戏确认
 func _show_new_game_confirmation() -> void:
 	var dialog = ConfirmationDialog.new()
-	dialog.title = "新的开始"
-	dialog.dialog_text = "开始新游戏将覆盖现有存档。\n是否继续？"
+	dialog.title = LocalizationManager.tr("ui.main_menu.dialog.new_game_overwrite.title")
+	dialog.dialog_text = LocalizationManager.tr("ui.main_menu.dialog.new_game_overwrite.text")
 	dialog.confirmed.connect(func():
 		SaveManager.delete_save(SaveManager.current_slot)
 		start_game_requested.emit()
@@ -292,8 +293,12 @@ func _show_new_game_confirmation() -> void:
 func _show_delete_confirmation(slot_index: int) -> void:
 	## Show confirmation dialog before deleting a save
 	var dialog = ConfirmationDialog.new()
-	dialog.title = "删除存档"
-	dialog.dialog_text = "确定要删除槽位 %d 的存档吗？\n此操作不可撤销。" % (slot_index + 1)
+	dialog.title = LocalizationManager.tr("ui.main_menu.dialog.delete_save.title")
+	dialog.dialog_text = LocalizationManager.call(
+		"tr",
+		"ui.main_menu.dialog.delete_save.text",
+		{"slot": slot_index + 1}
+	)
 	dialog.confirmed.connect(_on_delete_confirmed)
 	dialog.canceled.connect(_on_delete_canceled)
 	add_child(dialog)
@@ -313,8 +318,12 @@ func _on_delete_canceled() -> void:
 func _show_new_game_slot_confirmation() -> void:
 	## Show confirmation dialog for starting new game in an empty slot
 	var dialog = ConfirmationDialog.new()
-	dialog.title = "开始新游戏"
-	dialog.dialog_text = "在槽位 %d 开始新游戏？" % (_pending_new_game_slot + 1)
+	dialog.title = LocalizationManager.tr("ui.main_menu.dialog.new_game_slot.title")
+	dialog.dialog_text = LocalizationManager.call(
+		"tr",
+		"ui.main_menu.dialog.new_game_slot.text",
+		{"slot": _pending_new_game_slot + 1}
+	)
 	dialog.confirmed.connect(_on_new_game_slot_confirmed)
 	dialog.canceled.connect(_on_new_game_slot_canceled)
 	add_child(dialog)
@@ -404,6 +413,8 @@ func _load_settings_values() -> void:
 	if vsync_check:
 		vsync_check.button_pressed = settings.get("vsync", true)
 
+	_apply_localized_texts()
+
 # 设置回调
 func _on_resolution_selected(index: int) -> void:
 	var res = RESOLUTIONS[index]
@@ -418,7 +429,6 @@ func _on_resolution_selected(index: int) -> void:
 	
 	# 直接调用 DisplayServer 应用分辨率
 	DisplayServer.window_set_size(Vector2i(width, height))
-	print("[MainMenu] Resolution changed to: %dx%d" % [width, height])
 	
 	# 保存设置
 	_save_current_settings()
@@ -433,8 +443,6 @@ func _on_window_mode_selected(index: int) -> void:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 		2:  # Borderless (ExclusiveFullscreen)
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
-	
-	print("[MainMenu] Window mode changed to: %d" % index)
 	
 	# 保存设置
 	_save_current_settings()
@@ -473,6 +481,43 @@ func _save_current_settings() -> void:
 		"window_mode": window_mode_option.selected if window_mode_option else 0,
 	}
 	SaveManager.save_settings(settings)
+
+
+func _on_locale_changed(_new_locale: String) -> void:
+	_apply_localized_texts()
+
+
+func _apply_localized_texts() -> void:
+	if continue_button:
+		continue_button.text = LocalizationManager.tr("ui.main_menu.button.continue")
+	if new_game_button:
+		new_game_button.text = LocalizationManager.tr("ui.main_menu.button.new_game")
+	if load_game_button:
+		load_game_button.text = LocalizationManager.tr("ui.main_menu.button.load_game")
+	if settings_button:
+		settings_button.text = LocalizationManager.tr("ui.main_menu.button.settings")
+	if credits_button:
+		credits_button.text = LocalizationManager.tr("ui.main_menu.button.credits")
+	if quit_button:
+		quit_button.text = LocalizationManager.tr("ui.main_menu.button.quit")
+
+	if window_mode_option:
+		var selected_index := window_mode_option.selected
+		window_mode_option.clear()
+		for i in range(WINDOW_MODES.size()):
+			window_mode_option.add_item(LocalizationManager.tr("ui.main_menu.window_mode.%d" % i))
+		window_mode_option.selected = selected_index if selected_index >= 0 else 0
+
+	if vsync_check:
+		vsync_check.text = LocalizationManager.tr("ui.main_menu.settings.vsync")
+
+	var load_back = get_node_or_null("LoadGamePanel/BackButton")
+	if load_back:
+		load_back.text = LocalizationManager.tr("ui.main_menu.button.back")
+
+	var credits_back = get_node_or_null("CreditsPanel/BackButton")
+	if credits_back:
+		credits_back.text = LocalizationManager.tr("ui.main_menu.button.back")
 
 func _call_csharp_save_manager(method: String, args: Array = []) -> void:
 	"""调用 C# SaveManager 的方法"""

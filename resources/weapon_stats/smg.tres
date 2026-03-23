@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WeaponStats" load_steps=2 format=3 uid="uid://smg_stats_001"]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_stats.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+weapon_id = "smg_basic"
+weapon_name = "smg_basic"
+description = "高射速冲锋枪，低伤害高火力"
+damage = 8.0
+fire_rate = 0.05
+reload_time = 1.8
+magazine_size = 45
+max_ammo = 180
+projectile_speed = 700.0
+max_range = 500.0
+spread = 5.0
+is_automatic = true
+recoil_amount = 3.0
+screen_shake_amount = 0.2
+muzzle_flash_effect = "smg"
+shell_casing_scene = null
+pierce_count = 0
+use_ammo_system = true
+pellet_count = 1
+pellet_spread = 0.0

@@ -12,7 +12,7 @@ const LoadingScreenClass = preload("res://src/ui/loading_screen.gd")
 ## 每个阶段内的系统并行初始化，阶段之间串行执行
 const INIT_PHASES: Array[Array] = [
 	# Phase 1: 基础设施（无依赖，可并行）
-	["CSharpSaveManager", "AudioManager", "EffectManager", "ProjectileSpawner"],
+	["CSharpSaveManager", "AudioManager", "EffectManager", "ProjectileSpawner", "LocalizationManager"],
 	# Phase 2: 输入系统（依赖 GUIDE）
 	["EnhancedInput"],
 	# Phase 3: 存档系统（依赖 CSharpSaveManager）
@@ -29,6 +29,7 @@ const SYSTEM_PATHS: Dictionary = {
 	"AudioManager": "/root/AudioManager",
 	"EffectManager": "/root/EffectManager",
 	"ProjectileSpawner": "/root/ProjectileSpawner",
+	"LocalizationManager": "/root/LocalizationManager",
 	"EnhancedInput": "/root/EnhancedInput",
 	"SaveManager": "/root/SaveManager",
 	"LevelManager": "/root/LevelManager",

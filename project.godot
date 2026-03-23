@@ -25,6 +25,35 @@ buses/default_bus_layout="res://resources/default_bus_layout.tres"
 
 [autoload]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 BootSequence="*res://src/autoload/boot_sequence.tscn"
 GameManager="*res://src/autoload/game_manager.gd"
 AudioManager="*res://src/autoload/audio_manager.gd"
@@ -34,6 +63,7 @@ CSharpSaveManager="*res://src/cs/Systems/SaveManager.cs"
 LevelManager="*res://src/levels/level_manager.gd"
 EffectManager="*res://src/autoload/effect_manager.gd"
 ProjectileSpawner="*res://src/autoload/projectile_spawner.gd"
+LocalizationManager="*res://src/autoload/localization_manager.gd"
 EnhancedInput="*res://src/autoload/enhanced_input.gd"
 GUIDE="*res://addons/guide/guide.gd"
 
@@ -57,6 +87,11 @@ project/assembly_name="DreamerHeroines"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/guide/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/godot_mcp/plugin.cfg")
+
+[internationalization]
+
+locale/fallback="zh_CN"
+translations=PackedStringArray("res://localization/zh_CN.po", "res://localization/en.po")
 
 [input]
 

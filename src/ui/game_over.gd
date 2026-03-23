@@ -39,12 +39,14 @@ func _ready() -> void:
 		continue_button.pressed.connect(_on_continue_pressed)
 	if menu_button:
 		menu_button.pressed.connect(_on_menu_pressed)
+	if LocalizationManager:
+		LocalizationManager.locale_changed.connect(_on_locale_changed)
 	
 	# 初始隐藏
 	visible = false
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
-	
-	print("GameOver initialized")
+
+	_apply_static_texts()
 
 # 显示游戏结束
 func show_game_over(type: GameOverType, stats: Dictionary = {}) -> void:
@@ -76,10 +78,10 @@ func _setup_for_type(type: GameOverType) -> void:
 	match type:
 		GameOverType.VICTORY:
 			if title_label:
-				title_label.text = "VICTORY"
+				title_label.text = LocalizationManager.tr("ui.game_over.title.victory")
 				title_label.modulate = Color(0.2, 1.0, 0.2)
 			if subtitle_label:
-				subtitle_label.text = "任务完成！"
+				subtitle_label.text = LocalizationManager.tr("ui.game_over.subtitle.victory")
 			if background:
 				background.color = victory_color
 			if continue_button:
@@ -89,10 +91,10 @@ func _setup_for_type(type: GameOverType) -> void:
 		
 		GameOverType.DEFEAT:
 			if title_label:
-				title_label.text = "DEFEAT"
+				title_label.text = LocalizationManager.tr("ui.game_over.title.defeat")
 				title_label.modulate = Color(1.0, 0.2, 0.2)
 			if subtitle_label:
-				subtitle_label.text = "任务失败"
+				subtitle_label.text = LocalizationManager.tr("ui.game_over.subtitle.defeat")
 			if background:
 				background.color = defeat_color
 			if continue_button:
@@ -102,10 +104,10 @@ func _setup_for_type(type: GameOverType) -> void:
 		
 		GameOverType.TIMEOUT:
 			if title_label:
-				title_label.text = "TIME'S UP"
+				title_label.text = LocalizationManager.tr("ui.game_over.title.timeout")
 				title_label.modulate = Color(1.0, 0.5, 0.2)
 			if subtitle_label:
-				subtitle_label.text = "时间耗尽"
+				subtitle_label.text = LocalizationManager.tr("ui.game_over.subtitle.timeout")
 			if background:
 				background.color = defeat_color
 			if continue_button:
@@ -116,19 +118,19 @@ func _setup_for_type(type: GameOverType) -> void:
 func _show_stats(stats: Dictionary) -> void:
 	if score_label:
 		var score = stats.get("score", GameManager.current_score)
-		score_label.text = "最终分数: %d" % score
+		score_label.text = LocalizationManager.call("tr", "ui.game_over.stats.score", {"value": score})
 	
 	if kills_label:
 		var kills = stats.get("kills", 0)
-		kills_label.text = "击杀数: %d" % kills
+		kills_label.text = LocalizationManager.call("tr", "ui.game_over.stats.kills", {"value": kills})
 	
 	if time_label:
 		var time = stats.get("time", "00:00")
-		time_label.text = "用时: %s" % time
+		time_label.text = LocalizationManager.call("tr", "ui.game_over.stats.time", {"value": time})
 	
 	if accuracy_label:
 		var accuracy = stats.get("accuracy", 0.0)
-		accuracy_label.text = "命中率: %.1f%%" % (accuracy * 100)
+		accuracy_label.text = LocalizationManager.call("tr", "ui.game_over.stats.accuracy", {"value": "%.1f" % (accuracy * 100)})
 
 # 按钮回调
 func _on_restart_pressed() -> void:
@@ -170,3 +172,18 @@ func hide_game_over() -> void:
 		visible = false
 		GameManager.set_paused(false)
 	)
+
+
+func _on_locale_changed(_new_locale: String) -> void:
+	_apply_static_texts()
+	if visible:
+		_setup_for_type(game_over_type)
+
+
+func _apply_static_texts() -> void:
+	if restart_button:
+		restart_button.text = LocalizationManager.tr("ui.game_over.button.restart")
+	if continue_button:
+		continue_button.text = LocalizationManager.tr("ui.game_over.button.continue")
+	if menu_button:
+		menu_button.text = LocalizationManager.tr("ui.game_over.button.menu")

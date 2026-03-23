@@ -1,0 +1,149 @@
+# English translations for DreamerHeroines
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+
+msgid "weapon.rifle_basic.name"
+msgstr "Basic Rifle"
+
+msgid "weapon.rifle_basic.description"
+msgstr "Standard assault rifle with balanced damage and fire rate"
+
+msgid "weapon.shotgun_basic.name"
+msgstr "Basic Shotgun"
+
+msgid "weapon.shotgun_basic.description"
+msgstr "High damage at close range, severe falloff at distance"
+
+msgid "weapon.smg_basic.name"
+msgstr "Basic SMG"
+
+msgid "weapon.smg_basic.description"
+msgstr "Very high fire rate, low damage per shot, good for close range"
+
+msgid "weapon.sniper_basic.name"
+msgstr "Basic Sniper"
+
+msgid "weapon.sniper_basic.description"
+msgstr "High damage, precision, but extremely slow fire rate"
+
+msgid "ui.main_menu.button.continue"
+msgstr "Continue"
+
+msgid "ui.main_menu.button.new_game"
+msgstr "New Game"
+
+msgid "ui.main_menu.button.load_game"
+msgstr "Load Game"
+
+msgid "ui.main_menu.button.settings"
+msgstr "Settings"
+
+msgid "ui.main_menu.button.credits"
+msgstr "Credits"
+
+msgid "ui.main_menu.button.quit"
+msgstr "Quit"
+
+msgid "ui.main_menu.button.back"
+msgstr "Back"
+
+msgid "ui.main_menu.window_mode.0"
+msgstr "Windowed"
+
+msgid "ui.main_menu.window_mode.1"
+msgstr "Fullscreen"
+
+msgid "ui.main_menu.window_mode.2"
+msgstr "Borderless"
+
+msgid "ui.main_menu.settings.vsync"
+msgstr "VSync"
+
+msgid "ui.main_menu.dialog.new_game_overwrite.title"
+msgstr "A New Beginning"
+
+msgid "ui.main_menu.dialog.new_game_overwrite.text"
+msgstr "Starting a new game will overwrite existing save data.\nContinue?"
+
+msgid "ui.main_menu.dialog.delete_save.title"
+msgstr "Delete Save"
+
+msgid "ui.main_menu.dialog.delete_save.text"
+msgstr "Are you sure you want to delete save slot {slot}?\nThis action cannot be undone."
+
+msgid "ui.main_menu.dialog.new_game_slot.title"
+msgstr "Start New Game"
+
+msgid "ui.main_menu.dialog.new_game_slot.text"
+msgstr "Start a new game in slot {slot}?"
+
+msgid "ui.save_slot.slot_number"
+msgstr "Slot {slot}"
+
+msgid "ui.save_slot.empty"
+msgstr "Empty Slot"
+
+msgid "ui.save_slot.unknown_level"
+msgstr "Unknown Level"
+
+msgid "ui.save_slot.play_time"
+msgstr "Play Time: {time}"
+
+msgid "ui.save_slot.button.start_game"
+msgstr "Start Game"
+
+msgid "ui.save_slot.button.load"
+msgstr "Load"
+
+msgid "ui.save_slot.time.hours_minutes"
+msgstr "{hours}h {minutes}m"
+
+msgid "ui.save_slot.time.minutes_seconds"
+msgstr "{minutes}m {seconds}s"
+
+msgid "ui.save_slot.time.seconds"
+msgstr "{seconds}s"
+
+msgid "ui.save_slot.time.minutes"
+msgstr "{minutes}m"
+
+msgid "ui.game_over.title.victory"
+msgstr "VICTORY"
+
+msgid "ui.game_over.title.defeat"
+msgstr "DEFEAT"
+
+msgid "ui.game_over.title.timeout"
+msgstr "TIME'S UP"
+
+msgid "ui.game_over.subtitle.victory"
+msgstr "Mission Complete!"
+
+msgid "ui.game_over.subtitle.defeat"
+msgstr "Mission Failed"
+
+msgid "ui.game_over.subtitle.timeout"
+msgstr "Time Expired"
+
+msgid "ui.game_over.stats.score"
+msgstr "Final Score: {value}"
+
+msgid "ui.game_over.stats.kills"
+msgstr "Kills: {value}"
+
+msgid "ui.game_over.stats.time"
+msgstr "Time: {value}"
+
+msgid "ui.game_over.stats.accuracy"
+msgstr "Accuracy: {value}%"
+
+msgid "ui.game_over.button.restart"
+msgstr "Restart"
+
+msgid "ui.game_over.button.continue"
+msgstr "Continue"
+
+msgid "ui.game_over.button.menu"
+msgstr "Main Menu"

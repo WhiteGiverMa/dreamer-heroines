@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WeaponStats" load_steps=2 format=3 uid="uid://shotgun_stats_001"]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_stats.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+weapon_id = "shotgun_basic"
+weapon_name = "shotgun_basic"
+description = "近距离高伤害霰弹枪"
+damage = 12.0
+fire_rate = 0.8
+reload_time = 2.5
+magazine_size = 8
+max_ammo = 32
+projectile_speed = 600.0
+max_range = 400.0
+spread = 0.0
+is_automatic = false
+recoil_amount = 15.0
+screen_shake_amount = 0.6
+muzzle_flash_effect = "shotgun"
+shell_casing_scene = null
+pierce_count = 0
+use_ammo_system = true
+pellet_count = 8
+pellet_spread = 15.0

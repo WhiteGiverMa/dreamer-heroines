@@ -30,6 +30,17 @@ extends Resource
 @export var pierce_count: int = 0  # 穿透次数，0表示不穿透
 @export var use_ammo_system: bool = true  # true=玩家武器，false=敌人无限弹药
 
-
 func _init() -> void:
 	resource_name = "WeaponStats"
+
+
+## 获取武器的本地化显示名称
+## @return: 本地化后的武器名称
+func get_display_name() -> String:
+	return LocalizationManager.tr("weapon." + weapon_name + ".name")
+
+
+## 获取武器的本地化显示描述
+## @return: 本地化后的武器描述
+func get_display_description() -> String:
+	return LocalizationManager.tr("weapon." + weapon_name + ".description")

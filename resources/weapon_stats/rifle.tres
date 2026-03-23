@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WeaponStats" load_steps=2 format=3 uid="uid://rifle_stats_001"]
+
+[ext_resource type="Script" path="res://src/weapons/weapon_stats.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+weapon_id = "rifle_basic"
+weapon_name = "rifle_basic"
+description = "标准军用步枪，平衡的伤害和射速"
+damage = 15.0
+fire_rate = 0.1
+reload_time = 1.5
+magazine_size = 30
+max_ammo = 120
+projectile_speed = 800.0
+max_range = 1000.0
+spread = 2.0
+is_automatic = true
+recoil_amount = 5.0
+screen_shake_amount = 0.3
+muzzle_flash_effect = "rifle"
+shell_casing_scene = null
+pierce_count = 0
+use_ammo_system = true
+pellet_count = 1
+pellet_spread = 0.0
