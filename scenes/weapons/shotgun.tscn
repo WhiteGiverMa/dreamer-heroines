@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://shotgun12345"]
+[gd_scene load_steps=5 format=3 uid="uid://shotgun12345"]
 
-[ext_resource type="Script" path="res://src/weapons/shotgun.gd" id="1_shotgun"]
+[ext_resource type="Script" path="res://src/weapons/shotgun_weapon.gd" id="1_shotgun"]
+[ext_resource type="Resource" path="res://resources/weapon_stats/shotgun.tres" id="2_stats"]
 
 [sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_shotgun"]
 size = Vector2(56, 16)
@@ -10,20 +11,7 @@ size = Vector2(10, 10)
 
 [node name="Shotgun" type="Node2D"]
 script = ExtResource("1_shotgun")
-weapon_name = "基础霰弹枪"
-damage = 12
-fire_rate = 0.8
-reload_time = 2.5
-magazine_size = 6
-max_ammo = 60
-projectile_speed = 900.0
-max_range = 800.0
-spread = 0.0
-is_automatic = false
-recoil_amount = 8.0
-screen_shake_amount = 0.5
-pellet_count = 8
-pellet_spread = 15.0
+stats = ExtResource("2_stats")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = SubResource("PlaceholderTexture2D_shotgun")

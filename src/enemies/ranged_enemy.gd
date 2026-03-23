@@ -11,13 +11,14 @@ extends EnemyBase
 @export var projectile_speed: float = 600.0
 @export var aim_time: float = 0.5
 
+@export_group("Weapon Loadout")
+@export var initial_weapons: Array[PackedScene] = []  # 武器配置（Inspector）
+
 var is_aiming: bool = false
 var aim_timer: float = 0.0
 
 @onready var muzzle: Marker2D = $Muzzle
 @onready var aim_line: Line2D = $AimLine
-# Use untyped to avoid circular dependency with Weapon class
-@onready var weapon = $WeaponPivot/Weapon if has_node("WeaponPivot/Weapon") else null
 
 func _ready() -> void:
 	# 从配置加载属性
@@ -29,11 +30,8 @@ func _ready() -> void:
 	# 设置远程敌人特性
 	can_shoot = true
 	
-	# 初始化武器组件
-	if weapon:
-		equip_weapon(weapon)
-		if weapon.stats:
-			weapon.stats.use_ammo_system = false
+	# 初始化武器配置
+	_initialize_weapon_loadout()
 	
 	# 隐藏瞄准线
 	if aim_line:
@@ -41,23 +39,56 @@ func _ready() -> void:
 	
 	print("RangedEnemy initialized")
 
+
+func _initialize_weapon_loadout() -> void:
+	"""Initialize weapons from inspector or scene hierarchy."""
+	# First, try to load from inspector config
+	for weapon_scene in initial_weapons:
+		if weapon_scene:
+			add_weapon(weapon_scene)
+
+	# If no weapons from inspector, check for WeaponPivot/Weapon in scene
+	if weapons.is_empty():
+		var scene_weapon = get_node_or_null("WeaponPivot/Weapon")
+		if scene_weapon:
+			# Find weapon child
+			for child in scene_weapon.get_children():
+				if child.has_signal("shot_fired"):
+					equip_weapon(child)
+					break
+
+	# Disable ammo system for enemy weapons
+	if equipped_weapon and equipped_weapon.stats:
+		equipped_weapon.stats.use_ammo_system = false
+
 func _load_enemy_config() -> void:
 	var config = _get_enemy_config()
-	
-	max_health = config.get("max_health", 40)
-	move_speed = config.get("move_speed", 120.0)
-	jump_velocity = config.get("jump_velocity", -350.0)
-	detection_range = config.get("detection_range", 600.0)
-	attack_range = config.get("attack_range", 500.0)
-	attack_damage = config.get("attack_damage", 15)
-	attack_cooldown = config.get("attack_cooldown", 1.5)
-	patrol_distance = config.get("patrol_distance", 200.0)
-	patrol_wait_time = config.get("patrol_wait_time", 2.0)
-	
-	preferred_distance = config.get("preferred_distance", 300.0)
-	retreat_distance = config.get("retreat_distance", 150.0)
-	projectile_speed = config.get("projectile_speed", 600.0)
-	aim_time = config.get("aim_time", 0.5)
+
+	# JSON values are nested in { "value": x } structure
+	max_health = _get_config_value(config, "max_health", 40)
+	move_speed = _get_config_value(config, "move_speed", 120.0)
+	jump_velocity = _get_config_value(config, "jump_velocity", -350.0)
+	detection_range = _get_config_value(config, "detection_range", 600.0)
+	attack_range = _get_config_value(config, "attack_range", 500.0)
+	attack_damage = _get_config_value(config, "attack_damage", 15)
+	attack_cooldown = _get_config_value(config, "attack_cooldown", 1.5)
+	patrol_distance = _get_config_value(config, "patrol_distance", 200.0)
+	patrol_wait_time = config.get("patrol_wait_time", 2.0)  # Not in JSON, use default
+
+	preferred_distance = _get_config_value(config, "preferred_range", 300.0)  # JSON uses "preferred_range"
+	retreat_distance = config.get("retreat_distance", 150.0)  # Not in JSON, use default
+	projectile_speed = _get_config_value(config, "projectile_speed", 600.0)
+	aim_time = config.get("aim_time", 0.5)  # Not in JSON, use default
+
+
+func _get_config_value(config: Dictionary, key: String, default) -> Variant:
+	"""Extract value from nested JSON structure: { "value": x }"""
+	if config.has(key):
+		var entry = config[key]
+		if entry is Dictionary and entry.has("value"):
+			return entry["value"]
+		return entry
+	return default
 
 func _get_enemy_config() -> Dictionary:
 	var file_path = "res://config/enemy_stats.json"
@@ -67,8 +98,8 @@ func _get_enemy_config() -> Dictionary:
 		file.close()
 		
 		var data = JSON.parse_string(json)
-		if data and data.has("ranged"):
-			return data["ranged"]
+		if data and data.has("ranged_basic"):
+			return data["ranged_basic"]
 	
 	# 默认配置
 	return {
@@ -93,15 +124,18 @@ func _state_chase(delta: float) -> void:
 		change_state(State.PATROL)
 		player_lost.emit()
 		return
-	
+
 	var distance_to_player = global_position.distance_to(player.global_position)
 	var direction_to_player = sign(player.global_position.x - global_position.x)
-	
+
+	# AI weapon switching based on distance
+	_select_weapon_for_range(distance_to_player)
+
 	# 检查是否在攻击范围内
 	if distance_to_player <= attack_range and can_attack and not is_aiming:
 		change_state(State.ATTACK)
 		return
-	
+
 	# 距离控制
 	if distance_to_player < retreat_distance:
 		# 太近了，撤退
@@ -119,6 +153,25 @@ func _state_chase(delta: float) -> void:
 		# 尝试攻击
 		if can_attack and distance_to_player <= attack_range:
 			change_state(State.ATTACK)
+
+
+func _select_weapon_for_range(distance: float) -> void:
+	"""Switch weapon based on distance to player."""
+	if weapons.size() <= 1:
+		return
+
+	# Find best weapon for current distance
+	for i in range(weapons.size()):
+		var w = weapons[i]
+		# Check if weapon has stats with pellet_count
+		if w and w.stats:
+			# Shotgun for close range, rifle for far
+			if distance < 150.0 and w.stats.pellet_count > 1:
+				switch_weapon_to(i)
+				return
+			elif distance >= 150.0 and w.stats.pellet_count == 1:
+				switch_weapon_to(i)
+				return
 
 func _state_attack(delta: float) -> void:
 	if not player:
@@ -185,43 +238,13 @@ func _fire_projectile() -> void:
 	
 	AudioManager.play_sfx("enemy_shoot")
 	
-	# 使用武器组件或回退到传统方式
+	# Use weapon component only
 	if equipped_weapon:
 		var muzzle_pos = muzzle.global_position if muzzle else global_position
 		var aim_dir = (player.global_position - muzzle_pos).normalized()
 		try_shoot_weapon(muzzle_pos, aim_dir)
 	else:
-		# 回退：直接创建投射物
-		var projectile = _create_projectile()
-		if projectile:
-			get_tree().current_scene.add_child(projectile)
-
-func _create_projectile() -> Node:
-	var muzzle_pos = muzzle.global_position if muzzle else global_position
-	var aim_direction = (player.global_position - muzzle_pos).normalized()
-	return _create_projectile_at(muzzle_pos, aim_direction)
-
-
-func _create_projectile_at(spawn_pos: Vector2, direction: Vector2) -> Node:
-	var scene = projectile_scene
-	if not scene:
-		scene = load("res://scenes/weapons/projectile.tscn")
-	
-	if not scene:
-		return null
-	
-	var projectile = scene.instantiate()
-	
-	# 添加一点随机散布
-	var spread_angle = randf_range(-5.0, 5.0)
-	var final_dir = direction.rotated(deg_to_rad(spread_angle))
-	
-	projectile.global_position = spawn_pos
-	projectile.direction = final_dir
-	projectile.speed = projectile_speed
-	projectile.damage = attack_damage
-	
-	return projectile
+		push_warning("RangedEnemy: No weapon equipped, cannot fire")
 
 func _perform_attack() -> void:
 	# 远程敌人使用射击而非近战
@@ -269,8 +292,5 @@ func get_enemy_type() -> String:
 
 # === Weapon Integration ===
 
-func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction: String) -> void:
-	# 武器发射信号回调 - 创建投射物
-	var projectile = _create_projectile_at(pos, dir)
-	if projectile:
-		get_tree().current_scene.add_child(projectile)
+# Use parent's _on_weapon_shot_fired from EnemyBase which uses ProjectileSpawner
+# No override needed - weapons handle spread internally

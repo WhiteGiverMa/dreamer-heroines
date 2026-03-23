@@ -168,6 +168,11 @@ libraries = {
 [node name="Muzzle" type="Marker2D" parent="."]
 position = Vector2(20, -35)
 
+[node name="WeaponPivot" type="Marker2D" parent="."]
+position = Vector2(20, -35)
+
+[node name="Weapon" type="Node2D" parent="WeaponPivot"]
+
 [node name="AimLine" type="Line2D" parent="."]
 points = PackedVector2Array(0, 0, 100, 0)
 width = 2.0

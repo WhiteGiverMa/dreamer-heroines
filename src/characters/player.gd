@@ -136,8 +136,6 @@ func _initialize_weapons() -> void:
 			# 检测武器类型并打印信息
 			if rifle is Weapon:
 				print("Player equipped Rifle (Weapon component) with stats: %s" % rifle.stats.weapon_name if rifle.stats else "unknown")
-			elif rifle is WeaponBase:
-				print("Player equipped Rifle (WeaponBase) with %d damage, %.2f fire_rate" % [rifle.damage, rifle.fire_rate])
 		else:
 			push_error("Weapon container not found!")
 	else:
@@ -286,15 +284,11 @@ func _handle_shooting() -> void:
 	
 	var is_pressed = EnhancedInput.instance.is_action_pressed(shoot_action)
 	if is_pressed:
-		# 根据武器类型调用不同的射击方法
-		if current_weapon is Weapon:
-			# 新 Weapon 组件：传递枪口位置和瞄准方向
+		# 使用 Weapon 组件：传递枪口位置和瞄准方向
+		if current_weapon:
 			var muzzle_pos := get_muzzle_position()
 			var aim_dir := get_aim_direction()
 			current_weapon.try_shoot(muzzle_pos, aim_dir)
-		elif current_weapon is WeaponBase:
-			# 旧 WeaponBase：无参数调用
-			current_weapon.try_shoot()
 
 	
 	if EnhancedInput.instance.is_action_just_pressed(reload_action) and current_weapon:
@@ -324,16 +318,14 @@ func _equip_weapon(index: int) -> void:
 			current_weapon.reload_started.disconnect(_on_weapon_reload_started)
 		if current_weapon.has_signal("reload_finished"):
 			current_weapon.reload_finished.disconnect(_on_weapon_reload_finished)
-		# 断开新 Weapon 组件的信号
-		if current_weapon is Weapon:
-			if current_weapon.has_signal("shot_fired"):
-				current_weapon.shot_fired.disconnect(_on_weapon_shot_fired)
+		if current_weapon.has_signal("shot_fired"):
+			current_weapon.shot_fired.disconnect(_on_weapon_shot_fired)
 		current_weapon.unequip()
 	
 	current_weapon = weapons[index]
 	current_weapon.equip(self)
 	
-	# 连接武器信号（兼容 WeaponBase 和 Weapon）
+	# 连接武器信号
 	if current_weapon.has_signal("ammo_changed"):
 		current_weapon.ammo_changed.connect(_on_weapon_ammo_changed)
 	if current_weapon.has_signal("reload_started"):
@@ -341,15 +333,20 @@ func _equip_weapon(index: int) -> void:
 	if current_weapon.has_signal("reload_finished"):
 		current_weapon.reload_finished.connect(_on_weapon_reload_finished)
 	
-	# 如果是新的 Weapon 组件，设置阵营并连接 shot_fired 信号
-	if current_weapon is Weapon:
-		current_weapon.faction = "player"
-		_setup_weapon_signals(current_weapon)
+	# 设置阵营并连接 shot_fired 信号
+	current_weapon.faction_type = Faction.Type.PLAYER
+	_setup_weapon_signals(current_weapon)
 	
-	weapon_changed.emit(current_weapon.weapon_name if current_weapon is WeaponBase else current_weapon.stats.weapon_name if current_weapon.stats else "Unknown")
+	var weapon_name := "Unknown"
+	if current_weapon.stats:
+		weapon_name = current_weapon.stats.weapon_name
+	weapon_changed.emit(weapon_name)
 	
 	# 立即更新弹药显示
-	_on_weapon_ammo_changed(current_weapon.current_ammo_in_mag, current_weapon.magazine_size if current_weapon is WeaponBase else current_weapon.stats.magazine_size if current_weapon.stats else 0)
+	var mag_size := 0
+	if current_weapon.stats:
+		mag_size = current_weapon.stats.magazine_size
+	_on_weapon_ammo_changed(current_weapon.current_ammo_in_mag, mag_size)
 
 
 func _setup_weapon_signals(weapon: Weapon) -> void:
@@ -358,14 +355,14 @@ func _setup_weapon_signals(weapon: Weapon) -> void:
 		weapon.shot_fired.connect(_on_weapon_shot_fired)
 
 
-func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction: String) -> void:
+func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction_type: int) -> void:
 	"""处理 Weapon 组件的射击信号"""
 	# 生成玩家投射物
-	if ProjectileSpawner and current_weapon is Weapon and current_weapon.stats:
-		ProjectileSpawner.spawn_player_projectile(pos, dir, current_weapon.stats, self)
+	if ProjectileSpawner and current_weapon and current_weapon.stats:
+		ProjectileSpawner.spawn_projectile(pos, dir, current_weapon.stats, faction_type, self)
 	
 	# 应用相机震动（玩家特有）
-	if camera and current_weapon is Weapon and current_weapon.stats:
+	if camera and current_weapon and current_weapon.stats:
 		camera.apply_shake(current_weapon.stats.screen_shake_amount)
 
 
@@ -376,8 +373,8 @@ func _on_weapon_ammo_changed(current: int, max: int) -> void:
 
 func _on_weapon_reload_started() -> void:
 	# 通知 HUD 显示换弹进度
-	if GameManager.hud:
-		GameManager.hud.start_reload_progress(current_weapon.reload_time)
+	if GameManager.hud and current_weapon and current_weapon.stats:
+		GameManager.hud.start_reload_progress(current_weapon.stats.reload_time)
 
 
 func _on_weapon_reload_finished() -> void:

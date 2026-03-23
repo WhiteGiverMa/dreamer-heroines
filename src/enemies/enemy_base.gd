@@ -36,6 +36,8 @@ var can_attack: bool = true
 
 # Weapon support (use untyped to avoid circular dependency)
 var equipped_weapon = null
+var weapons: Array = []
+var current_weapon_index: int = 0
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
@@ -283,15 +285,62 @@ func _update_animation() -> void:
 
 # === Weapon Support Methods ===
 
+func add_weapon(weapon_scene: PackedScene) -> void:
+	"""Add a weapon to the enemy's weapon array and equip it if first."""
+	var weapon = weapon_scene.instantiate()
+	weapons.append(weapon)
+
+	# Add to WeaponPivot if exists
+	var pivot = get_node_or_null("WeaponPivot")
+	if pivot:
+		var weapon_container = pivot.get_node_or_null("Weapon")
+		if weapon_container:
+			weapon_container.add_child(weapon)
+		else:
+			pivot.add_child(weapon)
+	else:
+		add_child(weapon)
+
+	# Equip if first weapon
+	if weapons.size() == 1:
+		_equip_weapon_at_index(0)
+
+
+func switch_weapon_to(index: int) -> void:
+	"""Switch to weapon at specified index."""
+	if index < 0 or index >= weapons.size():
+		return
+	_equip_weapon_at_index(index)
+
+
+func _equip_weapon_at_index(index: int) -> void:
+	"""Internal method to equip weapon at index."""
+	# Disconnect previous weapon
+	if equipped_weapon and equipped_weapon.has_signal("shot_fired"):
+		if equipped_weapon.shot_fired.is_connected(_on_weapon_shot_fired):
+			equipped_weapon.shot_fired.disconnect(_on_weapon_shot_fired)
+		equipped_weapon.visible = false
+
+	current_weapon_index = index
+	equipped_weapon = weapons[index]
+
+	# Setup new weapon
+	equipped_weapon.visible = true
+	equipped_weapon.faction_type = Faction.Type.ENEMY
+	equipped_weapon.shot_fired.connect(_on_weapon_shot_fired)
+
+
 func equip_weapon(weapon) -> void:
-	equipped_weapon = weapon
-	weapon.faction = "enemy"
-	weapon.shot_fired.connect(_on_weapon_shot_fired)
+	"""Legacy method - add weapon to array and equip it."""
+	# If weapon not in array, add it
+	if weapon not in weapons:
+		weapons.append(weapon)
+	_equip_weapon_at_index(weapons.find(weapon))
 
 
-func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction: String) -> void:
+func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction_type: int) -> void:
 	if equipped_weapon and equipped_weapon.stats:
-		ProjectileSpawner.spawn_enemy_projectile(pos, dir, equipped_weapon.stats, self)
+		ProjectileSpawner.spawn_projectile(pos, dir, equipped_weapon.stats, faction_type, self)
 
 
 func try_shoot_weapon(muzzle_pos: Vector2, aim_dir: Vector2) -> bool:

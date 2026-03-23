@@ -2,6 +2,7 @@ extends "res://src/base/game_system.gd"
 
 # 预加载 WeaponStats 类型（autoload 加载顺序问题）
 const WeaponStatsClass = preload("res://src/weapons/weapon_stats.gd")
+const ProjectileScript = preload("res://src/weapons/projectile.gd")
 
 # ProjectileSpawner - 投射物生成器
 # 统一管理游戏中所有投射物的创建、缓存和回收
@@ -29,11 +30,31 @@ func _ready() -> void:
 
 # 初始化方法 - 由 BootSequence 调用
 func initialize() -> void:
+	if is_initialized:
+		return
+
 	print("[ProjectileSpawner] 开始初始化...")
 	_preload_projectile_scene()
 	_preload_pool()
 	print("[ProjectileSpawner] 初始化完成")
 	_mark_ready()
+
+
+func _ensure_projectile_script(projectile: Node) -> bool:
+	if not projectile:
+		return false
+
+	if projectile.has_method("fire"):
+		return true
+
+	if ProjectileScript:
+		projectile.set_script(ProjectileScript)
+
+	if projectile.has_method("fire"):
+		return true
+
+	push_warning("[ProjectileSpawner] Projectile 脚本绑定失败，仍缺少 fire()")
+	return false
 
 # 预加载投射物场景
 func _preload_projectile_scene() -> void:
@@ -51,38 +72,53 @@ func _preload_pool() -> void:
 	var pool: Array = []
 	for i in range(preload_count):
 		var projectile = _cached_scene.instantiate()
-		projectile.visible = false
-		projectile.process_mode = Node.PROCESS_MODE_DISABLED
+		# Godot 4.x 行为：从 .tscn instantiate 时脚本可能未自动加载
+		if not _ensure_projectile_script(projectile):
+			if is_instance_valid(projectile):
+				projectile.queue_free()
+			continue
+
+		if projectile.has_method("deactivate_for_pool"):
+			projectile.deactivate_for_pool()
+		else:
+			projectile.visible = false
+			projectile.process_mode = Node.PROCESS_MODE_DISABLED
 		pool.append(projectile)
 		add_child(projectile)
 	
 	_projectile_pools[PROJECTILE_SCENE] = pool
-	print("[ProjectileSpawner] 对象池预填充完成，数量: %d" % preload_count)
+	print("[ProjectileSpawner] 对象池预填充完成，数量: %d" % pool.size())
 
 # 生成投射物（主要接口）
 # @param position: 生成位置
 # @param direction: 飞行方向（归一化向量）
 # @param stats: 武器属性数据
-# @param faction: 阵营（"player" 或 "enemy"）
-# @param owner: 发射者节点（可选）
+# @param faction_type: 阵营类型（Faction.Type 枚举值）
+# @param owner_node: 发射者节点（可选）
 # @return: 生成的投射物实例
 func spawn_projectile(
 	position: Vector2,
 	direction: Vector2,
 	stats: WeaponStatsClass,
-	faction: String,
+	faction_type: int,
 	owner_node: Node2D = null
 ) -> Node:
+	if not is_initialized:
+		push_warning("[ProjectileSpawner] spawn_projectile() 在 initialize() 前被调用，执行懒初始化")
+		initialize()
+
 	var projectile = _get_from_pool(PROJECTILE_SCENE)
 	
 	if not projectile:
 		push_warning("[ProjectileSpawner] 无法获取投射物实例")
 		return null
-	
-	# 设置基本属性
+
+	if not _ensure_projectile_script(projectile):
+		push_warning("[ProjectileSpawner] 投射物缺少脚本，取消本次生成")
+		return null
+
+	# 统一激活入口：优先使用 projectile.fire()（对象池重置逻辑在 projectile 内部）
 	projectile.global_position = position
-	
-	# 设置投射物数据（假设投射物有这些属性）
 	if "direction" in projectile:
 		projectile.direction = direction
 	if "speed" in projectile and stats:
@@ -91,21 +127,18 @@ func spawn_projectile(
 		projectile.damage = stats.damage if "damage" in stats else 10.0
 	if "lifetime" in projectile and stats:
 		projectile.lifetime = stats.projectile_lifetime if "projectile_lifetime" in stats else 2.0
-	if "faction" in projectile:
-		projectile.faction = faction
+	if "faction_type" in projectile:
+		projectile.faction_type = faction_type
+	elif "faction" in projectile:
+		projectile.faction = Faction.type_to_string(faction_type)
 	if "owner_node" in projectile:
 		projectile.owner_node = owner_node
-	
-	# 设置旋转（朝向飞行方向）
-	projectile.rotation = direction.angle()
-	
-	# 启用处理
-	projectile.visible = true
-	projectile.process_mode = Node.PROCESS_MODE_INHERIT
-	
-	# 触发发射信号或方法
+
 	if projectile.has_method("fire"):
 		projectile.fire()
+	else:
+		push_warning("[ProjectileSpawner] Projectile does not have fire() method!")
+		return null
 	
 	return projectile
 
@@ -119,30 +152,87 @@ func _get_from_pool(scene_path: String) -> Node:
 	
 	var pool: Array = _projectile_pools[scene_path]
 	
-	# 查找可用的投射物（不可见且有效的）
-	for projectile in pool:
-		if is_instance_valid(projectile) and not projectile.visible:
-			# 重置状态
+	# 查找可用的投射物（使用明确生命周期判定）
+	var idx := 0
+	while idx < pool.size():
+		var projectile = pool[idx]
+		if not is_instance_valid(projectile):
+			pool.remove_at(idx)
+			continue
+
+		var is_available := false
+		if projectile.has_method("is_available_for_pool"):
+			is_available = projectile.is_available_for_pool()
+		else:
+			is_available = not projectile.visible
+
+		if not is_available:
+			idx += 1
+			continue
+
+		if not _ensure_projectile_script(projectile):
+			# 脚本修复失败：剔除脏实例，避免污染对象池
+			pool.remove_at(idx)
+			projectile.queue_free()
+			continue
+
+		if projectile.has_method("deactivate_for_pool"):
+			projectile.deactivate_for_pool()
+		else:
 			projectile.visible = false
 			projectile.process_mode = Node.PROCESS_MODE_DISABLED
-			return projectile
+		return projectile
 	
 	# 池中没有可用投射物，创建新的
+	if scene_path == PROJECTILE_SCENE and not _cached_scene:
+		_preload_projectile_scene()
+
 	var scene = _cached_scene if scene_path == PROJECTILE_SCENE else load(scene_path)
 	if not scene:
 		push_warning("[ProjectileSpawner] 无法加载场景: " + scene_path)
 		return null
 	
 	var new_projectile = scene.instantiate()
+	if not _ensure_projectile_script(new_projectile):
+		new_projectile.queue_free()
+		push_warning("[ProjectileSpawner] 新建投射物脚本绑定失败，无法加入对象池")
+		return null
+
+	if new_projectile.has_method("deactivate_for_pool"):
+		new_projectile.deactivate_for_pool()
+	else:
+		new_projectile.visible = false
+		new_projectile.process_mode = Node.PROCESS_MODE_DISABLED
+
 	add_child(new_projectile)
 	pool.append(new_projectile)
 	
 	# 限制池大小
 	if pool.size() > max_pool_size:
-		var old = pool.pop_front()
-		if is_instance_valid(old):
-			old.queue_free()
-		print("[ProjectileSpawner] 对象池达到上限，清理旧实例")
+		var removed := false
+		for i in range(pool.size()):
+			var candidate = pool[i]
+			if candidate == new_projectile:
+				continue
+			if not is_instance_valid(candidate):
+				pool.remove_at(i)
+				removed = true
+				break
+			var candidate_active := false
+			if candidate.has_method("is_pool_active"):
+				candidate_active = candidate.is_pool_active()
+			else:
+				candidate_active = candidate.visible
+			if not candidate_active:
+				pool.remove_at(i)
+				candidate.queue_free()
+				removed = true
+				break
+
+		if not removed:
+			push_warning("[ProjectileSpawner] 对象池达到上限，但当前实例均处于激活态，跳过清理")
+		else:
+			print("[ProjectileSpawner] 对象池达到上限，清理旧实例")
 	
 	return new_projectile
 
@@ -152,10 +242,19 @@ func _get_from_pool(scene_path: String) -> Node:
 func return_to_pool(projectile: Node, scene_path: String = PROJECTILE_SCENE) -> void:
 	if not projectile:
 		return
+	if not is_instance_valid(projectile):
+		return
 	
 	# 隐藏并禁用处理
-	projectile.visible = false
-	projectile.process_mode = Node.PROCESS_MODE_DISABLED
+	if projectile.has_method("deactivate_for_pool"):
+		if projectile.has_method("is_pool_active") and projectile.is_pool_active():
+			projectile.deactivate_for_pool()
+	else:
+		projectile.visible = false
+		projectile.process_mode = Node.PROCESS_MODE_DISABLED
+		if projectile is CollisionObject2D:
+			projectile.set_deferred("monitoring", false)
+			projectile.set_deferred("monitorable", false)
 	
 	# 重置位置到安全区域（可选）
 	projectile.global_position = Vector2(-10000, -10000)
@@ -191,7 +290,12 @@ func get_pool_info() -> Dictionary:
 		var pool: Array = _projectile_pools[pool_name]
 		var active_count = 0
 		for p in pool:
-			if is_instance_valid(p) and p.visible:
+			if not is_instance_valid(p):
+				continue
+			if p.has_method("is_pool_active"):
+				if p.is_pool_active():
+					active_count += 1
+			elif p.visible:
 				active_count += 1
 		
 		info["pools"][pool_name] = {
@@ -209,7 +313,7 @@ func spawn_player_projectile(
 	stats: WeaponStatsClass,
 	owner_node: Node2D = null
 ) -> Node:
-	return spawn_projectile(position, direction, stats, "player", owner_node)
+	return spawn_projectile(position, direction, stats, Faction.Type.PLAYER, owner_node)
 
 # 快捷方法：生成敌人投射物
 func spawn_enemy_projectile(
@@ -218,4 +322,4 @@ func spawn_enemy_projectile(
 	stats: WeaponStatsClass,
 	owner_node: Node2D = null
 ) -> Node:
-	return spawn_projectile(position, direction, stats, "enemy", owner_node)
+	return spawn_projectile(position, direction, stats, Faction.Type.ENEMY, owner_node)

@@ -15,15 +15,12 @@ static func _instrument(viewport:Viewport):
 	
 ## Catches unhandled input and forwards it to GUIDE
 func _unhandled_input(event:InputEvent):
-	if event is InputEventMouseButton:
-		print("[GUIDE _unhandled_input] Mouse button: button=%d, pressed=%s" % [event.button_index, event.pressed])
 	GUIDE.inject_input(event)
 
 ## ALSO catch input via _input as backup (some events may not reach _unhandled_input)
 func _input(event:InputEvent):
 	# Only process mouse button events that weren't handled elsewhere
 	if event is InputEventMouseButton:
-		print("[GUIDE _input] Mouse button: button=%d, pressed=%s" % [event.button_index, event.pressed])
 		# Forward to GUIDE directly (this ensures we get mouse events even if UI handles them)
 		GUIDE.inject_input(event)
 

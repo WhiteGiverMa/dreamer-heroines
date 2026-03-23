@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://rifle12345"]
+[gd_scene load_steps=5 format=3 uid="uid://rifle12345"]
 
-[ext_resource type="Script" path="res://src/weapons/rifle.gd" id="1_rifle"]
+[ext_resource type="Script" path="res://src/weapons/rifle_weapon.gd" id="1_rifle"]
+[ext_resource type="Resource" path="res://resources/weapon_stats/rifle.tres" id="2_stats"]
 
 [sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_rifle"]
 size = Vector2(64, 20)
@@ -10,18 +11,7 @@ size = Vector2(10, 10)
 
 [node name="Rifle" type="Node2D"]
 script = ExtResource("1_rifle")
-weapon_name = "基础步枪"
-damage = 15
-fire_rate = 0.1
-reload_time = 2.0
-magazine_size = 30
-max_ammo = 300
-projectile_speed = 1200.0
-max_range = 1500.0
-spread = 3.0
-is_automatic = true
-recoil_amount = 3.0
-screen_shake_amount = 0.2
+stats = ExtResource("2_stats")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = SubResource("PlaceholderTexture2D_rifle")

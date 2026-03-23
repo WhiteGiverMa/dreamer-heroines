@@ -1,8 +1,9 @@
-[gd_scene load_steps=13 format=3 uid="uid://level12345"]
+[gd_scene load_steps=14 format=3 uid="uid://level12345"]
 
 [ext_resource type="Script" path="res://src/levels/level_manager.gd" id="1_level_manager"]
 [ext_resource type="PackedScene" uid="uid://meleeenemy12345" path="res://scenes/enemies/melee_enemy.tscn" id="2_melee_enemy"]
 [ext_resource type="PackedScene" uid="uid://rangedenemy12345" path="res://scenes/enemies/ranged_enemy.tscn" id="3_ranged_enemy"]
+[ext_resource type="PackedScene" uid="uid://player12345" path="res://scenes/player.tscn" id="4_player"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_ground"]
 normal = Vector2(0, -1)
@@ -119,6 +120,9 @@ blend_mode = 1
 [node name="SpawnPoints" type="Node2D" parent="."]
 
 [node name="PlayerSpawn" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(200, 900)
+
+[node name="Player" parent="." instance=ExtResource("4_player")]
 position = Vector2(200, 900)
 
 [node name="EnemySpawn1" type="Marker2D" parent="SpawnPoints"]
