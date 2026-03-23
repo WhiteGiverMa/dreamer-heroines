@@ -10,8 +10,8 @@ config_version=5
 
 [application]
 
-config/name="DreamerHeroines"
-config/description="2D横板射击游戏 - 战火英雄风格硬核射击"
+config/name="Dreamer Heroines"
+config/description="2D横板射击游戏 - 逐梦少女"
 config/version="0.1.0"
 config/tags=PackedStringArray("2d", "shooter", "platformer", "hardcore")
 run/main_scene="res://scenes/ui/main_menu.tscn"

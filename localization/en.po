@@ -1,4 +1,4 @@
-# English translations for DreamerHeroines
+# English translations for Dreamer Heroines
 msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -48,6 +48,18 @@ msgstr "Quit"
 
 msgid "ui.main_menu.button.back"
 msgstr "Back"
+
+msgid "ui.main_menu.title"
+msgstr "Dreamer Heroines"
+
+msgid "ui.main_menu.credits.text"
+msgstr "Game Design: Dreamer Heroines Team\nProgramming: Dreamer Heroines Team\nArt: Dreamer Heroines Team\nMusic: Dreamer Heroines Team\n\nSpecial Thanks:\n- Godot Engine\n- Community"
+
+msgid "ui.main_menu.panel.load_game.title"
+msgstr "Load Game"
+
+msgid "ui.main_menu.panel.credits.title"
+msgstr "Credits"
 
 msgid "ui.main_menu.window_mode.0"
 msgstr "Windowed"

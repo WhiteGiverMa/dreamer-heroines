@@ -1,4 +1,4 @@
-# 逐梦少女 (DreamerHeroines)
+# 逐梦少女 (Dreamer Heroines)
 
 > **引擎**: Godot 4.6.1  
 > **类型**: 2D横板射击  

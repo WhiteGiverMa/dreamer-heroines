@@ -143,6 +143,8 @@ func _auto_get_node_references() -> void:
 		vsync_check = get_node_or_null("SettingsPanel/VBoxContainer/VSyncCheck")
 	
 	# 其他
+	if not title_label:
+		title_label = get_node_or_null("TitleLabel")
 	if not version_label:
 		version_label = get_node_or_null("VersionLabel")
 	if not animation_player:
@@ -488,6 +490,9 @@ func _on_locale_changed(_new_locale: String) -> void:
 
 
 func _apply_localized_texts() -> void:
+	if title_label:
+		title_label.text = LocalizationManager.tr("ui.main_menu.title")
+
 	if continue_button:
 		continue_button.text = LocalizationManager.tr("ui.main_menu.button.continue")
 	if new_game_button:
@@ -515,9 +520,21 @@ func _apply_localized_texts() -> void:
 	if load_back:
 		load_back.text = LocalizationManager.tr("ui.main_menu.button.back")
 
+	var load_title: Label = get_node_or_null("LoadGamePanel/Title")
+	if load_title:
+		load_title.text = LocalizationManager.tr("ui.main_menu.panel.load_game.title")
+
+	var credits_title: Label = get_node_or_null("CreditsPanel/Title")
+	if credits_title:
+		credits_title.text = LocalizationManager.tr("ui.main_menu.panel.credits.title")
+
 	var credits_back = get_node_or_null("CreditsPanel/BackButton")
 	if credits_back:
 		credits_back.text = LocalizationManager.tr("ui.main_menu.button.back")
+
+	var credits_text: Label = get_node_or_null("CreditsPanel/CreditsText")
+	if credits_text:
+		credits_text.text = LocalizationManager.tr("ui.main_menu.credits.text")
 
 func _call_csharp_save_manager(method: String, args: Array = []) -> void:
 	"""调用 C# SaveManager 的方法"""

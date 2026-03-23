@@ -1,6 +1,6 @@
-# DreamerHeroines - MVP Checklist
+# Dreamer Heroines - MVP Checklist
 
-> **项目**: 战火英雄风格横板射击游戏  
+> **项目**: 逐梦少女（Dreamer Heroines）2D横板射击游戏
 > **引擎**: Godot 4.6.1  
 > **版本**: MVP 1.0  
 > **最后更新**: 2026-03-16

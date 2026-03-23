@@ -293,8 +293,11 @@ func _save_settings_to_file(settings: Dictionary) -> void:
 		var json = JSON.stringify(settings)
 		file.store_string(json)
 		file.close()
+		_migrate_legacy_save_data()
 
 func _load_settings_from_file() -> Dictionary:
+	_migrate_legacy_save_data()
+
 	var file_path = "user://settings.json"
 	
 	if not FileAccess.file_exists(file_path):
@@ -310,6 +313,51 @@ func _load_settings_from_file() -> Dictionary:
 			return settings
 	
 	return _get_default_settings()
+
+
+func _migrate_legacy_save_data() -> void:
+	var current_project_name: String = str(ProjectSettings.get_setting("application/config/name", ""))
+	if current_project_name != "Dreamer Heroines":
+		return
+
+	var app_data_dir := OS.get_data_dir()
+	if app_data_dir.is_empty():
+		return
+
+	var new_base := app_data_dir.path_join("Godot/app_userdata/Dreamer Heroines")
+	var old_base := app_data_dir.path_join("Godot/app_userdata/DreamerHeroines")
+
+	if new_base == old_base:
+		return
+
+	var old_settings_path := old_base.path_join("settings.json")
+	var old_saves_dir := old_base.path_join("saves")
+
+	if not FileAccess.file_exists(old_settings_path) and not DirAccess.dir_exists_absolute(old_saves_dir):
+		return
+
+	DirAccess.make_dir_recursive_absolute(new_base)
+
+	var marker_path := new_base.path_join("migration_from_dreamerheroines_legacy.done")
+	if FileAccess.file_exists(marker_path):
+		return
+
+	if not FileAccess.file_exists("user://settings.json") and FileAccess.file_exists(old_settings_path):
+		DirAccess.copy_absolute(old_settings_path, "user://settings.json")
+
+	if DirAccess.dir_exists_absolute(old_saves_dir):
+		DirAccess.make_dir_recursive_absolute("user://saves")
+		for slot in range(MAX_SLOTS):
+			var file_name := "save_%02d.sav" % slot
+			var old_slot_path := old_saves_dir.path_join(file_name)
+			var new_slot_path := "user://saves/%s" % file_name
+			if FileAccess.file_exists(old_slot_path) and not FileAccess.file_exists(new_slot_path):
+				DirAccess.copy_absolute(old_slot_path, new_slot_path)
+
+	var marker_file := FileAccess.open(marker_path, FileAccess.WRITE)
+	if marker_file:
+		marker_file.store_string("migrated")
+		marker_file.close()
 
 func _get_default_settings() -> Dictionary:
 	return {

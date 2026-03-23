@@ -32,7 +32,7 @@ offset_right = 200.0
 offset_bottom = 150.0
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 48
-text = "WAR HEROES"
+text = "Dreamer Heroines"
 horizontal_alignment = 1
 
 [node name="VersionLabel" type="Label" parent="."]
@@ -205,10 +205,10 @@ offset_right = 250.0
 offset_bottom = 150.0
 grow_horizontal = 2
 grow_vertical = 2
-text = "Game Design: War Heroes Team
-Programming: War Heroes Team
-Art: War Heroes Team
-Music: War Heroes Team
+text = "Game Design: Dreamer Heroines Team
+Programming: Dreamer Heroines Team
+Art: Dreamer Heroines Team
+Music: Dreamer Heroines Team
 
 Special Thanks:
 - Godot Engine

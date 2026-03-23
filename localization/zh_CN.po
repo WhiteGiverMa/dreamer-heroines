@@ -1,4 +1,4 @@
-# Chinese (Simplified) translations for DreamerHeroines
+# Chinese (Simplified) translations for 逐梦少女
 msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -48,6 +48,18 @@ msgstr "退出"
 
 msgid "ui.main_menu.button.back"
 msgstr "返回"
+
+msgid "ui.main_menu.title"
+msgstr "逐梦少女"
+
+msgid "ui.main_menu.credits.text"
+msgstr "游戏设计：逐梦少女团队\n程序开发：逐梦少女团队\n美术：逐梦少女团队\n音乐：逐梦少女团队\n\n特别鸣谢：\n- Godot Engine\n- Community"
+
+msgid "ui.main_menu.panel.load_game.title"
+msgstr "加载游戏"
+
+msgid "ui.main_menu.panel.credits.title"
+msgstr "制作人员"
 
 msgid "ui.main_menu.window_mode.0"
 msgstr "窗口模式"
