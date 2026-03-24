@@ -15,6 +15,7 @@ var max_sfx_players: int = 16
 
 var sound_library: Dictionary = {}
 var music_library: Dictionary = {}
+var _missing_audio_warned: Dictionary = {}
 
 var default_volumes: Dictionary = {
 	"Master": 1.0,
@@ -56,7 +57,7 @@ func _setup_default_bus_volumes():
 
 func play_sfx(sound_name: String, volume_db: float = 0.0, pitch_scale: float = 1.0) -> void:
 	if not sound_library.has(sound_name):
-		push_warning("Sound not found in library: " + sound_name)
+		_warn_missing_audio_once("sfx", sound_name)
 		return
 	
 	var stream = sound_library[sound_name]
@@ -70,7 +71,7 @@ func play_sfx(sound_name: String, volume_db: float = 0.0, pitch_scale: float = 1
 
 func play_music(music_name: String, fade_duration: float = 1.0, loop: bool = true) -> void:
 	if not music_library.has(music_name):
-		push_warning("Music not found in library: " + music_name)
+		_warn_missing_audio_once("music", music_name)
 		return
 	
 	var stream = music_library[music_name]
@@ -140,6 +141,18 @@ func _fade_music_in(duration: float) -> void:
 func _fade_music_out(duration: float) -> void:
 	var tween = create_tween()
 	tween.tween_property(music_player, "volume_db", -80.0, duration)
+
+func _warn_missing_audio_once(audio_type: String, audio_name: String) -> void:
+	var warn_key = "%s:%s" % [audio_type, audio_name]
+	if _missing_audio_warned.has(warn_key):
+		return
+
+	_missing_audio_warned[warn_key] = true
+	if audio_type == "music":
+		push_warning("Music not found in library (warn once): " + audio_name)
+		return
+
+	push_warning("Sound not found in library (warn once): " + audio_name)
 
 # 预加载常用音效
 func preload_common_sounds() -> void:

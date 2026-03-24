@@ -226,6 +226,7 @@ func update_spread(new_current_spread: float, new_base_spread: float) -> void:
 # ============================================
 
 ## 换弹开始回调
+@warning_ignore("unused_parameter")
 func _on_reload_started(_duration: float) -> void:
 	# Task 7: 设置换弹状态，仅在状态改变时重绘
 	if is_reloading:

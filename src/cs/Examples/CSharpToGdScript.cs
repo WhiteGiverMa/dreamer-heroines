@@ -293,23 +293,29 @@ namespace DreamerHeroines.Examples
         }
 
         // 信号回调方法
-        private void OnLevelStarted(int levelNumber)
+        private void OnLevelStarted(int _levelNumber)
         {
+            _ = _levelNumber;
             // Level started callback
         }
 
-        private void OnLevelCompleted(int levelNumber, float completionTime)
+        private void OnLevelCompleted(int _levelNumber, float _completionTime)
         {
+            _ = _levelNumber;
+            _ = _completionTime;
             // Level completed callback
         }
 
-        private void OnPlayerDied(Vector2 deathPosition)
+        private void OnPlayerDied(Vector2 _deathPosition)
         {
+            _ = _deathPosition;
             // Player died callback
         }
 
-        private void OnScoreChanged(int newScore, int delta)
+        private void OnScoreChanged(int _newScore, int _delta)
         {
+            _ = _newScore;
+            _ = _delta;
             // Score changed callback
         }
 

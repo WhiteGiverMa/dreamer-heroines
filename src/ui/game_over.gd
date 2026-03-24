@@ -174,7 +174,8 @@ func hide_game_over() -> void:
 	)
 
 
-func _on_locale_changed(_new_locale: String) -> void:
+@warning_ignore("unused_parameter")
+func _on_locale_changed(__new_locale: String) -> void:
 	_apply_static_texts()
 	if visible:
 		_setup_for_type(game_over_type)

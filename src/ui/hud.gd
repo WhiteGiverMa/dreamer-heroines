@@ -122,7 +122,7 @@ func _show_damage_feedback(damage_amount: int) -> void:
 func update_ammo(current: int, max: int, reserve: int = -1) -> void:
 	if ammo_label:
 		if reserve >= 0:
-			ammo_label.text = "%d / %d  [%d]" % [current, max, reserve]
+			ammo_label.text = "%d / %d (%d)" % [current, max, reserve]
 		else:
 			ammo_label.text = "%d / %d" % [current, max]
 		

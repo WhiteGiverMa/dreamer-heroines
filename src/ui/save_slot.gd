@@ -153,7 +153,8 @@ func _format_play_time(seconds: int) -> String:
 		return LocalizationManager.call("tr", "ui.save_slot.time.seconds", {"seconds": secs})
 
 
-func _on_locale_changed(_new_locale: String) -> void:
+@warning_ignore("unused_parameter")
+func _on_locale_changed(__new_locale: String) -> void:
 	if is_occupied:
 		_set_occupied_state(SaveManager.get_save_summary(slot_index))
 	else:

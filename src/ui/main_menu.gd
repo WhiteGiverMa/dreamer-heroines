@@ -485,7 +485,8 @@ func _save_current_settings() -> void:
 	SaveManager.save_settings(settings)
 
 
-func _on_locale_changed(_new_locale: String) -> void:
+@warning_ignore("unused_parameter")
+func _on_locale_changed(__new_locale: String) -> void:
 	_apply_localized_texts()
 
 

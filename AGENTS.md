@@ -234,4 +234,8 @@ godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -ginclude_subdirs -ge
 
 ## Git
 
-**频繁提交**: 每完成一个功能单元或修复一个bug立即提交
+**频繁提交：**
+
+- 改动 -> 验收
+  - 通过 -> *立即提交*
+  - 不通过 -> 返回*继续「改动 + 测试」*，直到通过后立即提交

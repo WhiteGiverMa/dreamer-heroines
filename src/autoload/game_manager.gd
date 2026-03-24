@@ -215,7 +215,9 @@ func register_hud(hud_instance: CanvasLayer) -> void:
 		var weapon = player_instance.get("current_weapon")
 		if weapon:
 			var current = weapon.current_ammo_in_mag if "current_ammo_in_mag" in weapon else 0
-			var max_val = weapon.magazine_size if "magazine_size" in weapon else 0
+			var max_val = 0
+			if "stats" in weapon and weapon.stats:
+				max_val = weapon.stats.magazine_size
 			var reserve = weapon.current_reserve_ammo if "current_reserve_ammo" in weapon else -1
 			hud.update_ammo(current, max_val, reserve)
 

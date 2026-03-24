@@ -100,12 +100,12 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_update_animation()
 
-func _handle_hover(delta: float) -> void:
+func _handle_hover(_delta: float) -> void:
 	# 悬停效果
 	var hover_offset = sin(hover_time * hover_frequency) * hover_amplitude
 	velocity.y = (base_y_position + hover_offset - global_position.y) * 5.0
 
-func _handle_dive(delta: float) -> void:
+func _handle_dive(_delta: float) -> void:
 	# 俯冲攻击
 	var dive_direction = (dive_target - global_position).normalized()
 	velocity = dive_direction * dive_speed
@@ -127,7 +127,7 @@ func _end_dive() -> void:
 	can_attack = false
 	attack_timer.start()
 
-func _state_patrol(delta: float) -> void:
+func _state_patrol(_delta: float) -> void:
 	# 检查是否发现玩家
 	if player:
 		change_state(State.CHASE)
@@ -175,11 +175,11 @@ func _start_dive() -> void:
 	if animation_player:
 		animation_player.play("dive")
 
-func _state_attack(delta: float) -> void:
+func _state_attack(_delta: float) -> void:
 	# 飞行敌人使用俯冲攻击，在_chase中处理
 	change_state(State.CHASE)
 
-func _apply_gravity(delta: float) -> void:
+func _apply_gravity(_delta: float) -> void:
 	# 飞行敌人不受重力影响
 	pass
 
