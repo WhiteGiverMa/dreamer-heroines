@@ -64,6 +64,9 @@ func _ready() -> void:
 	if confirmation_dialog:
 		confirmation_dialog.confirmed.connect(_on_confirmation_confirmed)
 		confirmation_dialog.canceled.connect(_on_confirmation_canceled)
+
+	if LocalizationManager:
+		LocalizationManager.locale_changed.connect(_on_locale_changed)
 	
 	# 初始隐藏
 	visible = false
@@ -71,23 +74,26 @@ func _ready() -> void:
 	
 	# 设置加载 - 暂时注释
 	# _load_settings()
+	_apply_localized_texts()
 	print("PauseMenu initialized")
+
 
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return
-	
-	if event.is_action_pressed("pause"):
-		if is_settings_open:
-			_close_settings()
-		else:
-			_on_resume_pressed()
+
+	if not is_settings_open and event.is_action_pressed("pause"):
+		_on_resume_pressed()
+		get_viewport().set_input_as_handled()
+		return
+
+	if is_settings_open and (event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel")):
+		_close_settings()
 		get_viewport().set_input_as_handled()
 
 # 显示/隐藏
 func show_pause_menu() -> void:
 	visible = true
-	GameManager.set_paused(true)
 	
 	# 动画
 	modulate.a = 0.0
@@ -105,25 +111,23 @@ func hide_pause_menu() -> void:
 	tween.tween_property(self, "modulate:a", 0.0, 0.2)
 	tween.tween_callback(func():
 		visible = false
-		GameManager.set_paused(false)
 	)
 
 # 按钮回调
 func _on_resume_pressed() -> void:
-	hide_pause_menu()
 	resume_requested.emit()
 
 func _on_restart_pressed() -> void:
-	_show_confirmation("restart", "确认重新开始？\n当前进度将丢失。")
+	_show_confirmation("restart", LocalizationManager.tr("ui.pause_menu.confirm.restart"))
 
 func _on_settings_pressed() -> void:
 	_open_settings()
 
 func _on_menu_pressed() -> void:
-	_show_confirmation("menu", "确认返回主菜单？\n未保存的进度将丢失。")
+	_show_confirmation("menu", LocalizationManager.tr("ui.pause_menu.confirm.menu"))
 
 func _on_quit_pressed() -> void:
-	_show_confirmation("quit", "确认退出游戏？")
+	_show_confirmation("quit", LocalizationManager.tr("ui.pause_menu.confirm.quit"))
 
 # 设置面板
 func _open_settings() -> void:
@@ -185,10 +189,8 @@ func _show_confirmation(action: String, message: String) -> void:
 func _on_confirmation_confirmed() -> void:
 	match pending_action:
 		"restart":
-			GameManager.set_paused(false)
 			restart_requested.emit()
 		"menu":
-			GameManager.set_paused(false)
 			quit_to_menu_requested.emit()
 		"quit":
 			quit_to_desktop_requested.emit()
@@ -197,6 +199,44 @@ func _on_confirmation_confirmed() -> void:
 
 func _on_confirmation_canceled() -> void:
 	pending_action = ""
+
+
+@warning_ignore("unused_parameter")
+func _on_locale_changed(_new_locale: String) -> void:
+	_apply_localized_texts()
+
+
+func _apply_localized_texts() -> void:
+	if not LocalizationManager:
+		return
+
+	var pause_label: Label = get_node_or_null("CenterContainer/VBoxContainer/PauseLabel")
+	if pause_label:
+		pause_label.text = LocalizationManager.tr("ui.pause_menu.title")
+
+	if resume_button:
+		resume_button.text = LocalizationManager.tr("ui.pause_menu.button.resume")
+
+	if restart_button:
+		restart_button.text = LocalizationManager.tr("ui.pause_menu.button.restart")
+
+	if settings_button:
+		settings_button.text = LocalizationManager.tr("ui.main_menu.button.settings")
+
+	if menu_button:
+		menu_button.text = LocalizationManager.tr("ui.pause_menu.button.main_menu")
+
+	if quit_button:
+		quit_button.text = LocalizationManager.tr("ui.pause_menu.button.quit")
+
+	if confirmation_dialog and confirmation_dialog.visible and not pending_action.is_empty():
+		match pending_action:
+			"restart":
+				confirmation_dialog.dialog_text = LocalizationManager.tr("ui.pause_menu.confirm.restart")
+			"menu":
+				confirmation_dialog.dialog_text = LocalizationManager.tr("ui.pause_menu.confirm.menu")
+			"quit":
+				confirmation_dialog.dialog_text = LocalizationManager.tr("ui.pause_menu.confirm.quit")
 
 # 设置加载/保存 - 暂时注释
 # func _load_settings() -> void:

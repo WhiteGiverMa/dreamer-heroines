@@ -91,6 +91,57 @@ msgstr "Start New Game"
 msgid "ui.main_menu.dialog.new_game_slot.text"
 msgstr "Start a new game in slot {slot}?"
 
+msgid "ui.settings.title"
+msgstr "Settings"
+
+msgid "ui.settings.resolution"
+msgstr "Resolution"
+
+msgid "ui.settings.window_mode"
+msgstr "Window Mode"
+
+msgid "ui.settings.language"
+msgstr "Language"
+
+msgid "ui.settings.language.option.zh_cn"
+msgstr "简体中文"
+
+msgid "ui.settings.language.option.en"
+msgstr "English"
+
+msgid "ui.settings.master_volume"
+msgstr "Master Volume"
+
+msgid "ui.settings.mouse_sensitivity"
+msgstr "Mouse Sensitivity"
+
+msgid "ui.settings.vsync"
+msgstr "VSync"
+
+msgid "ui.pause_menu.title"
+msgstr "PAUSED"
+
+msgid "ui.pause_menu.button.resume"
+msgstr "Resume"
+
+msgid "ui.pause_menu.button.restart"
+msgstr "Restart"
+
+msgid "ui.pause_menu.button.main_menu"
+msgstr "Main Menu"
+
+msgid "ui.pause_menu.button.quit"
+msgstr "Quit Game"
+
+msgid "ui.pause_menu.confirm.restart"
+msgstr "Restart the level?\nCurrent progress will be lost."
+
+msgid "ui.pause_menu.confirm.menu"
+msgstr "Return to main menu?\nUnsaved progress will be lost."
+
+msgid "ui.pause_menu.confirm.quit"
+msgstr "Quit the game?"
+
 msgid "ui.save_slot.slot_number"
 msgstr "Slot {slot}"
 

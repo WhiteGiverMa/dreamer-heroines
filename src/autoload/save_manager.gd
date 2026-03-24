@@ -367,7 +367,8 @@ func _get_default_settings() -> Dictionary:
 		"mouse_sensitivity": 1.0,
 		"fullscreen": false,
 		"vsync": true,
-		"window_mode": 0  # 0=Windowed, 1=Fullscreen, 2=Borderless
+		"window_mode": 0,  # 0=Windowed, 1=Fullscreen, 2=Borderless
+		"locale": "zh_CN"
 	}
 
 func _convert_csharp_summary(summary) -> Dictionary:

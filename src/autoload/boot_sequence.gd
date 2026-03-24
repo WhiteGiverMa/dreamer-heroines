@@ -285,6 +285,15 @@ func _apply_saved_settings() -> void:
 	var sensitivity = settings.get("mouse_sensitivity", 1.0)
 	# 存储到 ProjectSettings 或全局变量供游戏使用
 	ProjectSettings.set_setting("game/input/mouse_sensitivity", sensitivity)
+
+	# 应用语言
+	var saved_locale: String = settings.get("locale", "")
+	if LocalizationManager:
+		var locales := LocalizationManager.get_available_locales()
+		if saved_locale in locales:
+			LocalizationManager.set_locale(saved_locale)
+		else:
+			LocalizationManager.set_locale("zh_CN")
 	
 	print("[Boot] 设置已应用")
 

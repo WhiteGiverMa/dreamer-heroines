@@ -24,16 +24,7 @@ var hud: CanvasLayer = null
 var pause_menu: Control = null
 var game_over_screen: Control = null
 
-var is_game_paused: bool = false:
-	get:
-		return is_game_paused
-	set(value):
-		is_game_paused = value
-		get_tree().paused = value
-		if value:
-			change_state(GameState.PAUSED)
-		else:
-			change_state(GameState.PLAYING)
+var is_game_paused: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -59,7 +50,17 @@ func initialize() -> void:
 	_mark_ready()
 
 func _input(event: InputEvent):
-	if event.is_action_pressed("pause") and current_state in [GameState.PLAYING, GameState.PAUSED]:
+	if not event.is_action_pressed("pause"):
+		return
+
+	if current_state == GameState.PLAYING:
+		toggle_pause()
+		get_viewport().set_input_as_handled()
+		return
+
+	if current_state == GameState.PAUSED:
+		if pause_menu and pause_menu.visible:
+			return
 		toggle_pause()
 		get_viewport().set_input_as_handled()
 
@@ -72,24 +73,40 @@ func change_state(new_state: GameState) -> void:
 	
 	match new_state:
 		GameState.MENU:
+			_apply_runtime_state(false, false)
 			_show_menu()
 		GameState.PLAYING:
+			_apply_runtime_state(false, true)
 			_hide_menus()
 		GameState.PAUSED:
+			_apply_runtime_state(true, false)
 			_show_pause_menu()
 		GameState.GAME_OVER:
+			_apply_runtime_state(true, false)
 			_show_game_over(false)
 		GameState.VICTORY:
+			_apply_runtime_state(true, false)
 			_show_game_over(true)
 	
 	_sync_state_to_csharp()
 
 func toggle_pause() -> void:
-	is_game_paused = !is_game_paused
-	_sync_state_to_csharp()
+	set_paused(not is_game_paused)
 
-func set_paused(paused: bool) -> void:
-	is_game_paused = paused
+func set_paused(paused: bool, restore_playing_state: bool = true) -> void:
+	if paused:
+		if current_state == GameState.PLAYING:
+			change_state(GameState.PAUSED)
+		else:
+			_apply_runtime_state(true, false)
+	else:
+		if restore_playing_state and current_state == GameState.PAUSED:
+			change_state(GameState.PLAYING)
+		elif current_state == GameState.PLAYING:
+			_apply_runtime_state(false, true)
+		else:
+			_apply_runtime_state(false, false)
+
 	_sync_state_to_csharp()
 
 func is_playing() -> bool:
@@ -173,11 +190,15 @@ func get_level() -> Node2D:
 	return current_level_instance
 
 func restart_game() -> void:
+	set_paused(false, false)
+	_clear_runtime_combat_artifacts()
 	reset_game()
 	game_restarted.emit()
 	get_tree().reload_current_scene()
 
 func quit_to_menu() -> void:
+	set_paused(false, false)
+	_clear_runtime_combat_artifacts()
 	change_state(GameState.MENU)
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 
@@ -237,7 +258,6 @@ func register_game_over_screen(screen: Control) -> void:
 
 func _show_menu() -> void:
 	_hide_menus()
-	get_tree().paused = false
 
 func _show_pause_menu() -> void:
 	if pause_menu:
@@ -257,7 +277,30 @@ func _show_game_over(victory: bool) -> void:
 			game_over_screen.show_defeat()
 
 func _on_resume_requested() -> void:
-	is_game_paused = false
+	set_paused(false)
+
+
+func _apply_runtime_state(paused: bool, gameplay_input_enabled: bool) -> void:
+	is_game_paused = paused
+	get_tree().paused = paused
+	_set_gameplay_input_enabled(gameplay_input_enabled)
+
+
+func _set_gameplay_input_enabled(enabled: bool) -> void:
+	if EnhancedInput == null:
+		return
+
+	if enabled:
+		if not EnhancedInput.is_gameplay_context_enabled():
+			EnhancedInput.enable_gameplay_context()
+	else:
+		if EnhancedInput.is_gameplay_context_enabled():
+			EnhancedInput.disable_gameplay_context()
+
+
+func _clear_runtime_combat_artifacts() -> void:
+	if ProjectileSpawner and ProjectileSpawner.has_method("clear_pools"):
+		ProjectileSpawner.clear_pools()
 
 # 场景切换
 func change_scene(scene_path: String) -> void:

@@ -21,16 +21,23 @@ const WINDOW_MODES := ["Windowed", "Fullscreen", "Borderless"]
 # 节点引用 (使用 unique_name_in_owner)
 @onready var resolution_option: OptionButton = %ResolutionOption
 @onready var window_mode_option: OptionButton = %WindowModeOption
+@onready var language_option: OptionButton = %LanguageOption
 @onready var volume_slider: HSlider = %VolumeSlider
 @onready var sensitivity_slider: HSlider = %SensitivitySlider
 @onready var vsync_check: CheckBox = %VSyncCheck
 @onready var back_button: Button = %BackButton
 
+var _is_updating_controls: bool = false
+
 
 func _ready() -> void:
+	if LocalizationManager:
+		LocalizationManager.locale_changed.connect(_on_locale_changed)
+
 	_init_controls()
 	_load_settings()
 	_connect_signals()
+	_apply_localized_texts()
 
 
 func _init_controls() -> void:
@@ -49,6 +56,13 @@ func _init_controls() -> void:
 			window_mode_option.add_item(mode)
 		window_mode_option.selected = 0  # 默认窗口模式
 
+	# 初始化语言下拉框
+	if language_option and LocalizationManager:
+		language_option.clear()
+		for locale in LocalizationManager.get_available_locales():
+			language_option.add_item(_get_locale_display_name(locale))
+		language_option.selected = _get_locale_index(LocalizationManager.get_locale())
+
 
 func _load_settings() -> void:
 	"""从 SaveManager 加载设置"""
@@ -64,7 +78,11 @@ func _load_settings() -> void:
 	
 	if window_mode_option:
 		window_mode_option.selected = settings.get("window_mode", 0)
-	
+
+	if language_option and LocalizationManager:
+		var saved_locale: String = settings.get("locale", LocalizationManager.get_locale())
+		language_option.selected = _get_locale_index(saved_locale)
+
 	if vsync_check:
 		vsync_check.button_pressed = settings.get("vsync", true)
 	
@@ -78,6 +96,9 @@ func _connect_signals() -> void:
 	
 	if window_mode_option:
 		window_mode_option.item_selected.connect(_on_window_mode_selected)
+
+	if language_option:
+		language_option.item_selected.connect(_on_language_selected)
 	
 	if volume_slider:
 		volume_slider.value_changed.connect(_on_volume_changed)
@@ -128,6 +149,22 @@ func _on_window_mode_selected(index: int) -> void:
 	_save_settings()
 
 
+func _on_language_selected(index: int) -> void:
+	"""处理语言选择"""
+	if _is_updating_controls:
+		return
+	if not LocalizationManager:
+		return
+
+	var available_locales := LocalizationManager.get_available_locales()
+	if index < 0 or index >= available_locales.size():
+		return
+
+	var selected_locale: String = available_locales[index]
+	LocalizationManager.set_locale(selected_locale)
+	_save_settings()
+
+
 func _on_volume_changed(value: float) -> void:
 	"""处理音量变化"""
 	# value 范围 0-100，转换为 0-1
@@ -163,6 +200,7 @@ func _save_settings() -> void:
 		"fullscreen": window_mode_option.selected == 1 if window_mode_option else false,
 		"vsync": vsync_check.button_pressed if vsync_check else true,
 		"window_mode": window_mode_option.selected if window_mode_option else 0,
+		"locale": LocalizationManager.get_locale() if LocalizationManager else "zh_CN",
 	}
 	SaveManager.save_settings(settings)
 
@@ -170,6 +208,78 @@ func _save_settings() -> void:
 func _on_back_pressed() -> void:
 	"""处理返回按钮点击"""
 	close_requested.emit()
+
+
+@warning_ignore("unused_parameter")
+func _on_locale_changed(_new_locale: String) -> void:
+	_apply_localized_texts()
+
+
+func _apply_localized_texts() -> void:
+	if not LocalizationManager:
+		return
+
+	var title_label: Label = get_node_or_null("Title")
+	if title_label:
+		title_label.text = LocalizationManager.tr("ui.settings.title")
+
+	var resolution_label: Label = get_node_or_null("VBoxContainer/ResolutionLabel")
+	if resolution_label:
+		resolution_label.text = LocalizationManager.tr("ui.settings.resolution")
+
+	var window_mode_label: Label = get_node_or_null("VBoxContainer/WindowModeLabel")
+	if window_mode_label:
+		window_mode_label.text = LocalizationManager.tr("ui.settings.window_mode")
+
+	var language_label: Label = get_node_or_null("VBoxContainer/LanguageLabel")
+	if language_label:
+		language_label.text = LocalizationManager.tr("ui.settings.language")
+
+	var volume_label: Label = get_node_or_null("VBoxContainer/VolumeLabel")
+	if volume_label:
+		volume_label.text = LocalizationManager.tr("ui.settings.master_volume")
+
+	var sensitivity_label: Label = get_node_or_null("VBoxContainer/SensitivityLabel")
+	if sensitivity_label:
+		sensitivity_label.text = LocalizationManager.tr("ui.settings.mouse_sensitivity")
+
+	if vsync_check:
+		vsync_check.text = LocalizationManager.tr("ui.settings.vsync")
+
+	if back_button:
+		back_button.text = LocalizationManager.tr("ui.main_menu.button.back")
+
+	if window_mode_option:
+		var selected_window_mode := window_mode_option.selected
+		window_mode_option.clear()
+		for i in range(WINDOW_MODES.size()):
+			window_mode_option.add_item(LocalizationManager.tr("ui.main_menu.window_mode.%d" % i))
+		window_mode_option.selected = selected_window_mode if selected_window_mode >= 0 else 0
+
+	if language_option:
+		_is_updating_controls = true
+		var selected_locale := LocalizationManager.get_locale()
+		language_option.clear()
+		for locale in LocalizationManager.get_available_locales():
+			language_option.add_item(_get_locale_display_name(locale))
+		language_option.selected = _get_locale_index(selected_locale)
+		_is_updating_controls = false
+
+
+func _get_locale_display_name(locale: String) -> String:
+	match locale:
+		"zh_CN":
+			return LocalizationManager.tr("ui.settings.language.option.zh_cn")
+		"en":
+			return LocalizationManager.tr("ui.settings.language.option.en")
+		_:
+			return locale
+
+
+func _get_locale_index(locale: String) -> int:
+	var available_locales := LocalizationManager.get_available_locales()
+	var locale_index := available_locales.find(locale)
+	return locale_index if locale_index >= 0 else 0
 
 
 func show_panel() -> void:

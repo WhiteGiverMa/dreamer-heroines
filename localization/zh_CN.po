@@ -91,6 +91,57 @@ msgstr "开始新游戏"
 msgid "ui.main_menu.dialog.new_game_slot.text"
 msgstr "在槽位 {slot} 开始新游戏？"
 
+msgid "ui.settings.title"
+msgstr "设置"
+
+msgid "ui.settings.resolution"
+msgstr "分辨率"
+
+msgid "ui.settings.window_mode"
+msgstr "窗口模式"
+
+msgid "ui.settings.language"
+msgstr "语言"
+
+msgid "ui.settings.language.option.zh_cn"
+msgstr "简体中文"
+
+msgid "ui.settings.language.option.en"
+msgstr "English"
+
+msgid "ui.settings.master_volume"
+msgstr "主音量"
+
+msgid "ui.settings.mouse_sensitivity"
+msgstr "鼠标灵敏度"
+
+msgid "ui.settings.vsync"
+msgstr "垂直同步"
+
+msgid "ui.pause_menu.title"
+msgstr "已暂停"
+
+msgid "ui.pause_menu.button.resume"
+msgstr "继续"
+
+msgid "ui.pause_menu.button.restart"
+msgstr "重新开始"
+
+msgid "ui.pause_menu.button.main_menu"
+msgstr "主菜单"
+
+msgid "ui.pause_menu.button.quit"
+msgstr "退出游戏"
+
+msgid "ui.pause_menu.confirm.restart"
+msgstr "确认重新开始？\n当前进度将丢失。"
+
+msgid "ui.pause_menu.confirm.menu"
+msgstr "确认返回主菜单？\n未保存的进度将丢失。"
+
+msgid "ui.pause_menu.confirm.quit"
+msgstr "确认退出游戏？"
+
 msgid "ui.save_slot.slot_number"
 msgstr "槽位 {slot}"
 
