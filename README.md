@@ -181,6 +181,24 @@ godot --scene scenes/test_level.tscn
 dotnet build DreamerHeroines.csproj
 ```
 
+### Git 提交流程约束（Agent）
+
+- 禁止使用 `git commit --no-verify`（或 `-n`）绕过 hooks。
+- 推荐通过仓库包装脚本执行 Git 命令：
+
+```powershell
+./scripts/git-wrapper.ps1 status
+./scripts/git-wrapper.ps1 commit -m "your message"
+```
+
+- 若提交因尾随空格被阻止，先执行：
+
+```powershell
+./scripts/fix-trailing-whitespace.ps1 -Restage
+```
+
+然后重新提交（不要使用 `--no-verify`）。
+
 ### 输入控制
 
 | 动作 | 按键 |
