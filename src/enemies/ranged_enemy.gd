@@ -47,6 +47,14 @@ func _initialize_weapon_loadout() -> void:
 		if weapon_scene:
 			add_weapon(weapon_scene)
 
+	# Fallback: instantiate default rifle for node-based weapon setup
+	if weapons.is_empty():
+		var default_weapon_scene: PackedScene = load("res://scenes/weapons/rifle.tscn")
+		if default_weapon_scene:
+			add_weapon(default_weapon_scene)
+		else:
+			push_warning("RangedEnemy: Failed to load default weapon scene res://scenes/weapons/rifle.tscn")
+
 	# If no weapons from inspector, check for WeaponPivot/Weapon in scene
 	if weapons.is_empty():
 		var scene_weapon = get_node_or_null("WeaponPivot/Weapon")
@@ -57,9 +65,8 @@ func _initialize_weapon_loadout() -> void:
 					equip_weapon(child)
 					break
 
-	# Disable ammo system for enemy weapons
-	if equipped_weapon and equipped_weapon.stats:
-		equipped_weapon.stats.use_ammo_system = false
+	if not equipped_weapon:
+		push_warning("RangedEnemy: No weapon equipped after loadout initialization")
 
 func _load_enemy_config() -> void:
 	var config = _get_enemy_config()
@@ -225,7 +232,8 @@ func _update_aim_line() -> void:
 	aim_line.clear_points()
 	aim_line.add_point(Vector2.ZERO)
 	
-	var aim_direction = (player.global_position - global_position).normalized()
+	var target_point := _get_player_aim_point()
+	var aim_direction = (target_point - global_position).normalized()
 	aim_line.add_point(aim_direction * attack_range)
 
 func _fire_projectile() -> void:
@@ -241,10 +249,23 @@ func _fire_projectile() -> void:
 	# Use weapon component only
 	if equipped_weapon:
 		var muzzle_pos = muzzle.global_position if muzzle else global_position
-		var aim_dir = (player.global_position - muzzle_pos).normalized()
+		var target_point := _get_player_aim_point()
+		var aim_dir = (target_point - muzzle_pos).normalized()
 		try_shoot_weapon(muzzle_pos, aim_dir)
 	else:
 		push_warning("RangedEnemy: No weapon equipped, cannot fire")
+
+
+func _get_player_aim_point() -> Vector2:
+	if not player:
+		return global_position
+
+	if player.has_method("get_aim_point"):
+		var aim_point = player.call("get_aim_point")
+		if aim_point is Vector2:
+			return aim_point
+
+	return player.global_position
 
 func _perform_attack() -> void:
 	# 远程敌人使用射击而非近战

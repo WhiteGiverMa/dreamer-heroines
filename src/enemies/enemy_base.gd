@@ -25,6 +25,9 @@ signal player_lost
 @export var can_jump: bool = true
 @export var can_shoot: bool = false
 
+@export_group("Weapon")
+@export var weapon_uses_ammo_system: bool = false
+
 enum State { IDLE, PATROL, CHASE, ATTACK, HURT, DEAD }
 
 var current_health: int = 0
@@ -315,6 +318,9 @@ func switch_weapon_to(index: int) -> void:
 
 func _equip_weapon_at_index(index: int) -> void:
 	"""Internal method to equip weapon at index."""
+	if index < 0 or index >= weapons.size():
+		return
+
 	# Disconnect previous weapon
 	if equipped_weapon and equipped_weapon.has_signal("shot_fired"):
 		if equipped_weapon.shot_fired.is_connected(_on_weapon_shot_fired):
@@ -326,8 +332,11 @@ func _equip_weapon_at_index(index: int) -> void:
 
 	# Setup new weapon
 	equipped_weapon.visible = true
-	equipped_weapon.faction_type = Faction.Type.ENEMY
-	equipped_weapon.shot_fired.connect(_on_weapon_shot_fired)
+	equipped_weapon.faction = Faction.ENEMY_NAME
+	if equipped_weapon.has_method("set_use_ammo_system"):
+		equipped_weapon.set_use_ammo_system(weapon_uses_ammo_system)
+	if equipped_weapon.has_signal("shot_fired") and not equipped_weapon.shot_fired.is_connected(_on_weapon_shot_fired):
+		equipped_weapon.shot_fired.connect(_on_weapon_shot_fired)
 
 
 func equip_weapon(weapon) -> void:
@@ -338,8 +347,9 @@ func equip_weapon(weapon) -> void:
 	_equip_weapon_at_index(weapons.find(weapon))
 
 
-func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction_type: int) -> void:
+func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction: String) -> void:
 	if equipped_weapon and equipped_weapon.stats:
+		var faction_type: int = Faction.string_to_type(faction)
 		ProjectileSpawner.spawn_projectile(pos, dir, equipped_weapon.stats, faction_type, self)
 
 

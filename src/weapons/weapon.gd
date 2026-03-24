@@ -28,6 +28,7 @@ var current_ammo_in_mag: int = 0
 var current_reserve_ammo: int = 0
 var can_shoot: bool = true
 var is_reloading: bool = false
+var _use_ammo_system_runtime: bool = true
 
 # 视觉扩散状态（仅用于UI反馈，不影响实际弹道）
 var current_visual_spread: float = 0.0
@@ -40,6 +41,10 @@ var _fire_cooldown_timer: float = 0.0
 
 
 func _ready() -> void:
+	if stats:
+		_use_ammo_system_runtime = stats.use_ammo_system
+	else:
+		_use_ammo_system_runtime = false
 	_initialize_stats()
 
 
@@ -66,7 +71,7 @@ func _initialize_stats() -> void:
 		return
 	
 	# 初始化弹药
-	if stats.use_ammo_system:
+	if _use_ammo_system_runtime:
 		current_ammo_in_mag = stats.magazine_size
 		current_reserve_ammo = stats.max_ammo
 	else:
@@ -89,7 +94,7 @@ func try_shoot(muzzle_pos: Vector2, aim_dir: Vector2) -> bool:
 		return false
 	
 	# 检查弹药（无限弹药模式跳过）
-	if stats and stats.use_ammo_system:
+	if stats and _use_ammo_system_runtime:
 		if current_ammo_in_mag <= 0:
 			out_of_ammo.emit()
 			AudioManager.play_sfx("empty_click")
@@ -102,7 +107,7 @@ func try_shoot(muzzle_pos: Vector2, aim_dir: Vector2) -> bool:
 ## 执行射击
 func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
 	# 消耗弹药
-	if stats and stats.use_ammo_system:
+	if stats and _use_ammo_system_runtime:
 		current_ammo_in_mag -= 1
 		ammo_changed.emit(current_ammo_in_mag, stats.magazine_size)
 	
@@ -139,7 +144,7 @@ func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
 func reload() -> void:
 	if is_reloading:
 		return
-	if not stats or not stats.use_ammo_system:
+	if not stats or not _use_ammo_system_runtime:
 		return
 	if current_ammo_in_mag >= stats.magazine_size:
 		return
@@ -205,9 +210,31 @@ func get_ammo_info() -> Dictionary:
 
 ## 检查是否需要换弹
 func needs_reload() -> bool:
-	if not stats or not stats.use_ammo_system:
+	if not stats or not _use_ammo_system_runtime:
 		return false
 	return current_ammo_in_mag < stats.magazine_size and current_reserve_ammo > 0
+
+
+func set_use_ammo_system(enabled: bool) -> void:
+	"""Configure whether this weapon instance consumes ammo at runtime."""
+	_use_ammo_system_runtime = enabled
+
+	if not stats:
+		return
+
+	if enabled:
+		if current_ammo_in_mag <= 0 or current_ammo_in_mag > stats.magazine_size:
+			current_ammo_in_mag = stats.magazine_size
+		current_reserve_ammo = clampi(current_reserve_ammo, 0, stats.max_ammo)
+	else:
+		current_ammo_in_mag = 999
+		current_reserve_ammo = 999
+
+	ammo_changed.emit(current_ammo_in_mag, stats.magazine_size)
+
+
+func is_using_ammo_system() -> bool:
+	return _use_ammo_system_runtime
 
 
 # === 内部方法 ===

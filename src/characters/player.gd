@@ -337,6 +337,8 @@ func _equip_weapon(index: int) -> void:
 	
 	# 设置阵营并连接 shot_fired 信号
 	current_weapon.faction = "player"
+	if current_weapon.has_method("set_use_ammo_system"):
+		current_weapon.set_use_ammo_system(true)
 	_setup_weapon_signals(current_weapon)
 	
 	var weapon_name := "Unknown"
@@ -538,6 +540,15 @@ func get_muzzle_position() -> Vector2:
 
 func get_aim_direction() -> Vector2:
 	return EnhancedInput.instance.get_aim_direction()
+
+
+func get_aim_point() -> Vector2:
+	var collision_shape_node := get_node_or_null("CollisionShape2D")
+	if collision_shape_node is CollisionShape2D:
+		var collision_shape := collision_shape_node as CollisionShape2D
+		return collision_shape.global_position
+
+	return global_position
 
 
 func get_weapon_aim_origin() -> Vector2:
