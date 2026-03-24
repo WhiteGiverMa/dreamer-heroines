@@ -27,7 +27,15 @@ func _update_aim_direction() -> void:
 		var player := _get_player()
 		if player:
 			mouse_world_position = get_viewport().get_camera_2d().get_global_mouse_position()
-			aim_direction = (mouse_world_position - player.global_position).normalized()
+			var aim_origin := player.global_position
+			if player.has_method("get_weapon_aim_origin"):
+				aim_origin = player.get_weapon_aim_origin()
+
+			var aim_vector := mouse_world_position - aim_origin
+			if aim_vector.length_squared() > 0.0001:
+				aim_direction = aim_vector.normalized()
+			else:
+				aim_direction = Vector2.RIGHT
 		else:
 			aim_direction = Vector2.RIGHT
 

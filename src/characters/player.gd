@@ -538,3 +538,11 @@ func get_muzzle_position() -> Vector2:
 
 func get_aim_direction() -> Vector2:
 	return EnhancedInput.instance.get_aim_direction()
+
+
+func get_weapon_aim_origin() -> Vector2:
+	if current_weapon and current_weapon is Weapon:
+		return current_weapon.get_muzzle_position()
+	if weapon_pivot:
+		return weapon_pivot.global_position
+	return global_position
