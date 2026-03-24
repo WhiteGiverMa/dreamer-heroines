@@ -59,6 +59,8 @@ func _input(event: InputEvent):
 		return
 
 	if current_state == GameState.PAUSED:
+		if game_over_screen and game_over_screen.visible:
+			return
 		if pause_menu and pause_menu.visible:
 			return
 		toggle_pause()
@@ -283,6 +285,7 @@ func _on_resume_requested() -> void:
 func _apply_runtime_state(paused: bool, gameplay_input_enabled: bool) -> void:
 	is_game_paused = paused
 	get_tree().paused = paused
+	_set_current_level_processing(paused)
 	_set_gameplay_input_enabled(gameplay_input_enabled)
 
 
@@ -301,6 +304,21 @@ func _set_gameplay_input_enabled(enabled: bool) -> void:
 func _clear_runtime_combat_artifacts() -> void:
 	if ProjectileSpawner and ProjectileSpawner.has_method("clear_pools"):
 		ProjectileSpawner.clear_pools()
+
+
+func _set_current_level_processing(paused: bool) -> void:
+	var level_manager_node := get_node_or_null("/root/LevelManager")
+	if level_manager_node == null:
+		return
+
+	var level_node = level_manager_node.get("current_level")
+	if level_node == null or not is_instance_valid(level_node):
+		return
+
+	if paused:
+		(level_node as Node).process_mode = Node.PROCESS_MODE_PAUSABLE
+	else:
+		(level_node as Node).process_mode = Node.PROCESS_MODE_INHERIT
 
 # 场景切换
 func change_scene(scene_path: String) -> void:

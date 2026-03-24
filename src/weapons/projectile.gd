@@ -106,7 +106,7 @@ func _apply_active_state() -> void:
 	if not is_inside_tree():
 		return
 
-	process_mode = Node.PROCESS_MODE_INHERIT
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	set_physics_process(true)
 	set_deferred("monitoring", true)
 	set_deferred("monitorable", true)

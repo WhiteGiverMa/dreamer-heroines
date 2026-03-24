@@ -32,7 +32,8 @@ var objectives_completed: int = 0
 var player: Node2D = null
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	var is_autoload_instance := get_path() == NodePath("/root/LevelManager")
+	process_mode = Node.PROCESS_MODE_ALWAYS if is_autoload_instance else Node.PROCESS_MODE_PAUSABLE
 	system_name = "level_manager"
 	# 不在这里执行初始化，等待 BootSequence 调用
 
@@ -49,6 +50,9 @@ func initialize() -> void:
 	_mark_ready()
 
 func _process(delta: float) -> void:
+	if GameManager and GameManager.is_game_paused:
+		return
+
 	if current_state == LevelState.PLAYING:
 		elapsed_time += delta
 		_check_objectives()
