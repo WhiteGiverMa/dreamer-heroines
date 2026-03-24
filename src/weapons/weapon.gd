@@ -12,6 +12,8 @@ signal reload_started
 signal reload_finished
 signal ammo_changed(current: int, max: int)
 signal out_of_ammo
+# 视觉扩散信号：通知UI当前扩散状态（不影响弹道精度）
+signal spread_changed(current_spread: float, base_spread: float)
 
 # === 配置 ===
 @export var stats: WeaponStats
@@ -26,6 +28,9 @@ var current_ammo_in_mag: int = 0
 var current_reserve_ammo: int = 0
 var can_shoot: bool = true
 var is_reloading: bool = false
+
+# 视觉扩散状态（仅用于UI反馈，不影响实际弹道）
+var current_visual_spread: float = 0.0
 
 # 计时器
 var _fire_cooldown_timer: float = 0.0
@@ -43,6 +48,17 @@ func _process(delta: float) -> void:
 		_fire_cooldown_timer -= delta
 		if _fire_cooldown_timer <= 0:
 			can_shoot = true
+	
+	# 恢复视觉扩散（仅视觉，不影响弹道精度）
+	if stats and current_visual_spread > stats.spread:
+		var recovery_rate := 50.0  # 视觉恢复速率（度/秒）
+		var recovery_amount := recovery_rate * delta
+		var previous_spread := current_visual_spread
+		current_visual_spread -= recovery_amount
+		current_visual_spread = maxf(current_visual_spread, stats.spread)
+		# 发射恢复阶段扩散变化信号
+		if not is_equal_approx(current_visual_spread, previous_spread):
+			spread_changed.emit(current_visual_spread, stats.spread)
 
 
 func _initialize_stats() -> void:
@@ -57,6 +73,9 @@ func _initialize_stats() -> void:
 		# 无限弹药模式（敌人）
 		current_ammo_in_mag = 999
 		current_reserve_ammo = 999
+	
+	# 初始化视觉扩散
+	current_visual_spread = stats.spread if stats.spread > 0 else 0.0
 
 
 # === 主要接口 ===
@@ -96,6 +115,11 @@ func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
 	if stats and stats.spread > 0:
 		var random_angle = randf_range(-stats.spread, stats.spread)
 		final_dir = aim_dir.rotated(deg_to_rad(random_angle))
+	
+	# 视觉扩散增加（不影响实际弹道）
+	if stats:
+		current_visual_spread = stats.spread + 10.0  # 射击时视觉扩散峰值
+		spread_changed.emit(current_visual_spread, stats.spread)
 	
 	# 发射信号 - 让外部决定如何处理投射物
 	shot_fired.emit(muzzle_pos, final_dir, faction)

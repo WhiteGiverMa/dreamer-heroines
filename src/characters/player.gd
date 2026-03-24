@@ -312,29 +312,31 @@ func _equip_weapon(index: int) -> void:
 	# 卸下当前武器
 	if current_weapon:
 		# 断开旧武器的信号
-		if current_weapon.has_signal("ammo_changed"):
+		if current_weapon.has_signal("ammo_changed") and current_weapon.ammo_changed.is_connected(_on_weapon_ammo_changed):
 			current_weapon.ammo_changed.disconnect(_on_weapon_ammo_changed)
-		if current_weapon.has_signal("reload_started"):
+		if current_weapon.has_signal("reload_started") and current_weapon.reload_started.is_connected(_on_weapon_reload_started):
 			current_weapon.reload_started.disconnect(_on_weapon_reload_started)
-		if current_weapon.has_signal("reload_finished"):
+		if current_weapon.has_signal("reload_finished") and current_weapon.reload_finished.is_connected(_on_weapon_reload_finished):
 			current_weapon.reload_finished.disconnect(_on_weapon_reload_finished)
-		if current_weapon.has_signal("shot_fired"):
+		if current_weapon.has_signal("spread_changed") and current_weapon.spread_changed.is_connected(_on_weapon_spread_changed):
+			current_weapon.spread_changed.disconnect(_on_weapon_spread_changed)
+		if current_weapon.has_signal("shot_fired") and current_weapon.shot_fired.is_connected(_on_weapon_shot_fired):
 			current_weapon.shot_fired.disconnect(_on_weapon_shot_fired)
-		current_weapon.unequip()
 	
 	current_weapon = weapons[index]
-	current_weapon.equip(self)
 	
 	# 连接武器信号
-	if current_weapon.has_signal("ammo_changed"):
+	if current_weapon.has_signal("ammo_changed") and not current_weapon.ammo_changed.is_connected(_on_weapon_ammo_changed):
 		current_weapon.ammo_changed.connect(_on_weapon_ammo_changed)
-	if current_weapon.has_signal("reload_started"):
+	if current_weapon.has_signal("reload_started") and not current_weapon.reload_started.is_connected(_on_weapon_reload_started):
 		current_weapon.reload_started.connect(_on_weapon_reload_started)
-	if current_weapon.has_signal("reload_finished"):
+	if current_weapon.has_signal("reload_finished") and not current_weapon.reload_finished.is_connected(_on_weapon_reload_finished):
 		current_weapon.reload_finished.connect(_on_weapon_reload_finished)
+	if current_weapon.has_signal("spread_changed") and not current_weapon.spread_changed.is_connected(_on_weapon_spread_changed):
+		current_weapon.spread_changed.connect(_on_weapon_spread_changed)
 	
 	# 设置阵营并连接 shot_fired 信号
-	current_weapon.faction_type = Faction.Type.PLAYER
+	current_weapon.faction = "player"
 	_setup_weapon_signals(current_weapon)
 	
 	var weapon_name := "Unknown"
@@ -347,18 +349,25 @@ func _equip_weapon(index: int) -> void:
 	if current_weapon.stats:
 		mag_size = current_weapon.stats.magazine_size
 	_on_weapon_ammo_changed(current_weapon.current_ammo_in_mag, mag_size)
+	
+	# 立即同步准星扩散状态
+	var base_spread := 0.0
+	if current_weapon.stats:
+		base_spread = current_weapon.stats.spread
+	_on_weapon_spread_changed(current_weapon.current_visual_spread, base_spread)
 
 
 func _setup_weapon_signals(weapon: Weapon) -> void:
 	"""设置新 Weapon 组件的信号连接"""
-	if weapon.has_signal("shot_fired"):
+	if weapon.has_signal("shot_fired") and not weapon.shot_fired.is_connected(_on_weapon_shot_fired):
 		weapon.shot_fired.connect(_on_weapon_shot_fired)
 
 
-func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction_type: int) -> void:
+func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction: String) -> void:
 	"""处理 Weapon 组件的射击信号"""
 	# 生成玩家投射物
 	if ProjectileSpawner and current_weapon and current_weapon.stats:
+		var faction_type: int = Faction.Type.ENEMY if faction == "enemy" else Faction.Type.PLAYER
 		ProjectileSpawner.spawn_projectile(pos, dir, current_weapon.stats, faction_type, self)
 	
 	# 应用相机震动（玩家特有）
@@ -369,18 +378,27 @@ func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction_type: int) -> voi
 func _on_weapon_ammo_changed(current: int, max: int) -> void:
 	# 转发武器弹药信号到玩家信号
 	ammo_changed.emit(current, max)
+	if GameManager.hud:
+		GameManager.hud.on_crosshair_ammo_changed(current, max)
 
 
 func _on_weapon_reload_started() -> void:
 	# 通知 HUD 显示换弹进度
 	if GameManager.hud and current_weapon and current_weapon.stats:
 		GameManager.hud.start_reload_progress(current_weapon.stats.reload_time)
+		GameManager.hud.on_crosshair_reload_started(current_weapon.stats.reload_time)
 
 
 func _on_weapon_reload_finished() -> void:
 	# 通知 HUD 隐藏换弹进度
 	if GameManager.hud:
 		GameManager.hud.finish_reload_progress()
+		GameManager.hud.on_crosshair_reload_finished()
+
+
+func _on_weapon_spread_changed(current_spread: float, base_spread: float) -> void:
+	if GameManager.hud:
+		GameManager.hud.update_crosshair_spread(current_spread, base_spread)
 
 func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 	if is_invulnerable or current_health <= 0:

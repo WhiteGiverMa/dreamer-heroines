@@ -31,6 +31,9 @@ var health_warning_threshold: float = 0.3
 @onready var damage_overlay: ColorRect = $DamageOverlay
 @onready var hit_marker: TextureRect = $MainContainer/BottomBar/CenterSection/HitMarker
 
+# 准星 (使用动态类型避免 parser 解析 CrosshairUI 类名失败)
+@onready var crosshair = $MainContainer/BottomBar/CenterSection/CrosshairUI
+
 # 内部状态
 var current_health: int = 100
 var max_health: int = 100
@@ -325,3 +328,27 @@ func show_kill_streak(count: int) -> void:
 	
 	if animation_player:
 		animation_player.play("kill_streak")
+
+# ============================================
+# 准星转发方法
+# ============================================
+
+## 更新准星扩散
+func update_crosshair_spread(current_spread: float, base_spread: float) -> void:
+	if crosshair:
+		crosshair.update_spread(current_spread, base_spread)
+
+## 换弹开始转发
+func on_crosshair_reload_started(duration: float) -> void:
+	if crosshair:
+		crosshair._on_reload_started(duration)
+
+## 换弹结束转发
+func on_crosshair_reload_finished() -> void:
+	if crosshair:
+		crosshair._on_reload_finished()
+
+## 弹药变化转发
+func on_crosshair_ammo_changed(current: int, maximum: int) -> void:
+	if crosshair:
+		crosshair._on_ammo_changed(current, maximum)

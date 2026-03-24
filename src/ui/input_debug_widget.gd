@@ -253,10 +253,15 @@ func _update_shoot_display() -> void:
 	if _player:
 		var current_weapon = _player.get("current_weapon")
 		if current_weapon:
-			var ammo = current_weapon.get("current_ammo_in_mag")
-			var mag_size = current_weapon.get("magazine_size")
-			var can_shoot = current_weapon.get("can_shoot")
-			var is_reloading = current_weapon.get("is_reloading")
+			var ammo_value = current_weapon.get("current_ammo_in_mag")
+			var mag_size_value = current_weapon.get("magazine_size")
+			var can_shoot_value = current_weapon.get("can_shoot")
+			var is_reloading_value = current_weapon.get("is_reloading")
+
+			var ammo: int = int(ammo_value) if ammo_value != null else 0
+			var mag_size: int = int(mag_size_value) if mag_size_value != null else 0
+			var can_shoot: bool = bool(can_shoot_value) if can_shoot_value != null else false
+			var is_reloading: bool = bool(is_reloading_value) if is_reloading_value != null else false
 			var status = "R" if is_reloading else ("✓" if can_shoot else "✗")
 			shoot_info_label.text = "ammo:%d/%d [%s]" % [ammo, mag_size, status]
 		else:

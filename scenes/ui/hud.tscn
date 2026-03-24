@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://src/ui/hud.gd" id="1_hud"]
 [ext_resource type="PackedScene" uid="uid://dqt_input_debug" path="res://scenes/ui/input_debug_widget.tscn" id="2_debug"]
+[ext_resource type="PackedScene" path="res://scenes/ui/crosshair.tscn" id="3_crosshair"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_bg"]
 bg_color = Color(0.2, 0.2, 0.2, 0.8)
@@ -122,6 +123,9 @@ offset_right = 20.0
 offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="CrosshairUI" parent="MainContainer/BottomBar/CenterSection" instance=ExtResource("3_crosshair")]
+layout_mode = 1
 
 [node name="DamageOverlay" type="ColorRect" parent="."]
 visible = false
