@@ -39,16 +39,23 @@ func _ready() -> void:
 
 
 func _find_player() -> void:
+	if not is_inside_tree():
+		return
+
 	var tree = get_tree()
-	if tree:
-		var players = tree.get_nodes_in_group("player")
-		if players.size() > 0:
-			_player = players[0]
-			print("InputDebugWidget: Found player")
-		else:
-			# 继续尝试查找
-			await get_tree().create_timer(0.5).timeout
-			_find_player()
+	if tree == null:
+		return
+
+	var players = tree.get_nodes_in_group("player")
+	if players.size() > 0:
+		_player = players[0]
+		print("InputDebugWidget: Found player")
+		return
+
+	# 继续尝试查找（期间可能场景切换，恢复后要再次校验树状态）
+	await tree.create_timer(0.5).timeout
+	if is_inside_tree():
+		_find_player()
 
 
 func _process(delta: float) -> void:
