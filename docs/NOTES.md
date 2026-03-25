@@ -1,0 +1,1 @@
+之后新增静态 UI 文本时，优先做法是：在脚本里加一条 binder 绑定 + 在 po 文件加 key，不再需要重复写整段 _apply_localized_texts 赋值代码。

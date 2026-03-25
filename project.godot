@@ -33,30 +33,6 @@ buses/default_bus_layout="res://resources/default_bus_layout.tres"
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 BootSequence="*res://src/autoload/boot_sequence.tscn"
 GameManager="*res://src/autoload/game_manager.gd"
 AudioManager="*res://src/autoload/audio_manager.gd"
@@ -90,11 +66,6 @@ project/assembly_name="DreamerHeroines"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/guide/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/godot_mcp/plugin.cfg")
-
-[internationalization]
-
-locale/fallback="zh_CN"
-translations=PackedStringArray("res://localization/zh_CN.po", "res://localization/en.po")
 
 [input]
 
@@ -172,6 +143,11 @@ weapon_switch={
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":81,"key_label":0,"unicode":113,"location":0,"echo":false,"script":null)
 ]
 }
+
+[internationalization]
+
+locale/fallback="zh_CN"
+translations=PackedStringArray("res://localization/zh_CN.po", "res://localization/en.po")
 
 [layer_names]
 

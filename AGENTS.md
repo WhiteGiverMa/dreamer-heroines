@@ -33,6 +33,8 @@ godot --export-release "Windows Desktop" ./build/
 
 ## 代码风格
 
+> **如无必要，勿增实体**
+
 遵循 [Godot 官方风格指南](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html)。
 
 ### GDScript
