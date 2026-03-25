@@ -25,21 +25,7 @@ buses/default_bus_layout="res://resources/default_bus_layout.tres"
 
 [autoload]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+McpInteractionServer="*res://mcp_interaction_server.gd"
 
 BootSequence="*res://src/autoload/boot_sequence.tscn"
 GameManager="*res://src/autoload/game_manager.gd"
