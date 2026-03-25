@@ -88,7 +88,12 @@ func _load_level_data(level_id: String) -> LevelData:
 	# 尝试从配置文件加载
 	var config_path = "res://config/levels/" + level_id + ".tres"
 	if ResourceLoader.exists(config_path):
-		return load(config_path) as LevelData
+		var loaded_resource := load(config_path)
+		if loaded_resource is LevelData:
+			return loaded_resource
+		if loaded_resource and loaded_resource.get_script() == preload("res://src/levels/level_data.gd"):
+			return loaded_resource as LevelData
+		push_warning("Level config exists but is not LevelData: " + config_path)
 	
 	# 创建默认关卡数据
 	var default_data = LevelData.new()
