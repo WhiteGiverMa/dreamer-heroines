@@ -25,6 +25,11 @@ const SaveSlotScene = preload("res://scenes/ui/save_slot.tscn")
 @export var load_game_panel: Control
 @export var settings_panel: Control
 @export var credits_panel: Control
+@export var level_select_panel: Control
+
+@export_group("Level Select")
+@export var arena_01_button: Button
+@export var test_level_button: Button
 
 @export_group("Save Slots")
 @export var save_slot_container: VBoxContainer
@@ -75,6 +80,10 @@ func _ready() -> void:
 		credits_button.pressed.connect(_on_credits_pressed)
 	if quit_button:
 		quit_button.pressed.connect(_on_quit_pressed)
+	if arena_01_button:
+		arena_01_button.pressed.connect(_on_arena_01_selected)
+	if test_level_button:
+		test_level_button.pressed.connect(_on_test_level_selected)
 	
 	# 连接返回按钮
 	_connect_back_buttons()
@@ -95,8 +104,11 @@ func _ready() -> void:
 	_check_save_files()
 	
 	# 播放开场动画
-	if animation_player:
+	if animation_player and animation_player.has_animation("intro"):
 		animation_player.play("intro")
+
+	# 明确初始化当前面板，避免首次切换时多个面板同时可见
+	_show_panel(main_panel)
 
 	_apply_localized_texts()
 
@@ -125,6 +137,13 @@ func _auto_get_node_references() -> void:
 		settings_panel = get_node_or_null("SettingsPanel")
 	if not credits_panel:
 		credits_panel = get_node_or_null("CreditsPanel")
+	if not level_select_panel:
+		level_select_panel = get_node_or_null("LevelSelectPanel")
+
+	if not arena_01_button:
+		arena_01_button = get_node_or_null("LevelSelectPanel/VBoxContainer/Arena01Button")
+	if not test_level_button:
+		test_level_button = get_node_or_null("LevelSelectPanel/VBoxContainer/TestLevelButton")
 	
 	# 存档槽位容器
 	if not save_slot_container:
@@ -164,6 +183,10 @@ func _connect_back_buttons() -> void:
 	if credits_back:
 		credits_back.pressed.connect(_on_back_to_main)
 
+	var level_select_back = get_node_or_null("LevelSelectPanel/VBoxContainer/BackButton")
+	if level_select_back:
+		level_select_back.pressed.connect(_on_back_to_main)
+
 func _on_back_to_main() -> void:
 	"""返回主面板"""
 	_show_panel(main_panel)
@@ -199,9 +222,34 @@ func _on_new_game_pressed() -> void:
 		start_game_requested.emit()
 
 func _on_start_game() -> void:
-	"""处理开始游戏：切换场景并更新游戏状态"""
-	# 切换到游戏场景（GameStateManager 会在游戏场景中自动更新状态）
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	"""处理开始游戏：先进入选关面板"""
+	_show_panel(level_select_panel)
+
+func _on_arena_01_selected() -> void:
+	"""选择 Arena 01 并启动关卡"""
+	_start_selected_level("arena_01")
+
+
+func _on_test_level_selected() -> void:
+	"""选择 Test Level 并启动关卡"""
+	_start_selected_level("test_level")
+
+
+func _start_selected_level(level_id: String) -> void:
+	"""通用关卡启动流程"""
+	if SaveManager.current_slot < 0:
+		var first_empty_slot := SaveManager.get_first_empty_slot()
+		SaveManager.current_slot = first_empty_slot if first_empty_slot >= 0 else 0
+
+	if not SaveManager.has_save_in_slot(SaveManager.current_slot):
+		SaveManager.save_to_slot(SaveManager.current_slot)
+
+	GameManager.reset_game()
+	GameManager.game_started.emit()
+
+	var level_loaded := LevelManager.load_level(level_id)
+	if not level_loaded:
+		push_error("Failed to load selected level: %s" % level_id)
 
 func _on_load_game_pressed() -> void:
 	_populate_save_slots()
@@ -212,7 +260,7 @@ func _on_settings_pressed() -> void:
 
 func _on_credits_pressed() -> void:
 	_show_panel(credits_panel)
-	if animation_player:
+	if animation_player and animation_player.has_animation("credits_roll"):
 		animation_player.play("credits_roll")
 
 func _on_quit_pressed() -> void:
@@ -532,6 +580,19 @@ func _apply_localized_texts() -> void:
 	var credits_back = get_node_or_null("CreditsPanel/BackButton")
 	if credits_back:
 		credits_back.text = LocalizationManager.tr("ui.main_menu.button.back")
+
+	var level_select_title: Label = get_node_or_null("LevelSelectPanel/Title")
+	if level_select_title:
+		level_select_title.text = "Select Level"
+
+	if arena_01_button:
+		arena_01_button.text = "Arena 01"
+	if test_level_button:
+		test_level_button.text = "Test Level"
+
+	var level_select_back = get_node_or_null("LevelSelectPanel/VBoxContainer/BackButton")
+	if level_select_back:
+		level_select_back.text = LocalizationManager.tr("ui.main_menu.button.back")
 
 	var credits_text: Label = get_node_or_null("CreditsPanel/CreditsText")
 	if credits_text:
