@@ -1,6 +1,7 @@
-[gd_scene load_steps=12 format=3 uid="uid://c8arena01level"]
+[gd_scene load_steps=13 format=3 uid="uid://c8arena01level"]
 
 [ext_resource type="Script" path="res://src/levels/arena_01.gd" id="1_arena"]
+[ext_resource type="Script" path="res://src/pickups/crate_spawner.gd" id="2_crate_spawner"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_ground"]
 normal = Vector2(0, -1)
@@ -230,3 +231,20 @@ collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBoundary"]
 shape = SubResource("RectangleShape2D_killzone")
+
+[node name="SupplySpawns" type="Node2D" parent="."]
+
+[node name="SupplySpawn1" type="Marker2D" parent="SupplySpawns"]
+position = Vector2(600, 950)
+
+[node name="SupplySpawn2" type="Marker2D" parent="SupplySpawns"]
+position = Vector2(1200, 950)
+
+[node name="SupplySpawn3" type="Marker2D" parent="SupplySpawns"]
+position = Vector2(1800, 950)
+
+[node name="CrateSpawner" type="Node2D" parent="."]
+script = ExtResource("2_crate_spawner")
+spawn_points = [NodePath("SupplySpawns/SupplySpawn1"), NodePath("SupplySpawns/SupplySpawn2"), NodePath("SupplySpawns/SupplySpawn3")]
+crate_types = ["ammo", "health", "ammo"]
+spawn_interval = 30.0
