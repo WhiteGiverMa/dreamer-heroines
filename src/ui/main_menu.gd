@@ -238,7 +238,7 @@ func _on_test_level_selected() -> void:
 func _start_selected_level(level_id: String) -> void:
 	"""通用关卡启动流程"""
 	if SaveManager.current_slot < 0:
-		var first_empty_slot := SaveManager.get_first_empty_slot()
+		var first_empty_slot: int = SaveManager.get_first_empty_slot()
 		SaveManager.current_slot = first_empty_slot if first_empty_slot >= 0 else 0
 
 	if not SaveManager.has_save_in_slot(SaveManager.current_slot):
@@ -247,7 +247,7 @@ func _start_selected_level(level_id: String) -> void:
 	GameManager.reset_game()
 	GameManager.game_started.emit()
 
-	var level_loaded := LevelManager.load_level(level_id)
+	var level_loaded: bool = LevelManager.load_level(level_id)
 	if not level_loaded:
 		push_error("Failed to load selected level: %s" % level_id)
 
@@ -556,7 +556,7 @@ func _apply_localized_texts() -> void:
 		quit_button.text = LocalizationManager.tr("ui.main_menu.button.quit")
 
 	if window_mode_option:
-		var selected_index := window_mode_option.selected
+		var selected_index: int = window_mode_option.selected
 		window_mode_option.clear()
 		for i in range(WINDOW_MODES.size()):
 			window_mode_option.add_item(LocalizationManager.tr("ui.main_menu.window_mode.%d" % i))

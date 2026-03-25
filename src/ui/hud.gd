@@ -332,7 +332,7 @@ func set_objective(text: String) -> void:
 func update_objective_progress(progress: float) -> void:
 	# 目标进度暂时显示在标签中
 	if objective_label:
-		var objective_text := _resolve_objective_text(_current_objective_base_text)
+		var objective_text: String = _resolve_objective_text(_current_objective_base_text)
 		objective_label.text = LocalizationManager.call(
 			"tr",
 			"ui.hud.objective_progress",
@@ -420,7 +420,7 @@ func show_kill_streak(count: int) -> void:
 	if count < 2:
 		return
 
-	var streak_key := ""
+	var streak_key: String = ""
 	match count:
 		2:
 			streak_key = "ui.hud.kill_streak.double"
@@ -433,7 +433,7 @@ func show_kill_streak(count: int) -> void:
 		_:
 			streak_key = "ui.hud.kill_streak.multi"
 
-	var streak_text := LocalizationManager.call("tr", streak_key, {"value": count})
+	var streak_text: String = LocalizationManager.call("tr", streak_key, {"value": count})
 
 	show_message(streak_text, 1.5)
 
@@ -539,7 +539,7 @@ func _on_wave_complete(wave_number: int) -> void:
 
 func _on_enemy_spawned(_enemy: Node) -> void:
 	# 敌人生成时更新计数
-	var enemies := get_tree().get_nodes_in_group("enemy")
+	var enemies: Array[Node] = get_tree().get_nodes_in_group("enemy")
 	update_enemy_count(enemies.size())
 
 
@@ -552,7 +552,7 @@ func _on_all_waves_complete() -> void:
 func _on_objective_score_changed(current_kills: int, target: int) -> void:
 	update_arena_score(current_kills, target)
 	# 同时更新敌人计数
-	var enemies := get_tree().get_nodes_in_group("enemy")
+	var enemies: Array[Node] = get_tree().get_nodes_in_group("enemy")
 	update_enemy_count(enemies.size())
 
 
@@ -571,7 +571,7 @@ func _apply_localized_texts() -> void:
 		_localized_text_binder.refresh_all()
 
 	if is_reloading:
-		var progress := 0
+		var progress: int = 0
 		if reload_duration > 0:
 			progress = int((reload_elapsed / reload_duration) * 100)
 		if ammo_label:
