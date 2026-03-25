@@ -227,6 +227,10 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 		if current_state == State.HURT:
 			change_state(State.CHASE)
 
+func heal(amount: int) -> void:
+	current_health = min(current_health + amount, max_health)
+	health_changed.emit(current_health, max_health)
+
 func _die() -> void:
 	AudioManager.play_sfx("enemy_death")
 	animation_player.play("death")
