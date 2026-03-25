@@ -12,6 +12,7 @@ func _ready() -> void:
 	collision_layer = Layers.PICKUPS
 	collision_mask = Layers.MASK_PICKUP
 	body_entered.connect(_on_body_entered)
+	add_to_group("supply_crate")
 
 func can_be_picked_up_by(entity: Node2D) -> bool:
 	if _is_empty:
