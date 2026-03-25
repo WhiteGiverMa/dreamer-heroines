@@ -1,0 +1,38 @@
+* text=auto
+
+# Enforce LF for source, config, and docs to avoid CRLF churn on Windows.
+*.gd text eol=lf
+*.cs text eol=lf
+*.csproj text eol=lf
+*.sln text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+
+# Godot text assets should stay LF for stable diffs/hooks.
+*.godot text eol=lf
+*.tscn text eol=lf
+*.tres text eol=lf
+*.import text eol=lf
+*.cfg text eol=lf
+
+# Keep Windows-native scripts as CRLF for shell compatibility.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets (never normalize line endings).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.dll binary
+*.exe binary

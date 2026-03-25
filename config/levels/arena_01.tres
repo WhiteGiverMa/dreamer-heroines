@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="LevelData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/levels/level_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+resource_name = "LevelData"
+level_id = "arena_01"
+level_name = "Arena 01"
+level_description = "第一关：竞技场试炼 - 消灭所有敌人"
+level_index = 1
+is_unlocked = true
+is_completed = false
+
+time_limit = 0.0
+max_lives = 3
+starting_health = 100
+starting_ammo = {}
+
+primary_objective = 0
+secondary_objectives = []
+
+completion_exp = 100
+completion_gold = 50
+unlocks_on_complete = []
+
+player_spawn_position = Vector2(100, 300)
+enemy_spawn_groups = []
+checkpoints = []
