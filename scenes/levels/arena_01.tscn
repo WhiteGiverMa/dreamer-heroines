@@ -245,6 +245,6 @@ position = Vector2(1800, 950)
 
 [node name="CrateSpawner" type="Node2D" parent="."]
 script = ExtResource("2_crate_spawner")
-spawn_points = [NodePath("SupplySpawns/SupplySpawn1"), NodePath("SupplySpawns/SupplySpawn2"), NodePath("SupplySpawns/SupplySpawn3")]
+spawn_point_paths = [NodePath("SupplySpawns/SupplySpawn1"), NodePath("SupplySpawns/SupplySpawn2"), NodePath("SupplySpawns/SupplySpawn3")]
 crate_types = ["ammo", "health", "ammo"]
 spawn_interval = 30.0

@@ -4,7 +4,7 @@ extends Node2D
 # Supply crate spawner with periodic timer
 # Spawns ammo/health crates at designated Marker2D positions
 
-@export var spawn_points: Array[Marker2D] = []
+@export var spawn_point_paths: Array[NodePath] = []
 @export var crate_types: Array[String] = ["ammo", "health", "ammo"]
 @export var spawn_interval: float = 30.0
 
@@ -16,12 +16,24 @@ const CRATE_SCENES := {
 const SPAWN_PROXIMITY_THRESHOLD: float = 50.0
 
 var _spawn_timer: Timer
+var _spawn_points: Array[Marker2D] = []
 
 
 func _ready() -> void:
+	_resolve_spawn_points()
 	_create_spawn_timer()
 	_spawn_crates()
 	_spawn_timer.start(spawn_interval)
+
+
+func _resolve_spawn_points() -> void:
+	_spawn_points.clear()
+	for path: NodePath in spawn_point_paths:
+		var node: Node = get_node_or_null(path)
+		if node is Marker2D:
+			_spawn_points.append(node)
+		else:
+			push_warning("CrateSpawner: spawn point path does not resolve to Marker2D: %s" % path)
 
 
 func _create_spawn_timer() -> void:
@@ -37,8 +49,8 @@ func _on_spawn_timer_timeout() -> void:
 
 
 func _spawn_crates() -> void:
-	for i: int in spawn_points.size():
-		var spawn_point: Marker2D = spawn_points[i]
+	for i: int in _spawn_points.size():
+		var spawn_point: Marker2D = _spawn_points[i]
 		if spawn_point == null:
 			continue
 

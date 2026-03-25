@@ -10,7 +10,8 @@ func _ready() -> void:
 
 
 func _on_pickup(body: Node2D) -> void:
-	if not body.has_method("current_weapon"):
+	# Check if body is a player (has current_weapon property)
+	if not body.is_in_group("player"):
 		return
 
 	var weapon = body.current_weapon
