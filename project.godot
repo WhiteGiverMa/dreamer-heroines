@@ -33,6 +33,14 @@ buses/default_bus_layout="res://resources/default_bus_layout.tres"
 
 
 
+
+
+
+
+
+
+
+
 BootSequence="*res://src/autoload/boot_sequence.tscn"
 GameManager="*res://src/autoload/game_manager.gd"
 AudioManager="*res://src/autoload/audio_manager.gd"

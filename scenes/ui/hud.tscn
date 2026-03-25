@@ -1,19 +1,27 @@
-[gd_scene load_steps=5 format=3 uid="uid://hud12345"]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://src/ui/hud.gd" id="1_hud"]
-[ext_resource type="PackedScene" uid="uid://dqt_input_debug" path="res://scenes/ui/input_debug_widget.tscn" id="2_debug"]
+[ext_resource type="Script" path="res://src/ui/crosshair_ui.gd" id="2_6t74n"]
+[ext_resource type="PackedScene" path="res://scenes/ui/input_debug_widget.tscn" id="2_debug"]
 [ext_resource type="PackedScene" path="res://scenes/ui/crosshair.tscn" id="3_crosshair"]
+[ext_resource type="Script" path="res://src/ui/enemy_indicator.gd" id="4_10olc"]
+[ext_resource type="PackedScene" path="res://scenes/ui/enemy_arrow.tscn" id="5_enemy_arrow"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_bg"]
 bg_color = Color(0.2, 0.2, 0.2, 0.8)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_fill"]
-bg_color = Color(0.8, 0.2, 0.2, 1.0)
+bg_color = Color(0.8, 0.2, 0.2, 1)
 
-[node name="HUD" type="CanvasLayer"]
-script = ExtResource("1_hud")
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0, 0, 0, 0.7)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
-[node name="MainContainer" type="MarginContainer" parent="."]
+[node name="HUD" type="CanvasLayer" unique_id=1529928695]
+
+[node name="MainContainer" type="MarginContainer" parent="." unique_id=1355393787]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -25,112 +33,107 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="TopBar" type="HBoxContainer" parent="MainContainer"]
+[node name="TopBar" type="HBoxContainer" parent="MainContainer" unique_id=144297065]
 layout_mode = 2
 size_flags_vertical = 0
 
-[node name="HealthSection" type="VBoxContainer" parent="MainContainer/TopBar"]
+[node name="HealthSection" type="VBoxContainer" parent="MainContainer/TopBar" unique_id=159029061]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HealthLabel" type="Label" parent="MainContainer/TopBar/HealthSection"]
+[node name="HealthLabel" type="Label" parent="MainContainer/TopBar/HealthSection" unique_id=1245805019]
 layout_mode = 2
 text = "HP: 100 / 100"
 
-[node name="HealthBar" type="ProgressBar" parent="MainContainer/TopBar/HealthSection"]
+[node name="HealthBar" type="ProgressBar" parent="MainContainer/TopBar/HealthSection" unique_id=152049561]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 20)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_styles/background = SubResource("StyleBoxFlat_health_bg")
 theme_override_styles/fill = SubResource("StyleBoxFlat_health_fill")
-max_value = 100.0
 value = 100.0
 show_percentage = false
 
-[node name="ScoreSection" type="VBoxContainer" parent="MainContainer/TopBar"]
+[node name="ScoreSection" type="VBoxContainer" parent="MainContainer/TopBar" unique_id=1103911426]
 layout_mode = 2
 size_flags_horizontal = 3
-horizontal_alignment = 1
 
-[node name="ScoreLabel" type="Label" parent="MainContainer/TopBar/ScoreSection"]
+[node name="ScoreLabel" type="Label" parent="MainContainer/TopBar/ScoreSection" unique_id=1149141688]
 layout_mode = 2
 text = "Score: 0"
 horizontal_alignment = 1
 
-[node name="LivesLabel" type="Label" parent="MainContainer/TopBar/ScoreSection"]
+[node name="LivesLabel" type="Label" parent="MainContainer/TopBar/ScoreSection" unique_id=1880522039]
 layout_mode = 2
 text = "x3"
 horizontal_alignment = 1
 
-[node name="ArenaSection" type="VBoxContainer" parent="MainContainer/TopBar"]
+[node name="ArenaSection" type="VBoxContainer" parent="MainContainer/TopBar" unique_id=183208037]
 layout_mode = 2
 size_flags_horizontal = 3
-horizontal_alignment = 2
 
-[node name="WaveCounter" type="Label" parent="MainContainer/TopBar/ArenaSection"]
+[node name="WaveCounter" type="Label" parent="MainContainer/TopBar/ArenaSection" unique_id=873318671]
 layout_mode = 2
 text = "Wave 1/5"
 horizontal_alignment = 2
 
-[node name="EnemyCount" type="Label" parent="MainContainer/TopBar/ArenaSection"]
+[node name="EnemyCount" type="Label" parent="MainContainer/TopBar/ArenaSection" unique_id=366596009]
 layout_mode = 2
 text = "Enemies: 0"
 horizontal_alignment = 2
 
-[node name="ScoreDisplay" type="Label" parent="MainContainer/TopBar/ArenaSection"]
+[node name="ScoreDisplay" type="Label" parent="MainContainer/TopBar/ArenaSection" unique_id=1592967452]
 layout_mode = 2
 text = "Kills: 0/25"
 horizontal_alignment = 2
 
-[node name="ObjectiveSection" type="VBoxContainer" parent="MainContainer/TopBar"]
+[node name="ObjectiveSection" type="VBoxContainer" parent="MainContainer/TopBar" unique_id=1387959838]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
-horizontal_alignment = 2
 
-[node name="ObjectiveLabel" type="Label" parent="MainContainer/TopBar/ObjectiveSection"]
+[node name="ObjectiveLabel" type="Label" parent="MainContainer/TopBar/ObjectiveSection" unique_id=868541731]
 layout_mode = 2
 text = "消灭所有敌人"
 horizontal_alignment = 2
 
-[node name="TimerLabel" type="Label" parent="MainContainer/TopBar/ObjectiveSection"]
+[node name="TimerLabel" type="Label" parent="MainContainer/TopBar/ObjectiveSection" unique_id=605229346]
 layout_mode = 2
 text = "00:00"
 horizontal_alignment = 2
 
-[node name="BottomBar" type="HBoxContainer" parent="MainContainer"]
+[node name="BottomBar" type="HBoxContainer" parent="MainContainer" unique_id=450978474]
 layout_mode = 2
 size_flags_vertical = 8
 
-[node name="WeaponSection" type="VBoxContainer" parent="MainContainer/BottomBar"]
+[node name="WeaponSection" type="VBoxContainer" parent="MainContainer/BottomBar" unique_id=1972501361]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="WeaponNameLabel" type="Label" parent="MainContainer/BottomBar/WeaponSection"]
+[node name="WeaponNameLabel" type="Label" parent="MainContainer/BottomBar/WeaponSection" unique_id=1635021630]
 layout_mode = 2
 text = "Rifle"
 
-[node name="AmmoLabel" type="Label" parent="MainContainer/BottomBar/WeaponSection"]
+[node name="AmmoLabel" type="Label" parent="MainContainer/BottomBar/WeaponSection" unique_id=1341842118]
 layout_mode = 2
 text = "30 / 30"
 
-[node name="ReloadProgress" type="ProgressBar" parent="MainContainer/BottomBar/WeaponSection"]
+[node name="ReloadProgress" type="ProgressBar" parent="MainContainer/BottomBar/WeaponSection" unique_id=729342438]
 visible = false
 custom_minimum_size = Vector2(100, 8)
 layout_mode = 2
-size_flags_horizontal = 1
 max_value = 1.0
 show_percentage = false
 
-[node name="WeaponSlots" type="HBoxContainer" parent="MainContainer/BottomBar/WeaponSection"]
+[node name="WeaponSlots" type="HBoxContainer" parent="MainContainer/BottomBar/WeaponSection" unique_id=516310645]
 layout_mode = 2
 
-[node name="CenterSection" type="Control" parent="MainContainer/BottomBar"]
+[node name="CenterSection" type="Control" parent="MainContainer/BottomBar" unique_id=484985625]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HitMarker" type="TextureRect" parent="MainContainer/BottomBar/CenterSection"]
+[node name="HitMarker" type="TextureRect" parent="MainContainer/BottomBar/CenterSection" unique_id=1435309231]
 visible = false
 layout_mode = 1
 anchors_preset = 8
@@ -145,10 +148,18 @@ offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="CrosshairUI" parent="MainContainer/BottomBar/CenterSection" instance=ExtResource("3_crosshair")]
+[node name="CrosshairUI" type="Control" parent="MainContainer/BottomBar/CenterSection" unique_id=1434069756 instance=ExtResource("3_crosshair")]
 layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_6t74n")
 
-[node name="DamageOverlay" type="ColorRect" parent="."]
+[node name="DamageOverlay" type="ColorRect" parent="." unique_id=1794149522]
 visible = false
 anchors_preset = 15
 anchor_right = 1.0
@@ -157,14 +168,13 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(1, 0, 0, 0.3)
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=45547450]
 
-[node name="HitMarkerTimer" type="Timer" parent="."]
+[node name="HitMarkerTimer" type="Timer" parent="." unique_id=2099171394]
 wait_time = 0.2
 one_shot = true
 
-[node name="InputDebugWidget" parent="." instance=ExtResource("2_debug")]
-layout_mode = 3
+[node name="InputDebugWidget" type="PanelContainer" parent="." unique_id=1891043112 instance=ExtResource("2_debug")]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -176,5 +186,18 @@ offset_right = 200.0
 offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="EnemyIndicator" type="Control" parent="." unique_id=489057680]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_10olc")
+max_enemies_for_display = 3
+enemy_arrow_scene = ExtResource("5_enemy_arrow")
 
 [connection signal="timeout" from="HitMarkerTimer" to="." method="_on_hit_marker_timer_timeout"]
