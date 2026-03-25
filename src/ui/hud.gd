@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+const LocalizedTextBinderClass = preload("res://src/ui/localized_text_binder.gd")
+
 # HUD - 游戏内界面
 # 显示生命值、弹药、分数等游戏信息
 
@@ -56,6 +58,11 @@ var kill_target: int = 25
 var reload_duration: float = 0.0
 var reload_elapsed: float = 0.0
 var is_reloading: bool = false
+var _last_ammo_current: int = 0
+var _last_ammo_max: int = 0
+var _last_ammo_reserve: int = -1
+var _current_objective_base_text: String = ""
+var _localized_text_binder = null
 
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var hit_marker_timer: Timer = $HitMarkerTimer
@@ -65,6 +72,11 @@ func _ready() -> void:
 	# 注册到 GameManager
 	GameManager.register_hud(self)
 
+	if LocalizationManager and not LocalizationManager.locale_changed.is_connected(_on_locale_changed):
+		LocalizationManager.locale_changed.connect(_on_locale_changed)
+
+	_setup_localized_bindings()
+
 	# 连接游戏管理器信号
 	GameManager.score_changed.connect(_on_score_changed)
 	GameManager.state_changed.connect(_on_game_state_changed)
@@ -72,6 +84,9 @@ func _ready() -> void:
 	# 初始化显示
 	_update_health_display()
 	_update_score_display()
+	_update_wave_display()
+	update_enemy_count(live_enemy_count)
+	update_arena_score(kill_count, kill_target)
 	# 弹药显示会在武器切换时更新
 
 	# 隐藏需要动态显示的元素
@@ -82,7 +97,51 @@ func _ready() -> void:
 	if reload_progress:
 		reload_progress.visible = false
 
+	_apply_localized_texts()
+
 	print("HUD initialized")
+
+
+func _setup_localized_bindings() -> void:
+	_localized_text_binder = LocalizedTextBinderClass.new(self)
+
+	_localized_text_binder.bind(
+		"score",
+		"MainContainer/TopBar/ScoreSection/ScoreLabel",
+		"ui.hud.score",
+		"text",
+		Callable(self, "_get_score_params")
+	)
+	_localized_text_binder.bind(
+		"lives",
+		"MainContainer/TopBar/ScoreSection/LivesLabel",
+		"ui.hud.lives",
+		"text",
+		Callable(self, "_get_lives_params")
+	)
+	_localized_text_binder.bind(
+		"wave",
+		"MainContainer/TopBar/ArenaSection/WaveCounter",
+		"ui.hud.wave",
+		"text",
+		Callable(self, "_get_wave_params")
+	)
+	_localized_text_binder.bind(
+		"enemies",
+		"MainContainer/TopBar/ArenaSection/EnemyCount",
+		"ui.hud.enemies",
+		"text",
+		Callable(self, "_get_enemies_params")
+	)
+	_localized_text_binder.bind(
+		"kills",
+		"MainContainer/TopBar/ArenaSection/ScoreDisplay",
+		"ui.hud.kills",
+		"text",
+		Callable(self, "_get_kills_params")
+	)
+
+	_localized_text_binder.start()
 
 
 func _process(delta: float) -> void:
@@ -138,11 +197,12 @@ func _show_damage_feedback(damage_amount: int) -> void:
 
 # 弹药更新
 func update_ammo(current: int, max: int, reserve: int = -1) -> void:
+	_last_ammo_current = current
+	_last_ammo_max = max
+	_last_ammo_reserve = reserve
+
 	if ammo_label:
-		if reserve >= 0:
-			ammo_label.text = "%d / %d (%d)" % [current, max, reserve]
-		else:
-			ammo_label.text = "%d / %d" % [current, max]
+		ammo_label.text = _format_ammo_text(current, max, reserve)
 
 		# 低弹药警告
 		if current <= max * 0.2:
@@ -216,7 +276,7 @@ func _update_reload_progress(delta: float) -> void:
 	# 更新弹药标签显示进度
 	if ammo_label and reload_duration > 0:
 		var progress = reload_elapsed / reload_duration
-		ammo_label.text = "Reloading... %d%%" % int(progress * 100)
+		ammo_label.text = LocalizationManager.call("tr", "ui.hud.reloading_progress", {"value": int(progress * 100)})
 
 
 # 武器更新
@@ -257,23 +317,27 @@ func _on_score_changed(new_score: int) -> void:
 
 
 func _update_score_display() -> void:
-	if score_label:
-		score_label.text = "Score: %d" % GameManager.current_score
-
-	if lives_label:
-		lives_label.text = "x%d" % GameManager.player_lives
+	if _localized_text_binder:
+		_localized_text_binder.refresh("score")
+		_localized_text_binder.refresh("lives")
 
 
 # 目标显示
 func set_objective(text: String) -> void:
+	_current_objective_base_text = text
 	if objective_label:
-		objective_label.text = text
+		objective_label.text = _resolve_objective_text(text)
 
 
 func update_objective_progress(progress: float) -> void:
 	# 目标进度暂时显示在标签中
 	if objective_label:
-		objective_label.text = objective_label.text + " (%d%%)" % int(progress * 100)
+		var objective_text := _resolve_objective_text(_current_objective_base_text)
+		objective_label.text = LocalizationManager.call(
+			"tr",
+			"ui.hud.objective_progress",
+			{"objective": objective_text, "value": int(progress * 100)}
+		)
 
 
 func _update_objective_display() -> void:
@@ -356,18 +420,20 @@ func show_kill_streak(count: int) -> void:
 	if count < 2:
 		return
 
-	var streak_text = ""
+	var streak_key := ""
 	match count:
 		2:
-			streak_text = "Double Kill!"
+			streak_key = "ui.hud.kill_streak.double"
 		3:
-			streak_text = "Triple Kill!"
+			streak_key = "ui.hud.kill_streak.triple"
 		4:
-			streak_text = "Quadra Kill!"
+			streak_key = "ui.hud.kill_streak.quadra"
 		5:
-			streak_text = "Penta Kill!"
+			streak_key = "ui.hud.kill_streak.penta"
 		_:
-			streak_text = "%d Kills!" % count
+			streak_key = "ui.hud.kill_streak.multi"
+
+	var streak_text := LocalizationManager.call("tr", streak_key, {"value": count})
 
 	show_message(streak_text, 1.5)
 
@@ -394,23 +460,23 @@ func update_wave(wave_number: int) -> void:
 
 ## 更新波数显示文本
 func _update_wave_display() -> void:
-	if wave_counter:
-		wave_counter.text = "Wave %d/%d" % [current_wave, max_waves]
+	if _localized_text_binder:
+		_localized_text_binder.refresh("wave")
 
 
 ## 更新敌人数量显示
 func update_enemy_count(count: int) -> void:
 	live_enemy_count = count
-	if enemy_count:
-		enemy_count.text = "Enemies: %d" % count
+	if _localized_text_binder:
+		_localized_text_binder.refresh("enemies")
 
 
 ## 更新击杀数显示
 func update_arena_score(current_kills: int, target: int) -> void:
 	kill_count = current_kills
 	kill_target = target
-	if score_display:
-		score_display.text = "Kills: %d/%d" % [current_kills, target]
+	if _localized_text_binder:
+		_localized_text_binder.refresh("kills")
 
 
 ## 连接 WaveSpawner 信号
@@ -493,6 +559,64 @@ func _on_objective_score_changed(current_kills: int, target: int) -> void:
 func _on_objective_complete() -> void:
 	# 目标完成 - 保持格式 "Kills: X/25"
 	update_arena_score(kill_target, kill_target)
+
+
+@warning_ignore("unused_parameter")
+func _on_locale_changed(_new_locale: String) -> void:
+	_apply_localized_texts()
+
+
+func _apply_localized_texts() -> void:
+	if _localized_text_binder:
+		_localized_text_binder.refresh_all()
+
+	if is_reloading:
+		var progress := 0
+		if reload_duration > 0:
+			progress = int((reload_elapsed / reload_duration) * 100)
+		if ammo_label:
+			ammo_label.text = LocalizationManager.call("tr", "ui.hud.reloading_progress", {"value": progress})
+	else:
+		update_ammo(_last_ammo_current, _last_ammo_max, _last_ammo_reserve)
+
+	if not _current_objective_base_text.is_empty() and objective_label:
+		objective_label.text = _resolve_objective_text(_current_objective_base_text)
+
+
+func _format_ammo_text(current: int, max: int, reserve: int) -> String:
+	if reserve >= 0:
+		return LocalizationManager.call(
+			"tr",
+			"ui.hud.ammo.with_reserve",
+			{"current": current, "max": max, "reserve": reserve}
+		)
+	return LocalizationManager.call("tr", "ui.hud.ammo", {"current": current, "max": max})
+
+
+func _resolve_objective_text(text: String) -> String:
+	if text.begins_with("ui."):
+		return LocalizationManager.tr(text)
+	return text
+
+
+func _get_score_params() -> Dictionary:
+	return {"value": GameManager.current_score}
+
+
+func _get_lives_params() -> Dictionary:
+	return {"value": GameManager.player_lives}
+
+
+func _get_wave_params() -> Dictionary:
+	return {"current": current_wave, "total": max_waves}
+
+
+func _get_enemies_params() -> Dictionary:
+	return {"value": live_enemy_count}
+
+
+func _get_kills_params() -> Dictionary:
+	return {"current": kill_count, "total": kill_target}
 
 
 # ============================================

@@ -210,3 +210,45 @@ msgstr "Continue"
 
 msgid "ui.game_over.button.menu"
 msgstr "Main Menu"
+
+msgid "ui.hud.score"
+msgstr "Score: {value}"
+
+msgid "ui.hud.lives"
+msgstr "x{value}"
+
+msgid "ui.hud.ammo"
+msgstr "{current} / {max}"
+
+msgid "ui.hud.ammo.with_reserve"
+msgstr "{current} / {max} ({reserve})"
+
+msgid "ui.hud.reloading_progress"
+msgstr "Reloading... {value}%"
+
+msgid "ui.hud.objective_progress"
+msgstr "{objective} ({value}%)"
+
+msgid "ui.hud.wave"
+msgstr "Wave {current}/{total}"
+
+msgid "ui.hud.enemies"
+msgstr "Enemies: {value}"
+
+msgid "ui.hud.kills"
+msgstr "Kills: {current}/{total}"
+
+msgid "ui.hud.kill_streak.double"
+msgstr "Double Kill!"
+
+msgid "ui.hud.kill_streak.triple"
+msgstr "Triple Kill!"
+
+msgid "ui.hud.kill_streak.quadra"
+msgstr "Quadra Kill!"
+
+msgid "ui.hud.kill_streak.penta"
+msgstr "Penta Kill!"
+
+msgid "ui.hud.kill_streak.multi"
+msgstr "{value} Kills!"

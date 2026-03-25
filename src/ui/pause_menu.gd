@@ -1,5 +1,7 @@
 extends Control
 
+const LocalizedTextBinderClass = preload("res://src/ui/localized_text_binder.gd")
+
 # PauseMenu - 暂停菜单
 # 游戏暂停时的菜单界面
 
@@ -28,6 +30,7 @@ signal quit_to_desktop_requested
 
 var pending_action: String = ""
 var is_settings_open: bool = false
+var _localized_text_binder = null
 
 func _ready() -> void:
 	# 自注册到 GameManager
@@ -74,8 +77,22 @@ func _ready() -> void:
 	
 	# 设置加载 - 暂时注释
 	# _load_settings()
+	_setup_localized_bindings()
 	_apply_localized_texts()
 	print("PauseMenu initialized")
+
+
+func _setup_localized_bindings() -> void:
+	_localized_text_binder = LocalizedTextBinderClass.new(self)
+
+	_localized_text_binder.bind("pause_label", "CenterContainer/VBoxContainer/PauseLabel", "ui.pause_menu.title")
+	_localized_text_binder.bind_node("resume_button", resume_button, "ui.pause_menu.button.resume")
+	_localized_text_binder.bind_node("restart_button", restart_button, "ui.pause_menu.button.restart")
+	_localized_text_binder.bind_node("settings_button", settings_button, "ui.main_menu.button.settings")
+	_localized_text_binder.bind_node("menu_button", menu_button, "ui.pause_menu.button.main_menu")
+	_localized_text_binder.bind_node("quit_button", quit_button, "ui.pause_menu.button.quit")
+
+	_localized_text_binder.start()
 
 
 func _input(event: InputEvent) -> void:
@@ -210,24 +227,8 @@ func _apply_localized_texts() -> void:
 	if not LocalizationManager:
 		return
 
-	var pause_label: Label = get_node_or_null("CenterContainer/VBoxContainer/PauseLabel")
-	if pause_label:
-		pause_label.text = LocalizationManager.tr("ui.pause_menu.title")
-
-	if resume_button:
-		resume_button.text = LocalizationManager.tr("ui.pause_menu.button.resume")
-
-	if restart_button:
-		restart_button.text = LocalizationManager.tr("ui.pause_menu.button.restart")
-
-	if settings_button:
-		settings_button.text = LocalizationManager.tr("ui.main_menu.button.settings")
-
-	if menu_button:
-		menu_button.text = LocalizationManager.tr("ui.pause_menu.button.main_menu")
-
-	if quit_button:
-		quit_button.text = LocalizationManager.tr("ui.pause_menu.button.quit")
+	if _localized_text_binder:
+		_localized_text_binder.refresh_all()
 
 	if confirmation_dialog and confirmation_dialog.visible and not pending_action.is_empty():
 		match pending_action:

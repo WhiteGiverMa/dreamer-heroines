@@ -1,5 +1,7 @@
 extends Control
 
+const LocalizedTextBinderClass = preload("res://src/ui/localized_text_binder.gd")
+
 # GameOver - 游戏结束界面
 # 显示游戏结束、胜利或失败信息
 
@@ -30,6 +32,7 @@ enum GameOverType { VICTORY, DEFEAT, TIMEOUT }
 @export var animation_player: AnimationPlayer
 
 var game_over_type: GameOverType = GameOverType.DEFEAT
+var _localized_text_binder = null
 
 func _ready() -> void:
 	# 连接按钮信号
@@ -45,8 +48,19 @@ func _ready() -> void:
 	# 初始隐藏
 	visible = false
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	_setup_localized_bindings()
 
 	_apply_static_texts()
+
+
+func _setup_localized_bindings() -> void:
+	_localized_text_binder = LocalizedTextBinderClass.new(self)
+
+	_localized_text_binder.bind_node("restart_button", restart_button, "ui.game_over.button.restart")
+	_localized_text_binder.bind_node("continue_button", continue_button, "ui.game_over.button.continue")
+	_localized_text_binder.bind_node("menu_button", menu_button, "ui.game_over.button.menu")
+
+	_localized_text_binder.start()
 
 # 显示游戏结束
 func show_game_over(type: GameOverType, stats: Dictionary = {}) -> void:
@@ -182,9 +196,5 @@ func _on_locale_changed(__new_locale: String) -> void:
 
 
 func _apply_static_texts() -> void:
-	if restart_button:
-		restart_button.text = LocalizationManager.tr("ui.game_over.button.restart")
-	if continue_button:
-		continue_button.text = LocalizationManager.tr("ui.game_over.button.continue")
-	if menu_button:
-		menu_button.text = LocalizationManager.tr("ui.game_over.button.menu")
+	if _localized_text_binder:
+		_localized_text_binder.refresh_all()

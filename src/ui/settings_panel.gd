@@ -1,6 +1,8 @@
 class_name SettingsPanel
 extends Panel
 
+const LocalizedTextBinderClass = preload("res://src/ui/localized_text_binder.gd")
+
 # SettingsPanel - 设置面板
 # 处理设置UI逻辑和持久化
 # 可在主菜单和暂停菜单上下文中使用
@@ -28,6 +30,7 @@ const WINDOW_MODES := ["Windowed", "Fullscreen", "Borderless"]
 @onready var back_button: Button = %BackButton
 
 var _is_updating_controls: bool = false
+var _localized_text_binder = null
 
 
 func _ready() -> void:
@@ -37,6 +40,7 @@ func _ready() -> void:
 	_init_controls()
 	_load_settings()
 	_connect_signals()
+	_setup_localized_bindings()
 	_apply_localized_texts()
 
 
@@ -219,35 +223,8 @@ func _apply_localized_texts() -> void:
 	if not LocalizationManager:
 		return
 
-	var title_label: Label = get_node_or_null("Title")
-	if title_label:
-		title_label.text = LocalizationManager.tr("ui.settings.title")
-
-	var resolution_label: Label = get_node_or_null("VBoxContainer/ResolutionLabel")
-	if resolution_label:
-		resolution_label.text = LocalizationManager.tr("ui.settings.resolution")
-
-	var window_mode_label: Label = get_node_or_null("VBoxContainer/WindowModeLabel")
-	if window_mode_label:
-		window_mode_label.text = LocalizationManager.tr("ui.settings.window_mode")
-
-	var language_label: Label = get_node_or_null("VBoxContainer/LanguageLabel")
-	if language_label:
-		language_label.text = LocalizationManager.tr("ui.settings.language")
-
-	var volume_label: Label = get_node_or_null("VBoxContainer/VolumeLabel")
-	if volume_label:
-		volume_label.text = LocalizationManager.tr("ui.settings.master_volume")
-
-	var sensitivity_label: Label = get_node_or_null("VBoxContainer/SensitivityLabel")
-	if sensitivity_label:
-		sensitivity_label.text = LocalizationManager.tr("ui.settings.mouse_sensitivity")
-
-	if vsync_check:
-		vsync_check.text = LocalizationManager.tr("ui.settings.vsync")
-
-	if back_button:
-		back_button.text = LocalizationManager.tr("ui.main_menu.button.back")
+	if _localized_text_binder:
+		_localized_text_binder.refresh_all()
 
 	if window_mode_option:
 		var selected_window_mode := window_mode_option.selected
@@ -300,3 +277,16 @@ func hide_panel() -> void:
 	tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tween.tween_property(self, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(func(): visible = false)
+func _setup_localized_bindings() -> void:
+	_localized_text_binder = LocalizedTextBinderClass.new(self)
+
+	_localized_text_binder.bind("title", "Title", "ui.settings.title")
+	_localized_text_binder.bind("resolution_label", "VBoxContainer/ResolutionLabel", "ui.settings.resolution")
+	_localized_text_binder.bind("window_mode_label", "VBoxContainer/WindowModeLabel", "ui.settings.window_mode")
+	_localized_text_binder.bind("language_label", "VBoxContainer/LanguageLabel", "ui.settings.language")
+	_localized_text_binder.bind("volume_label", "VBoxContainer/VolumeLabel", "ui.settings.master_volume")
+	_localized_text_binder.bind("sensitivity_label", "VBoxContainer/SensitivityLabel", "ui.settings.mouse_sensitivity")
+	_localized_text_binder.bind_node("vsync_text", vsync_check, "ui.settings.vsync")
+	_localized_text_binder.bind_node("back_text", back_button, "ui.main_menu.button.back")
+
+	_localized_text_binder.start()

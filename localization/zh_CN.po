@@ -210,3 +210,45 @@ msgstr "继续"
 
 msgid "ui.game_over.button.menu"
 msgstr "返回菜单"
+
+msgid "ui.hud.score"
+msgstr "分数: {value}"
+
+msgid "ui.hud.lives"
+msgstr "x{value}"
+
+msgid "ui.hud.ammo"
+msgstr "{current} / {max}"
+
+msgid "ui.hud.ammo.with_reserve"
+msgstr "{current} / {max} ({reserve})"
+
+msgid "ui.hud.reloading_progress"
+msgstr "换弹中... {value}%"
+
+msgid "ui.hud.objective_progress"
+msgstr "{objective}（{value}%）"
+
+msgid "ui.hud.wave"
+msgstr "波次 {current}/{total}"
+
+msgid "ui.hud.enemies"
+msgstr "敌人: {value}"
+
+msgid "ui.hud.kills"
+msgstr "击杀: {current}/{total}"
+
+msgid "ui.hud.kill_streak.double"
+msgstr "双杀！"
+
+msgid "ui.hud.kill_streak.triple"
+msgstr "三杀！"
+
+msgid "ui.hud.kill_streak.quadra"
+msgstr "四杀！"
+
+msgid "ui.hud.kill_streak.penta"
+msgstr "五杀！"
+
+msgid "ui.hud.kill_streak.multi"
+msgstr "{value} 连杀！"
