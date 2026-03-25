@@ -30,6 +30,9 @@ var objectives_completed: int = 0
 
 # 玩家引用
 var player: Node2D = null
+const PLAYER_SCENE_PATH := "res://scenes/player.tscn"
+const MAX_INIT_ATTEMPTS := 10
+var _initialize_attempts := 0
 
 func _ready() -> void:
 	var is_autoload_instance := get_path() == NodePath("/root/LevelManager")
@@ -61,6 +64,7 @@ func _process(delta: float) -> void:
 # 关卡加载
 func load_level(level_id: String) -> bool:
 	current_state = LevelState.LOADING
+	_initialize_attempts = 0
 	
 	# 加载关卡数据
 	var level_data = _load_level_data(level_id)
@@ -102,12 +106,15 @@ func _load_level_data(level_id: String) -> LevelData:
 	return default_data
 
 func _initialize_level() -> void:
+	_initialize_attempts += 1
 	current_level = get_tree().current_scene
+	if current_level == null:
+		if _initialize_attempts < MAX_INIT_ATTEMPTS:
+			call_deferred("_initialize_level")
+		return
 	
-	# 查找玩家
-	var players = get_tree().get_nodes_in_group("player")
-	if players.size() > 0:
-		player = players[0] as Node2D
+	# 查找/生成玩家
+	_ensure_player_instance()
 	
 	# 查找检查点
 	_find_checkpoints()
@@ -126,6 +133,49 @@ func _initialize_level() -> void:
 	
 	# 发送关卡加载完成信号
 	call_deferred("_emit_level_loaded")
+
+
+func _ensure_player_instance() -> void:
+	var players := get_tree().get_nodes_in_group("player")
+	if players.size() > 0:
+		player = players[0] as Node2D
+		if GameManager and player:
+			GameManager.register_player(player)
+		return
+
+	if not ResourceLoader.exists(PLAYER_SCENE_PATH):
+		push_error("LevelManager: Player scene not found at %s" % PLAYER_SCENE_PATH)
+		return
+
+	var player_scene := load(PLAYER_SCENE_PATH) as PackedScene
+	if player_scene == null:
+		push_error("LevelManager: Failed to load player scene")
+		return
+
+	var player_instance := player_scene.instantiate() as Node2D
+	if player_instance == null:
+		push_error("LevelManager: Failed to instantiate player scene")
+		return
+
+	player_instance.name = "Player"
+	current_level.add_child(player_instance)
+	player_instance.global_position = _resolve_player_spawn_position()
+	player = player_instance
+
+	if GameManager:
+		GameManager.register_player(player)
+
+
+func _resolve_player_spawn_position() -> Vector2:
+	if current_level:
+		var spawn_marker := current_level.get_node_or_null("SpawnPoints/PlayerSpawn") as Marker2D
+		if spawn_marker:
+			return spawn_marker.global_position
+
+	if current_level_data:
+		return current_level_data.player_spawn_position
+
+	return Vector2.ZERO
 
 func _emit_level_loaded() -> void:
 	level_loaded.emit(current_level_data)

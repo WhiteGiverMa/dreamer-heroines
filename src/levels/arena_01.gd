@@ -1,6 +1,7 @@
 extends Node2D
 
 const HUD_SCENE_PATH := "res://scenes/ui/hud.tscn"
+const PLAYER_SCENE_PATH := "res://scenes/player.tscn"
 
 var _wave_spawner: Node
 var _mission_objective: Node
@@ -20,6 +21,8 @@ func _prepare_runtime_state() -> void:
 
 
 func _ensure_core_nodes() -> void:
+	_ensure_player_exists()
+
 	var existing_spawner := get_node_or_null("WaveSpawner")
 	if existing_spawner:
 		_wave_spawner = existing_spawner
@@ -39,6 +42,51 @@ func _ensure_core_nodes() -> void:
 		add_child(_mission_objective)
 
 	_hud = _resolve_or_spawn_hud()
+
+
+func _ensure_player_exists() -> void:
+	var players := get_tree().get_nodes_in_group("player")
+	if players.size() > 0:
+		var existing_player := players[0] as Node2D
+		if LevelManager:
+			LevelManager.player = existing_player
+		if GameManager:
+			GameManager.register_player(existing_player)
+		return
+
+	if not ResourceLoader.exists(PLAYER_SCENE_PATH):
+		push_error("Arena01: player scene not found at %s" % PLAYER_SCENE_PATH)
+		return
+
+	var player_scene := load(PLAYER_SCENE_PATH) as PackedScene
+	if player_scene == null:
+		push_error("Arena01: failed to load player scene")
+		return
+
+	var player_instance := player_scene.instantiate() as Node2D
+	if player_instance == null:
+		push_error("Arena01: failed to instantiate player scene")
+		return
+
+	player_instance.name = "Player"
+	add_child(player_instance)
+	player_instance.global_position = _resolve_player_spawn_position()
+
+	if LevelManager:
+		LevelManager.player = player_instance
+	if GameManager:
+		GameManager.register_player(player_instance)
+
+
+func _resolve_player_spawn_position() -> Vector2:
+	var spawn_marker := get_node_or_null("SpawnPoints/PlayerSpawn") as Marker2D
+	if spawn_marker:
+		return spawn_marker.global_position
+
+	if LevelManager and LevelManager.current_level_data:
+		return LevelManager.current_level_data.player_spawn_position
+
+	return Vector2.ZERO
 
 
 func _resolve_or_spawn_hud() -> Node:
