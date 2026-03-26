@@ -322,6 +322,10 @@ func _handle_command(json_str: String) -> void:
 			_cmd_render_settings(params)
 		"resource":
 			_cmd_resource(params)
+		"dev_mode":
+			_cmd_dev_mode(params)
+		"dev_cmd":
+			_cmd_dev_cmd(params)
 		_:
 			_send_response({"error": "Unknown command: %s" % command})
 
@@ -4405,6 +4409,24 @@ func _cmd_resource(params: Dictionary) -> void:
 			_send_response({"success": true, "action": "exists", "path": res_path, "exists": ResourceLoader.exists(res_path)})
 		_:
 			_send_response({"error": "Unknown resource action: %s" % action})
+
+
+# --- Dev Mode ---
+func _cmd_dev_mode(params: Dictionary) -> void:
+	if not DeveloperCommands:
+		_send_response({"success": false, "error": "DeveloperCommands autoload not available"})
+		return
+	var result = DeveloperCommands.handle_dev_mode(params)
+	_send_response(result)
+
+
+# --- Dev Cmd ---
+func _cmd_dev_cmd(params: Dictionary) -> void:
+	if not DeveloperCommands:
+		_send_response({"success": false, "error": "DeveloperCommands autoload not available"})
+		return
+	var result = DeveloperCommands.handle_dev_cmd(params)
+	_send_response(result)
 
 
 func _exit_tree() -> void:

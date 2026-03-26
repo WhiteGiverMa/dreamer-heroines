@@ -1,8 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://enemy_arrow_scene"]
+[gd_scene load_steps=4 format=3 uid="uid://enemy_arrow_scene"]
 
 [ext_resource type="Script" path="res://src/ui/enemy_arrow.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/ui/arrows/arrow_IsosRt_red.png" id="2_arrow"]
 
 [node name="EnemyArrow" type="TextureRect"]
-texture_filter = 1
+texture_filter = 0
 mouse_filter = 2
 script = ExtResource("1_script")
+arrow_edge_texture = ExtResource("2_arrow")
+arrow_overhead_texture = ExtResource("2_arrow")

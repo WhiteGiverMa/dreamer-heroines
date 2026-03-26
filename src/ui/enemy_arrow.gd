@@ -24,6 +24,9 @@ const FADE_OUT_DURATION := 0.15
 ## 状态转换动画时长
 const TRANSITION_DURATION := 0.15
 
+## 贴图默认朝向（你当前新图是朝下）
+const BASE_FORWARD_ANGLE := PI / 2.0
+
 # ============================================
 # 枚举
 # ============================================
@@ -117,6 +120,13 @@ func set_state(state: ArrowState) -> void:
 		ArrowState.HIDDEN:
 			texture = null
 
+	if texture:
+		size = texture.get_size()
+		custom_minimum_size = size
+		pivot_offset = size * 0.5
+	else:
+		pivot_offset = Vector2.ZERO
+
 
 ## 设置目标世界坐标
 func set_target_position(world_pos: Vector2) -> void:
@@ -127,9 +137,13 @@ func set_target_position(world_pos: Vector2) -> void:
 	var target_rot: float
 	match _state:
 		ArrowState.OVERHEAD:
-			target_rot = PI
+			target_rot = 0.0
 		ArrowState.EDGE:
-			target_rot = global_position.direction_to(_world_target).angle()
+			var source_pos := global_position + get_visual_size() * 0.5
+			if source_pos.distance_to(_world_target) <= 0.001:
+				target_rot = rotation
+			else:
+				target_rot = source_pos.direction_to(_world_target).angle() - BASE_FORWARD_ANGLE
 		_:
 			target_rot = rotation
 
@@ -189,3 +203,11 @@ func _tween_transition(from_pos: Vector2, from_rot: float, to_pos: Vector2, to_r
 ## 淡出完成回调
 func _on_fade_out_complete() -> void:
 	fade_out_complete.emit()
+
+
+func get_visual_size() -> Vector2:
+	if texture:
+		return texture.get_size()
+	if size.x > 0.0 and size.y > 0.0:
+		return size
+	return Vector2(24, 24)

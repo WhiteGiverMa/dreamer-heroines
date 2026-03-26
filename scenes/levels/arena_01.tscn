@@ -1,10 +1,9 @@
-[gd_scene load_steps=13 format=3 uid="uid://c8arena01level"]
+[gd_scene format=3 uid="uid://r5rbs4hv44op"]
 
-[ext_resource type="Script" path="res://src/levels/arena_01.gd" id="1_arena"]
-[ext_resource type="Script" path="res://src/pickups/crate_spawner.gd" id="2_crate_spawner"]
+[ext_resource type="Script" uid="uid://dbn8njcg3r1rs" path="res://src/levels/arena_01.gd" id="1_arena"]
+[ext_resource type="Script" uid="uid://u6g5wead7kt" path="res://src/pickups/crate_spawner.gd" id="2_crate_spawner"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_ground"]
-normal = Vector2(0, -1)
 
 [sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_ground"]
 size = Vector2(2400, 64)
@@ -15,17 +14,14 @@ size = Vector2(200, 32)
 [sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_platform"]
 size = Vector2(200, 32)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
-size = Vector2(64, 500)
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_cover"]
 size = Vector2(80, 100)
 
 [sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_cover"]
 size = Vector2(80, 100)
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_killzone"]
-size = Vector2(2500, 100)
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall"]
+size = Vector2(64, 500)
 
 [sub_resource type="Gradient" id="Gradient_checkpoint"]
 colors = PackedColorArray(0.2, 0.8, 0.2, 1, 0.2, 1, 0.2, 0)
@@ -33,181 +29,179 @@ colors = PackedColorArray(0.2, 0.8, 0.2, 1, 0.2, 1, 0.2, 0)
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_checkpoint"]
 gradient = SubResource("Gradient_checkpoint")
 width = 32
-height = 64
 fill_from = Vector2(0.5, 1)
 fill_to = Vector2(0.5, 0)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_checkpoint"]
 size = Vector2(32, 64)
 
-[node name="Arena01" type="Node2D" groups=["level"]]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_killzone"]
+size = Vector2(2500, 100)
+
+[node name="Arena01" type="Node2D" unique_id=333206435 groups=["level"]]
 script = ExtResource("1_arena")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1697075389]
 offset_left = -1200.0
 offset_top = -500.0
 offset_right = 3600.0
 offset_bottom = 1500.0
 color = Color(0.08, 0.1, 0.14, 1)
 
-[node name="Ground" type="StaticBody2D" parent="."]
+[node name="Ground" type="StaticBody2D" parent="." unique_id=1274866206]
 position = Vector2(1200, 1000)
 collision_layer = 4
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground" unique_id=381054018]
 shape = SubResource("WorldBoundaryShape2D_ground")
 
-[node name="Sprite2D" type="Sprite2D" parent="Ground"]
+[node name="Sprite2D" type="Sprite2D" parent="Ground" unique_id=1295218807]
 position = Vector2(0, 32)
 texture = SubResource("PlaceholderTexture2D_ground")
 
-[node name="TileMapLayer" type="TileMapLayer" parent="."]
-format = 1
+[node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=1255519894]
 
-[node name="Platforms" type="Node2D" parent="."]
+[node name="Platforms" type="Node2D" parent="." unique_id=834204395]
 
-[node name="Platform1" type="StaticBody2D" parent="Platforms"]
+[node name="Platform1" type="StaticBody2D" parent="Platforms" unique_id=896158489]
 position = Vector2(400, 800)
 collision_layer = 4
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform1"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform1" unique_id=1556955073]
 shape = SubResource("RectangleShape2D_platform")
 
-[node name="Sprite2D" type="Sprite2D" parent="Platforms/Platform1"]
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/Platform1" unique_id=657922219]
 texture = SubResource("PlaceholderTexture2D_platform")
 
-[node name="Platform2" type="StaticBody2D" parent="Platforms"]
+[node name="Platform2" type="StaticBody2D" parent="Platforms" unique_id=987237900]
 position = Vector2(1200, 650)
 collision_layer = 4
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform2"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform2" unique_id=2100683595]
 shape = SubResource("RectangleShape2D_platform")
 
-[node name="Sprite2D" type="Sprite2D" parent="Platforms/Platform2"]
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/Platform2" unique_id=1927289065]
 texture = SubResource("PlaceholderTexture2D_platform")
 
-[node name="Platform3" type="StaticBody2D" parent="Platforms"]
+[node name="Platform3" type="StaticBody2D" parent="Platforms" unique_id=1124571861]
 position = Vector2(2000, 500)
 collision_layer = 4
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform3"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Platforms/Platform3" unique_id=141121127]
 shape = SubResource("RectangleShape2D_platform")
 
-[node name="Sprite2D" type="Sprite2D" parent="Platforms/Platform3"]
+[node name="Sprite2D" type="Sprite2D" parent="Platforms/Platform3" unique_id=660197385]
 texture = SubResource("PlaceholderTexture2D_platform")
 
-[node name="CoverObjects" type="Node2D" parent="."]
+[node name="CoverObjects" type="Node2D" parent="." unique_id=1558698137]
 
-[node name="Cover1" type="StaticBody2D" parent="CoverObjects"]
+[node name="Cover1" type="StaticBody2D" parent="CoverObjects" unique_id=1036338926]
 position = Vector2(600, 950)
 collision_layer = 4
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CoverObjects/Cover1"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CoverObjects/Cover1" unique_id=312144507]
 shape = SubResource("RectangleShape2D_cover")
 
-[node name="Sprite2D" type="Sprite2D" parent="CoverObjects/Cover1"]
+[node name="Sprite2D" type="Sprite2D" parent="CoverObjects/Cover1" unique_id=218564498]
 modulate = Color(0.4, 0.35, 0.3, 1)
 texture = SubResource("PlaceholderTexture2D_cover")
 
-[node name="Cover2" type="StaticBody2D" parent="CoverObjects"]
+[node name="Cover2" type="StaticBody2D" parent="CoverObjects" unique_id=928282029]
 position = Vector2(1000, 950)
 collision_layer = 4
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CoverObjects/Cover2"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CoverObjects/Cover2" unique_id=540427509]
 shape = SubResource("RectangleShape2D_cover")
 
-[node name="Sprite2D" type="Sprite2D" parent="CoverObjects/Cover2"]
+[node name="Sprite2D" type="Sprite2D" parent="CoverObjects/Cover2" unique_id=923851005]
 modulate = Color(0.4, 0.35, 0.3, 1)
 texture = SubResource("PlaceholderTexture2D_cover")
 
-[node name="Cover3" type="StaticBody2D" parent="CoverObjects"]
+[node name="Cover3" type="StaticBody2D" parent="CoverObjects" unique_id=1290395599]
 position = Vector2(1400, 950)
 collision_layer = 4
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CoverObjects/Cover3"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CoverObjects/Cover3" unique_id=186085178]
 shape = SubResource("RectangleShape2D_cover")
 
-[node name="Sprite2D" type="Sprite2D" parent="CoverObjects/Cover3"]
+[node name="Sprite2D" type="Sprite2D" parent="CoverObjects/Cover3" unique_id=274618251]
 modulate = Color(0.4, 0.35, 0.3, 1)
 texture = SubResource("PlaceholderTexture2D_cover")
 
-[node name="Cover4" type="StaticBody2D" parent="CoverObjects"]
+[node name="Cover4" type="StaticBody2D" parent="CoverObjects" unique_id=1362017981]
 position = Vector2(1800, 950)
 collision_layer = 4
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CoverObjects/Cover4"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CoverObjects/Cover4" unique_id=525950763]
 shape = SubResource("RectangleShape2D_cover")
 
-[node name="Sprite2D" type="Sprite2D" parent="CoverObjects/Cover4"]
+[node name="Sprite2D" type="Sprite2D" parent="CoverObjects/Cover4" unique_id=1795477481]
 modulate = Color(0.4, 0.35, 0.3, 1)
 texture = SubResource("PlaceholderTexture2D_cover")
 
-[node name="Walls" type="Node2D" parent="."]
+[node name="Walls" type="Node2D" parent="." unique_id=822226899]
 
-[node name="LeftWall" type="StaticBody2D" parent="Walls"]
+[node name="LeftWall" type="StaticBody2D" parent="Walls" unique_id=547495822]
 position = Vector2(-32, 500)
 collision_layer = 4
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/LeftWall"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/LeftWall" unique_id=1595976656]
 shape = SubResource("RectangleShape2D_wall")
 
-[node name="RightWall" type="StaticBody2D" parent="Walls"]
+[node name="RightWall" type="StaticBody2D" parent="Walls" unique_id=857436849]
 position = Vector2(2432, 500)
 collision_layer = 4
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/RightWall"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/RightWall" unique_id=1480883866]
 shape = SubResource("RectangleShape2D_wall")
 
-[node name="Lighting" type="Node2D" parent="."]
+[node name="Lighting" type="Node2D" parent="." unique_id=391112]
 
-[node name="DirectionalLight2D" type="DirectionalLight2D" parent="Lighting"]
+[node name="DirectionalLight2D" type="DirectionalLight2D" parent="Lighting" unique_id=1440984246]
 energy = 0.5
 blend_mode = 1
 
-[node name="SpawnPoints" type="Node2D" parent="."]
+[node name="SpawnPoints" type="Node2D" parent="." unique_id=467870313]
 
-[node name="PlayerSpawn" type="Marker2D" parent="SpawnPoints"]
+[node name="PlayerSpawn" type="Marker2D" parent="SpawnPoints" unique_id=821819164]
 position = Vector2(200, 900)
 
-[node name="EnemySpawn1" type="Marker2D" parent="SpawnPoints"]
+[node name="EnemySpawn1" type="Marker2D" parent="SpawnPoints" unique_id=1892764182]
 position = Vector2(2200, 900)
 
-[node name="EnemySpawn2" type="Marker2D" parent="SpawnPoints"]
+[node name="EnemySpawn2" type="Marker2D" parent="SpawnPoints" unique_id=121629458]
 position = Vector2(200, 600)
 
-[node name="EnemySpawn3" type="Marker2D" parent="SpawnPoints"]
+[node name="EnemySpawn3" type="Marker2D" parent="SpawnPoints" unique_id=280478279]
 position = Vector2(1200, 550)
 
-[node name="EnemySpawn4" type="Marker2D" parent="SpawnPoints"]
+[node name="EnemySpawn4" type="Marker2D" parent="SpawnPoints" unique_id=1971027574]
 position = Vector2(2200, 450)
 
-[node name="Checkpoints" type="Node2D" parent="."]
+[node name="Checkpoints" type="Node2D" parent="." unique_id=18614253]
 
-[node name="Checkpoint1" type="Area2D" parent="Checkpoints" groups=["checkpoint"]]
+[node name="Checkpoint1" type="Area2D" parent="Checkpoints" unique_id=670224072 groups=["checkpoint"]]
 position = Vector2(200, 950)
-checkpoint_id = "start"
-checkpoint_name = "Arena Start"
-is_unlocked = true
 
-[node name="Sprite2D" type="Sprite2D" parent="Checkpoints/Checkpoint1"]
+[node name="Sprite2D" type="Sprite2D" parent="Checkpoints/Checkpoint1" unique_id=1076499601]
 position = Vector2(0, -32)
 texture = SubResource("GradientTexture2D_checkpoint")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Checkpoints/Checkpoint1"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Checkpoints/Checkpoint1" unique_id=1320864301]
 position = Vector2(0, -32)
 shape = SubResource("RectangleShape2D_checkpoint")
 
-[node name="Label" type="Label" parent="Checkpoints/Checkpoint1"]
+[node name="Label" type="Label" parent="Checkpoints/Checkpoint1" unique_id=112461529]
 visible = false
 offset_left = -40.0
 offset_top = -80.0
@@ -216,35 +210,33 @@ offset_bottom = -57.0
 text = "Checkpoint"
 horizontal_alignment = 1
 
-[node name="KillZone" type="Area2D" parent="."]
+[node name="KillZone" type="Area2D" parent="." unique_id=1138569420]
 position = Vector2(1200, 1200)
 collision_layer = 0
 collision_mask = 3
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="KillZone"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="KillZone" unique_id=1911351705]
 shape = SubResource("RectangleShape2D_killzone")
 
-[node name="LevelBoundary" type="StaticBody2D" parent="."]
+[node name="LevelBoundary" type="StaticBody2D" parent="." unique_id=1397680513]
 position = Vector2(1200, 1100)
 collision_layer = 4
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBoundary"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LevelBoundary" unique_id=501126109]
 shape = SubResource("RectangleShape2D_killzone")
 
-[node name="SupplySpawns" type="Node2D" parent="."]
+[node name="SupplySpawns" type="Node2D" parent="." unique_id=106778509]
 
-[node name="SupplySpawn1" type="Marker2D" parent="SupplySpawns"]
-position = Vector2(600, 950)
+[node name="SupplySpawn1" type="Marker2D" parent="SupplySpawns" unique_id=446215950]
+position = Vector2(400, 768)
 
-[node name="SupplySpawn2" type="Marker2D" parent="SupplySpawns"]
-position = Vector2(1200, 950)
+[node name="SupplySpawn2" type="Marker2D" parent="SupplySpawns" unique_id=1860906900]
+position = Vector2(1200, 618)
 
-[node name="SupplySpawn3" type="Marker2D" parent="SupplySpawns"]
-position = Vector2(1800, 950)
+[node name="SupplySpawn3" type="Marker2D" parent="SupplySpawns" unique_id=798948684]
+position = Vector2(2000, 468)
 
-[node name="CrateSpawner" type="Node2D" parent="."]
+[node name="CrateSpawner" type="Node2D" parent="." unique_id=169363856]
 script = ExtResource("2_crate_spawner")
-spawn_point_paths = [NodePath("SupplySpawns/SupplySpawn1"), NodePath("SupplySpawns/SupplySpawn2"), NodePath("SupplySpawns/SupplySpawn3")]
-crate_types = ["ammo", "health", "ammo"]
-spawn_interval = 30.0
+spawn_point_paths = Array[NodePath]([NodePath("../SupplySpawns/SupplySpawn1"), NodePath("../SupplySpawns/SupplySpawn2"), NodePath("../SupplySpawns/SupplySpawn3")])

@@ -30,7 +30,10 @@ var _viewport_bounds: Rect2
 var _ui_margin: float = 50.0
 var _overhead_offset: float = -50.0
 var _threshold_armed: bool = false
-var _pending_enemies: Array = []
+var _pending_enemies: Array[Node] = []
+var _removing_enemies: Dictionary = {}
+var _rescan_interval: float = 0.5
+var _rescan_elapsed: float = 0.0
 
 # ============================================
 # Lifecycle
@@ -38,18 +41,43 @@ var _pending_enemies: Array = []
 
 func _ready() -> void:
 	_wave_spawner = _find_wave_spawner()
-	if _wave_spawner:
+	if _wave_spawner and not _wave_spawner.enemy_spawned.is_connected(_on_enemy_spawned):
 		_wave_spawner.enemy_spawned.connect(_on_enemy_spawned)
-
-	var existing_enemies: Array[Node] = get_tree().get_nodes_in_group("enemy")
-	for enemy in existing_enemies:
-		if is_instance_valid(enemy):
-			_connect_enemy_signals(enemy)
-			_active_arrows[enemy.get_instance_id()] = enemy
 
 	_camera = get_viewport().get_camera_2d()
 	_viewport_bounds = get_viewport().get_visible_rect()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
+
+	_register_existing_enemies()
+	call_deferred("_register_existing_enemies")
+	_check_threshold()
+
+
+func _register_existing_enemies() -> void:
+	if not is_inside_tree():
+		return
+
+	var tree := get_tree()
+	if tree == null:
+		return
+
+	var existing_enemies: Array[Node] = tree.get_nodes_in_group("enemy")
+	for enemy in existing_enemies:
+		if not is_instance_valid(enemy):
+			continue
+
+		var enemy_id: int = enemy.get_instance_id()
+		if _active_arrows.has(enemy_id):
+			continue
+		if _removing_enemies.has(enemy_id):
+			continue
+
+		_connect_enemy_signals(enemy)
+		_active_arrows[enemy_id] = enemy
+		if not _pending_enemies.has(enemy):
+			_pending_enemies.append(enemy)
+
+	_check_threshold()
 
 
 func _find_wave_spawner() -> Node:
@@ -62,28 +90,43 @@ func _find_wave_spawner() -> Node:
 func _connect_enemy_signals(enemy: Node) -> void:
 	if not is_instance_valid(enemy):
 		return
-	enemy.died.connect(_on_enemy_died.bind(enemy.get_instance_id()), CONNECT_ONE_SHOT)
-	enemy.tree_exiting.connect(_on_enemy_removed.bind(enemy.get_instance_id()), CONNECT_ONE_SHOT)
+	var enemy_id: int = enemy.get_instance_id()
+	if enemy.has_signal("died"):
+		var on_enemy_died_callable := _on_enemy_died.bind(enemy_id)
+		if not enemy.died.is_connected(on_enemy_died_callable):
+			enemy.died.connect(on_enemy_died_callable, CONNECT_ONE_SHOT)
+	var on_enemy_removed_callable := _on_enemy_removed.bind(enemy_id)
+	if not enemy.tree_exiting.is_connected(on_enemy_removed_callable):
+		enemy.tree_exiting.connect(on_enemy_removed_callable, CONNECT_ONE_SHOT)
 
 
 func _on_enemy_spawned(enemy: Node) -> void:
 	if not is_instance_valid(enemy):
 		return
+	var enemy_id: int = enemy.get_instance_id()
+	if _active_arrows.has(enemy_id):
+		return
+	if _removing_enemies.has(enemy_id):
+		return
 	_connect_enemy_signals(enemy)
-	_active_arrows[enemy.get_instance_id()] = enemy
-	_pending_enemies.append(enemy)
+	_active_arrows[enemy_id] = enemy
+	if not _pending_enemies.has(enemy):
+		_pending_enemies.append(enemy)
 	_check_threshold()
 
 
 func _on_enemy_died(enemy_instance_id: int) -> void:
+	_removing_enemies[enemy_instance_id] = true
 	_active_arrows.erase(enemy_instance_id)
 	_remove_arrow_for_enemy(enemy_instance_id)
 	_check_threshold()
 
 
 func _on_enemy_removed(enemy_instance_id: int) -> void:
+	_removing_enemies.erase(enemy_instance_id)
 	_active_arrows.erase(enemy_instance_id)
 	_remove_arrow_for_enemy(enemy_instance_id)
+	_check_threshold()
 
 
 func _check_threshold() -> void:
@@ -97,9 +140,15 @@ func _check_threshold() -> void:
 
 
 func _world_to_screen(world_pos: Vector2) -> Vector2:
-	if _camera:
-		return _camera.unproject_position(world_pos)
-	return world_pos
+	if not is_inside_tree():
+		return world_pos
+
+	var viewport := get_viewport()
+	if viewport == null:
+		return world_pos
+
+	# CanvasTransform already includes active Camera2D transform.
+	return viewport.get_canvas_transform() * world_pos
 
 
 func _is_on_screen(screen_pos: Vector2) -> bool:
@@ -134,7 +183,12 @@ func _on_viewport_size_changed() -> void:
 	_viewport_bounds = get_viewport().get_visible_rect()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_rescan_elapsed += delta
+	if _rescan_elapsed >= _rescan_interval:
+		_rescan_elapsed = 0.0
+		_register_existing_enemies()
+
 	# Clean up stale enemy references first
 	var stale_enemies: Array = []
 	for enemy_id in _active_arrows:
@@ -165,6 +219,7 @@ func _create_arrow_for_enemy(enemy: Node) -> void:
 	var arrow: EnemyArrow = enemy_arrow_scene.instantiate()
 	add_child(arrow)
 	arrow.set_state(EnemyArrow.ArrowState.HIDDEN)
+	arrow.fade_in()
 	_arrow_indicators[enemy.get_instance_id()] = arrow
 
 
@@ -173,9 +228,12 @@ func _remove_arrow_for_enemy(enemy_instance_id: int) -> void:
 		return
 	var arrow: EnemyArrow = _arrow_indicators[enemy_instance_id]
 	_arrow_indicators.erase(enemy_instance_id)
+	if not is_instance_valid(arrow):
+		return
 	arrow.fade_out()
-	await arrow.tree_exited
-	arrow.queue_free()
+	await arrow.fade_out_complete
+	if is_instance_valid(arrow):
+		arrow.queue_free()
 
 
 func _update_arrow_for_enemy(enemy: Node) -> void:
@@ -189,11 +247,11 @@ func _update_arrow_for_enemy(enemy: Node) -> void:
 
 	if _is_on_screen(screen_pos):
 		arrow.set_state(EnemyArrow.ArrowState.OVERHEAD)
-		arrow.set_target_position(screen_pos)
+		arrow.set_target_position(enemy.global_position)
 		var display_pos := screen_pos + Vector2(0, _overhead_offset)
-		arrow.global_position = display_pos
+		arrow.global_position = display_pos - arrow.get_visual_size() * 0.5
 	else:
 		var edge_pos: Vector2 = _get_edge_position(screen_pos)
 		arrow.set_state(EnemyArrow.ArrowState.EDGE)
-		arrow.set_target_position(enemy.global_position)
-		arrow.global_position = edge_pos
+		arrow.set_target_position(screen_pos)
+		arrow.global_position = edge_pos - arrow.get_visual_size() * 0.5

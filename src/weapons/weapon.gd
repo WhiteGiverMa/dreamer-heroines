@@ -109,7 +109,7 @@ func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
 	# 消耗弹药
 	if stats and _use_ammo_system_runtime:
 		current_ammo_in_mag -= 1
-		ammo_changed.emit(current_ammo_in_mag, stats.magazine_size)
+		_emit_ammo_changed()
 	
 	# 设置冷却
 	can_shoot = false
@@ -174,9 +174,9 @@ func _finish_reload() -> void:
 	
 	current_ammo_in_mag += ammo_to_reload
 	current_reserve_ammo -= ammo_to_reload
-	
+
 	is_reloading = false
-	ammo_changed.emit(current_ammo_in_mag, stats.magazine_size)
+	_emit_ammo_changed()
 	reload_finished.emit()
 
 
@@ -189,7 +189,10 @@ func cancel_reload() -> void:
 func add_ammo(amount: int) -> void:
 	if not stats:
 		return
+	var previous_reserve_ammo: int = current_reserve_ammo
 	current_reserve_ammo = mini(current_reserve_ammo + amount, stats.max_ammo)
+	if current_reserve_ammo != previous_reserve_ammo:
+		_emit_ammo_changed()
 
 
 ## 获取枪口位置
@@ -230,7 +233,7 @@ func set_use_ammo_system(enabled: bool) -> void:
 		current_ammo_in_mag = 999
 		current_reserve_ammo = 999
 
-	ammo_changed.emit(current_ammo_in_mag, stats.magazine_size)
+	_emit_ammo_changed()
 
 
 func is_using_ammo_system() -> bool:
@@ -254,3 +257,9 @@ func _spawn_shell_casing() -> void:
 	var casing := stats.shell_casing_scene.instantiate()
 	get_tree().current_scene.add_child(casing)
 	casing.global_position = global_position
+
+
+func _emit_ammo_changed() -> void:
+	if not stats:
+		return
+	ammo_changed.emit(current_ammo_in_mag, stats.magazine_size)

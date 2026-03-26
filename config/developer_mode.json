@@ -1,0 +1,14 @@
+{
+  "_comment": "开发者模式配置",
+  "_warning": "此文件控制开发者模式的运行行为",
+  "hotkey": {
+    "value": "F12",
+    "description": "切换开发者模式的热键",
+    "physical_keycode": 4194348
+  },
+  "enabled_in_release": {
+    "value": false,
+    "description": "是否在Release构建中启用开发者模式",
+    "note": "false = 仅在调试构建中可用"
+  }
+}

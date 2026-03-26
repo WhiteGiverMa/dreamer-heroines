@@ -1,0 +1,331 @@
+extends Node
+
+
+# Developer mode state
+var _dev_mode_enabled: bool = false
+
+
+func _ready() -> void:
+	# Ensure this autoload runs even when game is paused
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	print("DeveloperCommands: Command handler ready")
+
+
+func handle_dev_mode(params: Dictionary) -> Dictionary:
+	var enabled := bool(params.get("enabled", false))
+	if not DeveloperMode:
+		return {"success": false, "error": "DeveloperMode autoload not available"}
+
+	if enabled:
+		if not DeveloperMode.is_active:
+			DeveloperMode.toggle()
+	else:
+		if DeveloperMode.is_active:
+			DeveloperMode.toggle()
+
+	_dev_mode_enabled = DeveloperMode.is_active
+	print("DeveloperCommands: Dev mode %s" % ("enabled" if _dev_mode_enabled else "disabled"))
+	return {"success": true, "dev_mode": _dev_mode_enabled}
+
+
+func handle_dev_cmd(params: Dictionary) -> Dictionary:
+	var cmd = str(params.get("cmd", "")).strip_edges()
+	if cmd.is_empty():
+		return {"success": false, "error": "No command provided"}
+
+	var args: Array = []
+	var raw_args: Variant = params.get("args", [])
+	if raw_args is Array:
+		args = raw_args
+
+	# MCP curl 兼容：支�?cmd="god_mode on" 这种单字符串格式
+	if args.is_empty() and cmd.contains(" "):
+		var parts: PackedStringArray = cmd.split(" ", false)
+		cmd = parts[0]
+		for i in range(1, parts.size()):
+			args.append(parts[i])
+
+	cmd = cmd.to_lower()
+	# Route commands to DeveloperMode
+	match cmd:
+		"wave":
+			return _handle_wave_command(args)
+		"reload":
+			return _handle_reload_command(args)
+		"config":
+			return _handle_config_command(args)
+		"spawn":
+			return _handle_spawn_command(args)
+		"kill_all":
+			return _handle_kill_all_command()
+		"enemies_to_player":
+			return _handle_enemies_to_player_command()
+		"enemies_to":
+			return _handle_enemies_to_command(args)
+		"damage_all":
+			return _handle_damage_all_command(args)
+		"ammo":
+			return _handle_ammo_command(args)
+		"god_mode":
+			return _handle_god_mode_command(args)
+		"health":
+			return _handle_health_command(args)
+		"heal":
+			return _handle_heal_command(args)
+		"teleport":
+			return _handle_teleport_command(args)
+		"respawn":
+			return _handle_respawn_command(args)
+		_:
+			return {"success": false, "error": "Unknown command: " + cmd}
+
+
+func _handle_wave_command(args: Array) -> Dictionary:
+	if args.is_empty():
+		return {"success": false, "error": "wave subcommand required (next/jump/pause/resume/info)"}
+	var subcmd = args[0]
+	var dev_mode = DeveloperMode
+	match subcmd:
+		"next":
+			dev_mode.cmd_next_wave()
+			return {"success": true, "message": "Starting next wave"}
+		"jump":
+			if args.size() < 2:
+				return {"success": false, "error": "wave jump <number> requires a wave number"}
+			var wave_num_text := str(args[1]).strip_edges()
+			if not wave_num_text.is_valid_int():
+				return {"success": false, "error": "Invalid wave number: " + wave_num_text}
+			var wave_num := int(wave_num_text)
+			dev_mode.cmd_jump_to_wave(wave_num)
+			return {"success": true, "message": "Jumped to wave " + str(wave_num)}
+		"pause":
+			dev_mode.cmd_pause_waves()
+			return {"success": true, "message": "Waves paused"}
+		"resume":
+			dev_mode.cmd_resume_waves()
+			return {"success": true, "message": "Waves resumed"}
+		"info":
+			var info = dev_mode.cmd_get_wave_info()
+			return {"success": true, "wave_info": info}
+		_:
+			return {"success": false, "error": "Unknown wave subcommand: " + subcmd}
+
+
+func _handle_ammo_command(args: Array) -> Dictionary:
+	if args.is_empty():
+		return {"success": false, "error": "ammo subcommand required (infinite/refill/set)"}
+	var dev_mode = DeveloperMode
+	var subcmd = args[0]
+	match subcmd:
+		"infinite":
+			if args.size() < 2:
+				return {"success": false, "error": "Usage: ammo infinite [on|off]"}
+			var state = args[1]
+			var enabled = true
+			if state == "off":
+				enabled = false
+			elif state != "on":
+				return {"success": false, "error": "Usage: ammo infinite [on|off]"}
+			dev_mode.cmd_infinite_ammo(enabled)
+			return {"success": true, "message": "Infinite ammo: " + ("enabled" if enabled else "disabled")}
+		"refill":
+			dev_mode.cmd_refill_ammo()
+			return {"success": true, "message": "Ammo refilled"}
+		"set":
+			if args.size() < 3:
+				return {"success": false, "error": "Usage: ammo set <current> <reserve>"}
+			var current_text := str(args[1]).strip_edges()
+			var reserve_text := str(args[2]).strip_edges()
+			if not current_text.is_valid_int() or not reserve_text.is_valid_int():
+				return {"success": false, "error": "Invalid ammo values"}
+			var current := int(current_text)
+			var reserve := int(reserve_text)
+			dev_mode.cmd_set_ammo(current, reserve)
+			return {"success": true, "message": "Ammo set to: current=" + str(current) + ", reserve=" + str(reserve)}
+		_:
+			return {"success": false, "error": "Unknown ammo subcommand: " + subcmd}
+
+
+func _handle_reload_command(args: Array) -> Dictionary:
+	var dev_mode = DeveloperMode
+	var config_name = "all" if args.is_empty() else args[0]
+	var result = dev_mode.cmd_reload_config(config_name)
+	return result
+
+
+func _handle_config_command(args: Array) -> Dictionary:
+	if args.is_empty() or args[0] != "get":
+		return {"success": false, "error": "Usage: config get <config_name>"}
+	if args.size() < 2:
+		return {"success": false, "error": "Usage: config get <config_name>"}
+	var dev_mode = DeveloperMode
+	return dev_mode.cmd_get_config(args[1])
+
+
+## 玩家控制命令处理�?
+func _get_developer_mode():
+	return DeveloperMode
+
+
+func _handle_spawn_command(args: Array) -> Dictionary:
+	if args.is_empty():
+		return {"success": false, "error": "Usage: spawn <enemy_key> [x] [y]"}
+	var enemy_key = args[0]
+	var x = 0.0
+	var y = 0.0
+	if args.size() >= 3:
+		var x_text := str(args[1]).strip_edges()
+		var y_text := str(args[2]).strip_edges()
+		if not x_text.is_valid_float() or not y_text.is_valid_float():
+			return {"success": false, "error": "Usage: spawn <enemy_key> [x] [y]"}
+		x = float(x_text)
+		y = float(y_text)
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
+	var enemy = dev_mode.cmd_spawn_enemy(enemy_key, x, y)
+	if enemy:
+		var node_path := ""
+		if enemy is Node:
+			node_path = str((enemy as Node).get_path())
+		return {
+			"success": true,
+			"message": "Spawned enemy: " + enemy_key,
+			"enemy_path": node_path,
+			"enemy_id": enemy.get_instance_id()
+		}
+	else:
+		return {"success": false, "error": "Failed to spawn enemy: " + enemy_key}
+
+
+func _handle_kill_all_command() -> Dictionary:
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
+	dev_mode.cmd_kill_all_enemies()
+	return {"success": true, "message": "Killed all enemies"}
+
+
+func _handle_enemies_to_player_command() -> Dictionary:
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
+	dev_mode.cmd_teleport_enemies_to_player()
+	return {"success": true, "message": "Teleported enemies to player"}
+
+
+func _handle_enemies_to_command(args: Array) -> Dictionary:
+	if args.size() < 2:
+		return {"success": false, "error": "Usage: enemies_to <x> <y>"}
+
+	var x_text := str(args[0]).strip_edges()
+	var y_text := str(args[1]).strip_edges()
+	if not x_text.is_valid_float() or not y_text.is_valid_float():
+		return {"success": false, "error": "Usage: enemies_to <x> <y>"}
+
+	var x = float(x_text)
+	var y = float(y_text)
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
+	dev_mode.cmd_teleport_enemies_to(x, y)
+	return {"success": true, "message": "Teleported enemies to (%s, %s)" % [x, y]}
+
+
+func _handle_damage_all_command(args: Array) -> Dictionary:
+	if args.is_empty():
+		return {"success": false, "error": "Usage: damage_all <amount>"}
+
+	var amount_text := str(args[0]).strip_edges()
+	if not amount_text.is_valid_int():
+		return {"success": false, "error": "Usage: damage_all <amount>"}
+
+	var amount = int(amount_text)
+	if amount <= 0:
+		return {"success": false, "error": "Damage amount must be positive"}
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
+	dev_mode.cmd_damage_all_enemies(amount)
+	return {"success": true, "message": "Damaged all enemies for %d HP" % amount}
+
+
+func _handle_god_mode_command(args: Array) -> Dictionary:
+	var enabled := true
+	if not args.is_empty():
+		var state := str(args[0]).to_lower()
+		enabled = state in ["on", "true", "1", "yes"]
+
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
+
+	dev_mode.cmd_god_mode(enabled)
+	return {"success": true, "god_mode": enabled}
+
+
+func _handle_health_command(args: Array) -> Dictionary:
+	if args.is_empty():
+		return {"success": false, "error": "Usage: health <value>"}
+
+	var value_text := str(args[0]).strip_edges()
+	if not value_text.is_valid_int():
+		return {"success": false, "error": "Usage: health <value>"}
+
+	var value := int(value_text)
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
+
+	dev_mode.cmd_set_health(value)
+	return {"success": true, "health": value}
+
+
+func _handle_heal_command(args: Array) -> Dictionary:
+	if args.is_empty():
+		return {"success": false, "error": "Usage: heal <amount>"}
+
+	var amount_text := str(args[0]).strip_edges()
+	if not amount_text.is_valid_int():
+		return {"success": false, "error": "Usage: heal <amount>"}
+
+	var amount := int(amount_text)
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
+
+	dev_mode.cmd_heal(amount)
+	return {"success": true, "healed": amount}
+
+
+func _handle_teleport_command(args: Array) -> Dictionary:
+	if args.size() < 2:
+		return {"success": false, "error": "Usage: teleport <x> <y>"}
+
+	var x_text := str(args[0]).strip_edges()
+	var y_text := str(args[1]).strip_edges()
+	if not x_text.is_valid_float() or not y_text.is_valid_float():
+		return {"success": false, "error": "Usage: teleport <x> <y>"}
+
+	var x := float(x_text)
+	var y := float(y_text)
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
+
+	dev_mode.cmd_teleport_player(x, y)
+	return {"success": true, "position": {"x": x, "y": y}}
+
+
+func _handle_respawn_command(args: Array) -> Dictionary:
+	var _unused := args
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
+
+	dev_mode.cmd_respawn_player()
+	return {"success": true, "message": "Player respawned"}
+
+
+func is_dev_mode_enabled() -> bool:
+	return _dev_mode_enabled

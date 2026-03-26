@@ -1,5 +1,6 @@
 [gd_scene format=3]
 
+[ext_resource type="Script" path="res://src/ui/hud.gd" id="1_hud_script"]
 [ext_resource type="Script" path="res://src/ui/crosshair_ui.gd" id="2_6t74n"]
 [ext_resource type="PackedScene" path="res://scenes/ui/input_debug_widget.tscn" id="2_debug"]
 [ext_resource type="PackedScene" path="res://scenes/ui/crosshair.tscn" id="3_crosshair"]
@@ -20,6 +21,7 @@ corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
 
 [node name="HUD" type="CanvasLayer" unique_id=1529928695]
+script = ExtResource("1_hud_script")
 
 [node name="MainContainer" type="MarginContainer" parent="." unique_id=1355393787]
 anchors_preset = 15

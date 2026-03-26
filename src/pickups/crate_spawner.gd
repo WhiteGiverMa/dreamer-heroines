@@ -22,7 +22,7 @@ var _spawn_points: Array[Marker2D] = []
 func _ready() -> void:
 	_resolve_spawn_points()
 	_create_spawn_timer()
-	_spawn_crates()
+	call_deferred("_spawn_crates")
 	_spawn_timer.start(spawn_interval)
 
 
@@ -49,6 +49,9 @@ func _on_spawn_timer_timeout() -> void:
 
 
 func _spawn_crates() -> void:
+	if not is_inside_tree() or get_tree() == null:
+		return
+
 	for i: int in _spawn_points.size():
 		var spawn_point: Marker2D = _spawn_points[i]
 		if spawn_point == null:
@@ -70,6 +73,9 @@ func _get_crate_type_for_index(index: int) -> String:
 
 
 func _is_spawn_point_occupied(spawn_point: Marker2D) -> bool:
+	if not is_inside_tree() or get_tree() == null:
+		return false
+
 	var existing_crates: Array[Node] = get_tree().get_nodes_in_group("supply_crate")
 	for crate: Node in existing_crates:
 		if crate is Node2D:
@@ -101,4 +107,4 @@ func _spawn_crate(crate_type: String, spawn_point: Marker2D) -> void:
 	var spawn_parent: Node = (
 		get_tree().current_scene if get_tree() and get_tree().current_scene else self
 	)
-	spawn_parent.add_child(crate)
+	spawn_parent.call_deferred("add_child", crate)

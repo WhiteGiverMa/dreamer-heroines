@@ -31,6 +31,7 @@ var objectives_completed: int = 0
 # 玩家引用
 var player: Node2D = null
 const PLAYER_SCENE_PATH := "res://scenes/player.tscn"
+const HUD_SCENE_PATH := "res://scenes/ui/hud.tscn"
 const MAX_INIT_ATTEMPTS := 10
 var _initialize_attempts := 0
 
@@ -115,6 +116,7 @@ func _initialize_level() -> void:
 	
 	# 查找/生成玩家
 	_ensure_player_instance()
+	_ensure_hud_instance()
 	
 	# 查找检查点
 	_find_checkpoints()
@@ -164,6 +166,41 @@ func _ensure_player_instance() -> void:
 
 	if GameManager:
 		GameManager.register_player(player)
+
+
+func _ensure_hud_instance() -> void:
+	if GameManager and GameManager.hud and is_instance_valid(GameManager.hud):
+		return
+
+	var scene_root := get_tree().current_scene
+	if scene_root:
+		var existing_hud := scene_root.get_node_or_null("UI/HUD")
+		if existing_hud == null:
+			existing_hud = scene_root.get_node_or_null("HUD")
+
+		if existing_hud and existing_hud is CanvasLayer:
+			if GameManager:
+				GameManager.register_hud(existing_hud)
+			return
+
+	if not ResourceLoader.exists(HUD_SCENE_PATH):
+		push_warning("LevelManager: HUD scene not found at %s" % HUD_SCENE_PATH)
+		return
+
+	var hud_scene := load(HUD_SCENE_PATH) as PackedScene
+	if hud_scene == null:
+		push_error("LevelManager: Failed to load HUD scene")
+		return
+
+	var hud_instance := hud_scene.instantiate() as CanvasLayer
+	if hud_instance == null:
+		push_error("LevelManager: Failed to instantiate HUD scene")
+		return
+
+	if current_level:
+		current_level.add_child(hud_instance)
+	else:
+		get_tree().root.add_child(hud_instance)
 
 
 func _resolve_player_spawn_position() -> Vector2:

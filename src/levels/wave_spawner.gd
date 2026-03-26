@@ -76,6 +76,85 @@ func stop() -> void:
 		_wave_timer.stop()
 
 
+## 立即生成指定敌人
+func spawn_enemy_now(enemy_key: String, position: Vector2 = Vector2.ZERO) -> Node:
+	if not ENEMY_SCENE_BY_KEY.has(enemy_key):
+		push_error("WaveSpawner: unknown enemy key: " + enemy_key)
+		return null
+
+	var scene_path: String = ENEMY_SCENE_BY_KEY[enemy_key]
+	var enemy_scene: PackedScene = load(scene_path) as PackedScene
+	if enemy_scene == null:
+		push_error("WaveSpawner: failed to load enemy scene: %s" % scene_path)
+		return null
+
+	var enemy: Node = enemy_scene.instantiate()
+	if enemy == null:
+		return null
+
+	if enemy is Node2D:
+		if position != Vector2.ZERO:
+			enemy.global_position = position
+		elif not _spawn_points.is_empty():
+			var spawn_point: Marker2D = _spawn_points[_rng.randi_range(0, _spawn_points.size() - 1)]
+			enemy.global_position = spawn_point.global_position
+
+	var spawn_parent: Node = (
+		get_tree().current_scene if get_tree() and get_tree().current_scene else self
+	)
+	spawn_parent.add_child(enemy)
+	enemy_spawned.emit(enemy)
+	return enemy
+
+
+## 跳转到指定波次
+func skip_to_wave(wave_number: int) -> void:
+	var total: int = _waves.size()
+	if wave_number < 1 or wave_number > total:
+		push_error("WaveSpawner: invalid wave number %d (valid range: 1-%d)" % [wave_number, total])
+		return
+
+	_current_wave_index = wave_number - 1
+	_pending_enemy_keys.clear()
+	_active_wave_enemy_ids.clear()
+	_is_running = true
+
+	if _spawn_timer:
+		_spawn_timer.stop()
+	if _wave_timer:
+		_wave_timer.stop()
+
+	var wave_data: Dictionary = _waves[_current_wave_index]
+	var enemies_data: Variant = wave_data.get("enemies", [])
+	if enemies_data is Array:
+		for enemy_key in enemies_data:
+			_pending_enemy_keys.append(String(enemy_key))
+
+	var actual_wave_number: int = int(wave_data.get("wave", _current_wave_index + 1))
+	wave_started.emit(actual_wave_number)
+
+	var first_delay: float = max(0.01, float(wave_data.get("spawn_delay", 1.0)))
+	_spawn_timer.start(first_delay)
+
+
+## 获取当前波次号（从1开始）
+func get_current_wave() -> int:
+	return _current_wave_index + 1
+
+
+## 获取总波次数
+func get_total_waves() -> int:
+	return _waves.size()
+
+
+## 清除所有当前敌人
+func clear_all_enemies() -> void:
+	var enemies: Array[Node] = get_tree().get_nodes_in_group("enemy")
+	for enemy in enemies:
+		if enemy and enemy.has_method("die"):
+			enemy.die()
+
+
 func _create_timers() -> void:
 	_spawn_timer = Timer.new()
 	_spawn_timer.one_shot = true

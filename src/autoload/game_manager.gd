@@ -5,6 +5,8 @@ extends "res://src/base/game_system.gd"
 
 enum GameState { MENU, PLAYING, PAUSED, GAME_OVER, VICTORY }
 
+const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
+
 signal state_changed(new_state: GameState)
 signal score_changed(new_score: int)
 signal player_died
@@ -23,6 +25,7 @@ var current_level_instance: Node2D = null
 var hud: CanvasLayer = null
 var pause_menu: Control = null
 var game_over_screen: Control = null
+var runtime_ui_layer: CanvasLayer = null
 
 var is_game_paused: bool = false
 
@@ -247,10 +250,14 @@ func register_hud(hud_instance: CanvasLayer) -> void:
 func register_pause_menu(menu: Control) -> void:
 	pause_menu = menu
 	if pause_menu:
-		pause_menu.resume_requested.connect(_on_resume_requested)
-		pause_menu.restart_requested.connect(restart_game)
-		pause_menu.quit_to_menu_requested.connect(quit_to_menu)
-		pause_menu.quit_to_desktop_requested.connect(quit_to_desktop)
+		if not pause_menu.resume_requested.is_connected(_on_resume_requested):
+			pause_menu.resume_requested.connect(_on_resume_requested)
+		if not pause_menu.restart_requested.is_connected(restart_game):
+			pause_menu.restart_requested.connect(restart_game)
+		if not pause_menu.quit_to_menu_requested.is_connected(quit_to_menu):
+			pause_menu.quit_to_menu_requested.connect(quit_to_menu)
+		if not pause_menu.quit_to_desktop_requested.is_connected(quit_to_desktop):
+			pause_menu.quit_to_desktop_requested.connect(quit_to_desktop)
 
 func register_game_over_screen(screen: Control) -> void:
 	game_over_screen = screen
@@ -262,8 +269,33 @@ func _show_menu() -> void:
 	_hide_menus()
 
 func _show_pause_menu() -> void:
+	_ensure_pause_menu()
 	if pause_menu:
 		pause_menu.show_pause_menu()
+
+
+func _ensure_pause_menu() -> void:
+	if pause_menu and is_instance_valid(pause_menu):
+		return
+
+	var current_scene := get_tree().current_scene
+	if current_scene == null:
+		push_warning("[GameManager] 无法创建暂停菜单：当前场景为空")
+		return
+
+	if runtime_ui_layer == null or not is_instance_valid(runtime_ui_layer):
+		runtime_ui_layer = CanvasLayer.new()
+		runtime_ui_layer.name = "RuntimeUI"
+		runtime_ui_layer.layer = 100
+		runtime_ui_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+		current_scene.add_child(runtime_ui_layer)
+
+	var pause_menu_instance = PAUSE_MENU_SCENE.instantiate()
+	if pause_menu_instance is Control:
+		runtime_ui_layer.add_child(pause_menu_instance)
+		register_pause_menu(pause_menu_instance as Control)
+	else:
+		push_warning("[GameManager] 无法创建暂停菜单：场景根节点不是 Control")
 
 func _hide_menus() -> void:
 	if pause_menu:

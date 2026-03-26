@@ -181,4 +181,52 @@ assets/audio/
 
 ---
 
+## 使用方法
+
+### 播放音效
+
+音效已在 `AudioManager` 中自动注册，直接调用即可：
+
+```gdscript
+# 播放武器音效
+AudioManager.play_sfx("sfx_gunshot_pistol")
+AudioManager.play_sfx("sfx_gunshot_rifle")
+AudioManager.play_sfx("sfx_gunshot_shotgun")
+AudioManager.play_sfx("sfx_gunshot_sniper")
+
+# 播放换弹音效
+AudioManager.play_sfx("sfx_reload_generic")
+AudioManager.play_sfx("sfx_empty_click")
+AudioManager.play_sfx("sfx_shell_eject")
+
+# 播放爆炸音效
+AudioManager.play_sfx("sfx_explosion_small")
+AudioManager.play_sfx("sfx_explosion_large")
+
+# 播放UI音效
+AudioManager.play_sfx("sfx_ui_click")
+AudioManager.play_sfx("sfx_ui_hover")
+
+# 可选参数: 音量和音调
+AudioManager.play_sfx("sfx_gunshot_rifle", volume_db=-3.0, pitch_scale=1.1)
+```
+
+### 已注册音效ID列表
+
+| 音效ID | 文件 | 用途 |
+|--------|------|------|
+| `sfx_gunshot_pistol` | gunshot_pistol.wav | 手枪射击 |
+| `sfx_gunshot_rifle` | gunshot_rifle.wav | 步枪射击 |
+| `sfx_gunshot_shotgun` | gunshot_shotgun.wav | 霰弹枪射击 |
+| `sfx_gunshot_sniper` | gunshot_sniper.wav | 狙击枪射击 |
+| `sfx_reload_generic` | reload.wav | 换弹 |
+| `sfx_empty_click` | empty_click.wav | 空仓挂机 |
+| `sfx_shell_eject` | shell_eject.wav | 弹壳弹出 |
+| `sfx_explosion_small` | explosion_small.wav | 小爆炸 |
+| `sfx_explosion_large` | explosion_large.wav | 大爆炸 |
+| `sfx_ui_click` | click.wav | 按钮点击 |
+| `sfx_ui_hover` | hover.wav | 按钮悬停 |
+
+---
+
 *最后更新: 2026-03-24*

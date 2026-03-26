@@ -140,6 +140,9 @@ func _wire_signals() -> void:
 		if _hud.has_method("connect_mission_objective"):
 			_hud.call("connect_mission_objective", _mission_objective)
 
+	_register_existing_enemies()
+	call_deferred("_refresh_hud_enemy_count")
+
 	call_deferred("_deferred_start_wave_spawner")
 
 
@@ -169,6 +172,28 @@ func _on_enemy_spawned(enemy: Node) -> void:
 
 	if _hud and _hud.has_method("update_enemy_count"):
 		_hud.call("update_enemy_count", get_tree().get_nodes_in_group("enemy").size())
+
+
+func _register_existing_enemies() -> void:
+	if _mission_objective == null or not _mission_objective.has_method("register_enemy"):
+		return
+
+	var existing_enemies: Array[Node] = get_tree().get_nodes_in_group("enemy")
+	for enemy in existing_enemies:
+		if is_instance_valid(enemy):
+			_mission_objective.register_enemy(enemy)
+
+
+func _refresh_hud_enemy_count() -> void:
+	if not is_inside_tree():
+		return
+
+	var tree := get_tree()
+	if tree == null:
+		return
+
+	if _hud and _hud.has_method("update_enemy_count"):
+		_hud.call("update_enemy_count", tree.get_nodes_in_group("enemy").size())
 
 
 func _on_score_changed(current_kills: int, target_kills: int) -> void:
