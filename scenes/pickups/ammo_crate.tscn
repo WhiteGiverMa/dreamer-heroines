@@ -1,19 +1,21 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://bx06qqvsap2e6"]
 
-[ext_resource type="Script" path="res://src/pickups/ammo_crate.gd" id="1_ammoscript"]
-[ext_resource type="Texture2D" path="res://assets/sprites/pickups/ammo_crate.png" id="2_ammotexture"]
+[ext_resource type="Script" uid="uid://0ocvvic2rvaq" path="res://src/pickups/ammo_crate.gd" id="1_ammoscript"]
+[ext_resource type="Texture2D" uid="uid://cqh0xl2cjud20" path="res://assets/sprites/pickups/ammo_crate.png" id="2_ammotexture"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(32, 32)
+size = Vector2(49, 46)
 
-[node name="AmmoCrate" type="Area2D"]
+[node name="AmmoCrate" type="Area2D" unique_id=1914699643]
 collision_layer = 32
-collision_mask = 1
 script = ExtResource("1_ammoscript")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=756033861]
+position = Vector2(0.5, -18)
 shape = SubResource("RectangleShape2D_body")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=83442662]
 modulate = Color(1, 0.9, 0.2, 1)
+position = Vector2(0, -18)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("2_ammotexture")

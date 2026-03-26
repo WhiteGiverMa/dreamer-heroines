@@ -8,9 +8,13 @@ extends Weapon
 # 持有者引用（用于后坐力动画）
 var _owner_pivot: Node2D = null
 
+const TEST_WEAPON_TEXTURE_PATH := "G:/dev/Assets/Premium Weapon Pack/Tactical Weapon Pack/Tactical Weapon Pack v1.0/images/generic/rifles/wpn_hk416.png"
+const TEST_WEAPON_SCALE := Vector2(0.2, 0.2)
+
 
 func _ready() -> void:
 	super._ready()
+	_apply_test_weapon_texture()
 
 
 ## 设置持有者的武器挂载点（用于后坐力动画）
@@ -40,6 +44,27 @@ func _play_recoil_animation() -> void:
 	# 缓慢恢复
 	var tween := create_tween()
 	tween.tween_property(_owner_pivot, "rotation", original_rotation, 0.1)
+
+
+func _apply_test_weapon_texture() -> void:
+	var weapon_sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if weapon_sprite == null:
+		push_warning("Rifle weapon sprite node not found, skip test texture apply")
+		return
+
+	if not FileAccess.file_exists(TEST_WEAPON_TEXTURE_PATH):
+		push_warning("Test weapon texture not found: %s" % TEST_WEAPON_TEXTURE_PATH)
+		return
+
+	var image := Image.new()
+	var error := image.load(TEST_WEAPON_TEXTURE_PATH)
+	if error != OK:
+		push_warning("Failed to load test weapon texture, error code: %d" % error)
+		return
+
+	var image_texture := ImageTexture.create_from_image(image)
+	weapon_sprite.texture = image_texture
+	weapon_sprite.scale = TEST_WEAPON_SCALE
 
 
 ## 获取武器描述

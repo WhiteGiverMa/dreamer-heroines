@@ -35,6 +35,8 @@ var game_over_type: GameOverType = GameOverType.DEFEAT
 var _localized_text_binder = null
 
 func _ready() -> void:
+	_resolve_node_references()
+
 	# 连接按钮信号
 	if restart_button:
 		restart_button.pressed.connect(_on_restart_pressed)
@@ -51,6 +53,35 @@ func _ready() -> void:
 	_setup_localized_bindings()
 
 	_apply_static_texts()
+
+
+func _resolve_node_references() -> void:
+	if title_label == null:
+		title_label = get_node_or_null("CenterContainer/VBoxContainer/TitleLabel") as Label
+	if subtitle_label == null:
+		subtitle_label = get_node_or_null("CenterContainer/VBoxContainer/SubtitleLabel") as Label
+	if stats_container == null:
+		stats_container = get_node_or_null("CenterContainer/VBoxContainer/StatsContainer") as VBoxContainer
+	if score_label == null:
+		score_label = get_node_or_null("CenterContainer/VBoxContainer/StatsContainer/ScoreLabel") as Label
+	if kills_label == null:
+		kills_label = get_node_or_null("CenterContainer/VBoxContainer/StatsContainer/KillsLabel") as Label
+	if time_label == null:
+		time_label = get_node_or_null("CenterContainer/VBoxContainer/StatsContainer/TimeLabel") as Label
+	if accuracy_label == null:
+		accuracy_label = get_node_or_null("CenterContainer/VBoxContainer/StatsContainer/AccuracyLabel") as Label
+
+	if restart_button == null:
+		restart_button = get_node_or_null("CenterContainer/VBoxContainer/ButtonContainer/RestartButton") as Button
+	if continue_button == null:
+		continue_button = get_node_or_null("CenterContainer/VBoxContainer/ButtonContainer/ContinueButton") as Button
+	if menu_button == null:
+		menu_button = get_node_or_null("CenterContainer/VBoxContainer/ButtonContainer/MenuButton") as Button
+
+	if background == null:
+		background = get_node_or_null("Background") as ColorRect
+	if animation_player == null:
+		animation_player = get_node_or_null("AnimationPlayer") as AnimationPlayer
 
 
 func _setup_localized_bindings() -> void:

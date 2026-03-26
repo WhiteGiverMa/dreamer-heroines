@@ -241,3 +241,15 @@ godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -ginclude_subdirs -ge
 - 改动 -> 验收
   - 通过 -> *立即提交*
   - 不通过 -> 返回*继续「改动 + 测试」*，直到通过后立即提交
+
+## 启用开发者模式
+
+curl -X POST localhost:9090 -d '{"command":"dev_mode","params":{"enabled":true}}'
+
+### 执行命令
+
+curl -X POST localhost:9090 -d '{"command":"dev_cmd","params":{"cmd":"god_mode on"}}'
+
+curl -X POST localhost:9090 -d '{"command":"dev_cmd","params":{"cmd":"spawn melee"}}'
+
+curl -X POST localhost:9090 -d '{"command":"dev_cmd","params":{"cmd":"wave next"}}'

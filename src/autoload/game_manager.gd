@@ -4,8 +4,12 @@ extends "res://src/base/game_system.gd"
 # 负责游戏状态、分数、关卡切换等全局管理
 
 enum GameState { MENU, PLAYING, PAUSED, GAME_OVER, VICTORY }
+const INPUT_MODE_GAME_ONLY := 0
+const INPUT_MODE_UI_ONLY := 1
+const INPUT_MODE_GAME_AND_UI := 2
 
 const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
+const GAME_OVER_SCENE := preload("res://scenes/ui/game_over.tscn")
 
 signal state_changed(new_state: GameState)
 signal score_changed(new_score: int)
@@ -28,6 +32,7 @@ var game_over_screen: Control = null
 var runtime_ui_layer: CanvasLayer = null
 
 var is_game_paused: bool = false
+var _game_and_ui_request_count: int = 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -78,19 +83,19 @@ func change_state(new_state: GameState) -> void:
 	
 	match new_state:
 		GameState.MENU:
-			_apply_runtime_state(false, false)
+			_apply_runtime_state(false, INPUT_MODE_UI_ONLY)
 			_show_menu()
 		GameState.PLAYING:
-			_apply_runtime_state(false, true)
+			_apply_runtime_state(false, _resolve_playing_input_mode())
 			_hide_menus()
 		GameState.PAUSED:
-			_apply_runtime_state(true, false)
+			_apply_runtime_state(true, INPUT_MODE_UI_ONLY)
 			_show_pause_menu()
 		GameState.GAME_OVER:
-			_apply_runtime_state(true, false)
+			_apply_runtime_state(true, INPUT_MODE_UI_ONLY)
 			_show_game_over(false)
 		GameState.VICTORY:
-			_apply_runtime_state(true, false)
+			_apply_runtime_state(true, INPUT_MODE_UI_ONLY)
 			_show_game_over(true)
 	
 	_sync_state_to_csharp()
@@ -103,14 +108,14 @@ func set_paused(paused: bool, restore_playing_state: bool = true) -> void:
 		if current_state == GameState.PLAYING:
 			change_state(GameState.PAUSED)
 		else:
-			_apply_runtime_state(true, false)
+			_apply_runtime_state(true, INPUT_MODE_UI_ONLY)
 	else:
 		if restore_playing_state and current_state == GameState.PAUSED:
 			change_state(GameState.PLAYING)
 		elif current_state == GameState.PLAYING:
-			_apply_runtime_state(false, true)
+			_apply_runtime_state(false, _resolve_playing_input_mode())
 		else:
-			_apply_runtime_state(false, false)
+			_apply_runtime_state(false, INPUT_MODE_UI_ONLY)
 
 	_sync_state_to_csharp()
 
@@ -262,8 +267,12 @@ func register_pause_menu(menu: Control) -> void:
 func register_game_over_screen(screen: Control) -> void:
 	game_over_screen = screen
 	if game_over_screen:
-		game_over_screen.restart_requested.connect(restart_game)
-		game_over_screen.quit_to_menu_requested.connect(quit_to_menu)
+		if game_over_screen.has_signal("restart_requested") and not game_over_screen.restart_requested.is_connected(restart_game):
+			game_over_screen.restart_requested.connect(restart_game)
+		if game_over_screen.has_signal("quit_to_menu_requested") and not game_over_screen.quit_to_menu_requested.is_connected(quit_to_menu):
+			game_over_screen.quit_to_menu_requested.connect(quit_to_menu)
+		if game_over_screen.has_signal("continue_requested") and not game_over_screen.continue_requested.is_connected(_on_continue_requested):
+			game_over_screen.continue_requested.connect(_on_continue_requested)
 
 func _show_menu() -> void:
 	_hide_menus()
@@ -304,6 +313,7 @@ func _hide_menus() -> void:
 		game_over_screen.hide()
 
 func _show_game_over(victory: bool) -> void:
+	_ensure_game_over_screen()
 	if game_over_screen:
 		if victory:
 			game_over_screen.show_victory()
@@ -314,28 +324,99 @@ func _on_resume_requested() -> void:
 	set_paused(false)
 
 
-func _apply_runtime_state(paused: bool, gameplay_input_enabled: bool) -> void:
+func _on_continue_requested() -> void:
+	set_paused(false, false)
+	_clear_runtime_combat_artifacts()
+
+	var next_level_id := "level_%d" % current_level
+	var has_next_level_scene := ResourceLoader.exists("res://scenes/levels/%s.tscn" % next_level_id)
+	var has_next_level_config := ResourceLoader.exists("res://config/levels/%s.tres" % next_level_id)
+
+	if (has_next_level_scene or has_next_level_config) and LevelManager:
+		var loaded := LevelManager.load_level(next_level_id)
+		if loaded:
+			return
+
+	quit_to_menu()
+
+
+func _apply_runtime_state(paused: bool, input_mode: int) -> void:
 	is_game_paused = paused
 	get_tree().paused = paused
 	_set_current_level_processing(paused)
-	_set_gameplay_input_enabled(gameplay_input_enabled)
+	_set_input_mode(input_mode)
 
 
-func _set_gameplay_input_enabled(enabled: bool) -> void:
+func _set_input_mode(mode: int) -> void:
 	if EnhancedInput == null:
 		return
 
-	if enabled:
-		if not EnhancedInput.is_gameplay_context_enabled():
-			EnhancedInput.enable_gameplay_context()
-	else:
-		if EnhancedInput.is_gameplay_context_enabled():
-			EnhancedInput.disable_gameplay_context()
+	if not EnhancedInput.has_method("set_input_mode"):
+		return
+
+	EnhancedInput.set_input_mode(mode)
+
+
+func _resolve_playing_input_mode() -> int:
+	if _game_and_ui_request_count > 0:
+		return INPUT_MODE_GAME_AND_UI
+	return INPUT_MODE_GAME_ONLY
+
+
+func request_game_and_ui_input(_owner: String = "") -> void:
+	_game_and_ui_request_count += 1
+	if current_state == GameState.PLAYING and not is_game_paused:
+		_set_input_mode(_resolve_playing_input_mode())
+
+
+func release_game_and_ui_input(_owner: String = "") -> void:
+	_game_and_ui_request_count = maxi(0, _game_and_ui_request_count - 1)
+	if current_state == GameState.PLAYING and not is_game_paused:
+		_set_input_mode(_resolve_playing_input_mode())
 
 
 func _clear_runtime_combat_artifacts() -> void:
 	if ProjectileSpawner and ProjectileSpawner.has_method("clear_pools"):
 		ProjectileSpawner.clear_pools()
+
+
+func _ensure_game_over_screen() -> void:
+	if game_over_screen and is_instance_valid(game_over_screen):
+		return
+
+	var current_scene := get_tree().current_scene
+	if current_scene == null:
+		push_warning("[GameManager] 无法创建结算界面：当前场景为空")
+		return
+
+	var existing_game_over := current_scene.get_node_or_null("RuntimeUI/GameOver")
+	if existing_game_over is Control:
+		register_game_over_screen(existing_game_over as Control)
+		return
+
+	if runtime_ui_layer and is_instance_valid(runtime_ui_layer):
+		if not current_scene.is_ancestor_of(runtime_ui_layer):
+			runtime_ui_layer = null
+
+	if runtime_ui_layer == null or not is_instance_valid(runtime_ui_layer):
+		var existing_runtime_ui := current_scene.get_node_or_null("RuntimeUI")
+		if existing_runtime_ui is CanvasLayer:
+			runtime_ui_layer = existing_runtime_ui as CanvasLayer
+
+	if runtime_ui_layer == null or not is_instance_valid(runtime_ui_layer):
+		runtime_ui_layer = CanvasLayer.new()
+		runtime_ui_layer.name = "RuntimeUI"
+		runtime_ui_layer.layer = 100
+		runtime_ui_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+		current_scene.add_child(runtime_ui_layer)
+
+	var game_over_instance = GAME_OVER_SCENE.instantiate()
+	if game_over_instance is Control:
+		game_over_instance.name = "GameOver"
+		runtime_ui_layer.add_child(game_over_instance)
+		register_game_over_screen(game_over_instance as Control)
+	else:
+		push_warning("[GameManager] 无法创建结算界面：场景根节点不是 Control")
 
 
 func _set_current_level_processing(paused: bool) -> void:

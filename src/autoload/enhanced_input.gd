@@ -88,8 +88,19 @@ func get_mouse_world_position() -> Vector2:
 ## 游戏玩法输入上下文资源
 @export var gameplay_context: GUIDEMappingContext
 
+## UI 输入上下文资源
+@export var ui_context: GUIDEMappingContext
+
+enum InputMode {
+	GAME_ONLY,
+	UI_ONLY,
+	GAME_AND_UI
+}
+
 ## 上下文启用状态
 var _gameplay_context_enabled: bool = false
+var _ui_context_enabled: bool = false
+var _current_input_mode: InputMode = InputMode.GAME_ONLY
 
 
 func _ready() -> void:
@@ -118,27 +129,95 @@ func _initialize_contexts() -> void:
 		if gameplay_context == null:
 			push_error("EnhancedInput: Failed to load gameplay_context.tres")
 			return
+
+	# 尝试加载 UI 上下文
+	if ui_context == null:
+		ui_context = load("res://config/input/contexts/ui_context.tres") as GUIDEMappingContext
+		if ui_context == null:
+			push_error("EnhancedInput: Failed to load ui_context.tres")
+			return
 	
-	# 自动启用游戏玩法上下文
-	enable_gameplay_context()
+	# 默认进入 GAME_ONLY（与历史行为一致）
+	set_input_mode(InputMode.GAME_ONLY)
+
+
+func set_input_mode(mode: InputMode) -> void:
+	if gameplay_context == null or ui_context == null:
+		push_error("EnhancedInput: Context not ready, cannot set input mode")
+		return
+
+	if _current_input_mode == mode and _is_mode_applied(mode):
+		return
+
+	# 先清空上下文，再按模式启用，避免残留
+	GUIDE.disable_mapping_context(gameplay_context)
+	GUIDE.disable_mapping_context(ui_context)
+	_gameplay_context_enabled = false
+	_ui_context_enabled = false
+
+	match mode:
+		InputMode.GAME_ONLY:
+			GUIDE.enable_mapping_context(gameplay_context, false, 10)
+			_gameplay_context_enabled = true
+		InputMode.UI_ONLY:
+			GUIDE.enable_mapping_context(ui_context, false, 0)
+			_ui_context_enabled = true
+		InputMode.GAME_AND_UI:
+			GUIDE.enable_mapping_context(ui_context, false, 0)
+			GUIDE.enable_mapping_context(gameplay_context, false, 10)
+			_ui_context_enabled = true
+			_gameplay_context_enabled = true
+
+	_current_input_mode = mode
+	print("[EnhancedInput] Input mode set to: %s" % _input_mode_to_string(mode))
+
+
+func get_input_mode() -> InputMode:
+	return _current_input_mode
+
+
+func _is_mode_applied(mode: InputMode) -> bool:
+	match mode:
+		InputMode.GAME_ONLY:
+			return _gameplay_context_enabled and not _ui_context_enabled
+		InputMode.UI_ONLY:
+			return _ui_context_enabled and not _gameplay_context_enabled
+		InputMode.GAME_AND_UI:
+			return _ui_context_enabled and _gameplay_context_enabled
+		_:
+			return false
+
+
+func _input_mode_to_string(mode: InputMode) -> String:
+	match mode:
+		InputMode.GAME_ONLY:
+			return "GAME_ONLY"
+		InputMode.UI_ONLY:
+			return "UI_ONLY"
+		InputMode.GAME_AND_UI:
+			return "GAME_AND_UI"
+		_:
+			return "UNKNOWN"
 
 
 ## 启用游戏玩法上下文
 func enable_gameplay_context() -> void:
-	if gameplay_context == null:
-		push_error("EnhancedInput: gameplay_context is null, cannot enable")
+	if _ui_context_enabled:
+		set_input_mode(InputMode.GAME_AND_UI)
 		return
-	
-	GUIDE.enable_mapping_context(gameplay_context)
-	_gameplay_context_enabled = true
-	print("EnhancedInput: Gameplay context enabled")
+
+	set_input_mode(InputMode.GAME_ONLY)
 
 
 ## 禁用游戏玩法上下文
 func disable_gameplay_context() -> void:
+	if _ui_context_enabled:
+		set_input_mode(InputMode.UI_ONLY)
+		return
+
 	if gameplay_context == null:
 		return
-	
+
 	GUIDE.disable_mapping_context(gameplay_context)
 	_gameplay_context_enabled = false
 	print("EnhancedInput: Gameplay context disabled")
@@ -147,6 +226,31 @@ func disable_gameplay_context() -> void:
 ## 检查游戏玩法上下文是否启用
 func is_gameplay_context_enabled() -> bool:
 	return _gameplay_context_enabled
+
+
+func enable_ui_context() -> void:
+	if _gameplay_context_enabled:
+		set_input_mode(InputMode.GAME_AND_UI)
+		return
+
+	set_input_mode(InputMode.UI_ONLY)
+
+
+func disable_ui_context() -> void:
+	if _gameplay_context_enabled:
+		set_input_mode(InputMode.GAME_ONLY)
+		return
+
+	if ui_context == null:
+		return
+
+	GUIDE.disable_mapping_context(ui_context)
+	_ui_context_enabled = false
+	print("EnhancedInput: UI context disabled")
+
+
+func is_ui_context_enabled() -> bool:
+	return _ui_context_enabled
 #endregion
 
 #region 输入查询 (G.U.I.D.E 包装)

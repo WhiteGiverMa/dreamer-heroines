@@ -1,18 +1,20 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cv0v0ihan2h8e"]
 
-[ext_resource type="Script" path="res://src/pickups/health_crate.gd" id="1_healthscript"]
-[ext_resource type="Texture2D" path="res://assets/sprites/pickups/health_crate.png" id="2_healthtexture"]
+[ext_resource type="Script" uid="uid://c0p8fwaabn3be" path="res://src/pickups/health_crate.gd" id="1_healthscript"]
+[ext_resource type="Texture2D" uid="uid://boqaxhl6pf15g" path="res://assets/sprites/pickups/health_crate.png" id="2_healthtexture"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(32, 32)
+size = Vector2(54, 55)
 
-[node name="HealthCrate" type="Area2D"]
+[node name="HealthCrate" type="Area2D" unique_id=1606367841]
 collision_layer = 32
-collision_mask = 1
 script = ExtResource("1_healthscript")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=257488263]
+position = Vector2(-1, -25)
 shape = SubResource("RectangleShape2D_body")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2125541160]
+position = Vector2(0, -25)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("2_healthtexture")
