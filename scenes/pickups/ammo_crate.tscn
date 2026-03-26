@@ -1,11 +1,9 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://src/pickups/ammo_crate.gd" id="1_ammoscript"]
+[ext_resource type="Texture2D" path="res://assets/sprites/pickups/ammo_crate.png" id="2_ammotexture"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(32, 32)
-
-[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_crate"]
 size = Vector2(32, 32)
 
 [node name="AmmoCrate" type="Area2D"]
@@ -18,4 +16,4 @@ shape = SubResource("RectangleShape2D_body")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 modulate = Color(1, 0.9, 0.2, 1)
-texture = SubResource("PlaceholderTexture2D_crate")
+texture = ExtResource("2_ammotexture")

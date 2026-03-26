@@ -1,11 +1,9 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://src/pickups/health_crate.gd" id="1_healthscript"]
+[ext_resource type="Texture2D" path="res://assets/sprites/pickups/health_crate.png" id="2_healthtexture"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(32, 32)
-
-[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_crate"]
 size = Vector2(32, 32)
 
 [node name="HealthCrate" type="Area2D"]
@@ -17,19 +15,4 @@ script = ExtResource("1_healthscript")
 shape = SubResource("RectangleShape2D_body")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-modulate = Color(0.2, 0.8, 0.2, 1)
-texture = SubResource("PlaceholderTexture2D_crate")
-
-[node name="CrossV" type="ColorRect" parent="."]
-offset_left = 13.0
-offset_top = -16.0
-offset_right = 19.0
-offset_bottom = 16.0
-color = Color(1, 1, 1, 1)
-
-[node name="CrossH" type="ColorRect" parent="."]
-offset_left = -16.0
-offset_top = 10.0
-offset_right = 16.0
-offset_bottom = 14.0
-color = Color(1, 1, 1, 1)
+texture = ExtResource("2_healthtexture")
