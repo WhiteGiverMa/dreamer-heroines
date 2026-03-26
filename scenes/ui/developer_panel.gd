@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-## DeveloperPanel - 开发者面�?GUI
+## DeveloperPanel - 开发者面GUI
 ## 提供调试功能的可视化界面，由 DeveloperMode autoload 管理
 
 # Tab 索引常量
@@ -58,7 +58,8 @@ func _ready() -> void:
 	print("[DeveloperPanel] 面板已初始化")
 
 
-## 连接控制台信�?func _connect_console_signals() -> void:
+## 连接控制台信
+func _connect_console_signals() -> void:
 	console_input.text_submitted.connect(_on_console_input_submitted)
 	console_submit.pressed.connect(_on_console_submit_pressed)
 
@@ -77,11 +78,12 @@ func _input(event: InputEvent) -> void:
 					get_viewport().set_input_as_handled()
 
 
-## 连接所有按钮信�?func _connect_signals() -> void:
+## 连接所有按钮信
+func _connect_signals() -> void:
 	# Player Tab - Toggle 按钮使用 toggled 信号
 	god_mode_toggle.toggled.connect(_on_god_mode_toggled)
 	infinite_ammo_toggle.toggled.connect(_on_infinite_ammo_toggled)
-	# Player Tab - 普通按钮使�?pressed 信号
+	# Player Tab - 普通按钮使pressed 信号
 	heal_button.pressed.connect(_on_heal_pressed)
 	respawn_button.pressed.connect(_on_respawn_pressed)
 	# Enemies Tab
@@ -94,9 +96,11 @@ func _input(event: InputEvent) -> void:
 	jump_wave_button.pressed.connect(_on_jump_wave_pressed)
 	# System Tab
 	reload_config_button.pressed.connect(_on_reload_config_pressed)
-	# 连接 DeveloperMode 状态变化信�?	DeveloperMode.state_changed.connect(_on_state_changed)
+	# 连接 DeveloperMode 状态变化信
+	DeveloperMode.state_changed.connect(_on_state_changed)
 	DeveloperMode.mode_changed.connect(_on_mode_changed)
-	# 初始化状态显�?	_update_status_display()
+	# 初始化状态显
+	_update_status_display()
 
 
 ## 显示面板
@@ -109,11 +113,13 @@ func hide_panel() -> void:
 	visible = false
 
 
-## 切换面板可见�?func toggle_visibility() -> void:
+## 切换面板可见
+func toggle_visibility() -> void:
 	visible = not visible
 
 
-## 添加控制台输�?## color_mode: 0=normal(white), 1=success(green), 2=error(red)
+## 添加控制台输
+## color_mode: 0=normal(white), 1=success(green), 2=error(red)
 func add_console_output(text: String, color_mode: int = 0) -> void:
 	match color_mode:
 		1:
@@ -126,16 +132,19 @@ func add_console_output(text: String, color_mode: int = 0) -> void:
 	console_output.pop()
 
 
-## 清空控制�?func clear_console() -> void:
+## 清空控制
+func clear_console() -> void:
 	console_output.clear()
 
 
-## 更新 God Mode 按钮状�?func update_god_mode_button(enabled: bool) -> void:
+## 更新 God Mode 按钮状
+func update_god_mode_button(enabled: bool) -> void:
 	if god_mode_toggle:
 		god_mode_toggle.button_pressed = enabled
 
 
-## 更新 Infinite Ammo 按钮状�?func update_infinite_ammo_button(enabled: bool) -> void:
+## 更新 Infinite Ammo 按钮状
+func update_infinite_ammo_button(enabled: bool) -> void:
 	if infinite_ammo_toggle:
 		infinite_ammo_toggle.button_pressed = enabled
 
@@ -204,7 +213,7 @@ func _on_reload_config_pressed() -> void:
 		DeveloperMode.cmd_reload_config("all")
 
 
-# === DeveloperMode 状态变化处�?===
+# === DeveloperMode 状态变化处===
 
 func _on_state_changed(key: String, value: Variant) -> void:
 	match key:
@@ -223,7 +232,8 @@ func _on_mode_changed(enabled: bool) -> void:
 		_update_status_display()
 
 
-## 更新所有状态显�?func _update_status_display() -> void:
+## 更新所有状态显
+func _update_status_display() -> void:
 	_update_god_mode_label(DeveloperMode.god_mode)
 	_update_infinite_ammo_label(DeveloperMode.infinite_ammo)
 	_update_wave_label()
