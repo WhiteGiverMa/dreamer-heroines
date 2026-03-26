@@ -34,6 +34,12 @@ var runtime_ui_layer: CanvasLayer = null
 var is_game_paused: bool = false
 var _game_and_ui_request_count: int = 0
 
+# 测试注入点（默认使用 autoload 节点）
+# 仅用于单元测试注入替身，运行时代码不要设置这些字段。
+var _enhanced_input_override: Node = null
+var _projectile_spawner_override: Node = null
+var _level_manager_override: Node = null
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	system_name = "game_manager"
@@ -204,13 +210,13 @@ func restart_game() -> void:
 	_clear_runtime_combat_artifacts()
 	reset_game()
 	game_restarted.emit()
-	get_tree().reload_current_scene()
+	reload_current_scene()
 
 func quit_to_menu() -> void:
 	set_paused(false, false)
 	_clear_runtime_combat_artifacts()
 	change_state(GameState.MENU)
-	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
+	change_scene("res://scenes/ui/main_menu.tscn")
 
 func quit_to_desktop() -> void:
 	get_tree().quit()
@@ -348,13 +354,14 @@ func _apply_runtime_state(paused: bool, input_mode: int) -> void:
 
 
 func _set_input_mode(mode: int) -> void:
-	if EnhancedInput == null:
+	var enhanced_input_node := _get_enhanced_input_node()
+	if enhanced_input_node == null:
 		return
 
-	if not EnhancedInput.has_method("set_input_mode"):
+	if not enhanced_input_node.has_method("set_input_mode"):
 		return
 
-	EnhancedInput.set_input_mode(mode)
+	enhanced_input_node.call("set_input_mode", mode)
 
 
 func _resolve_playing_input_mode() -> int:
@@ -376,8 +383,9 @@ func release_game_and_ui_input(_owner: String = "") -> void:
 
 
 func _clear_runtime_combat_artifacts() -> void:
-	if ProjectileSpawner and ProjectileSpawner.has_method("clear_pools"):
-		ProjectileSpawner.clear_pools()
+	var projectile_spawner_node := _get_projectile_spawner_node()
+	if projectile_spawner_node and projectile_spawner_node.has_method("clear_pools"):
+		projectile_spawner_node.call("clear_pools")
 
 
 func _ensure_game_over_screen() -> void:
@@ -420,7 +428,7 @@ func _ensure_game_over_screen() -> void:
 
 
 func _set_current_level_processing(paused: bool) -> void:
-	var level_manager_node := get_node_or_null("/root/LevelManager")
+	var level_manager_node := _get_level_manager_node()
 	if level_manager_node == null:
 		return
 
@@ -432,6 +440,24 @@ func _set_current_level_processing(paused: bool) -> void:
 		(level_node as Node).process_mode = Node.PROCESS_MODE_PAUSABLE
 	else:
 		(level_node as Node).process_mode = Node.PROCESS_MODE_INHERIT
+
+
+func _get_enhanced_input_node() -> Node:
+	if _enhanced_input_override and is_instance_valid(_enhanced_input_override):
+		return _enhanced_input_override
+	return get_node_or_null("/root/EnhancedInput")
+
+
+func _get_projectile_spawner_node() -> Node:
+	if _projectile_spawner_override and is_instance_valid(_projectile_spawner_override):
+		return _projectile_spawner_override
+	return get_node_or_null("/root/ProjectileSpawner")
+
+
+func _get_level_manager_node() -> Node:
+	if _level_manager_override and is_instance_valid(_level_manager_override):
+		return _level_manager_override
+	return get_node_or_null("/root/LevelManager")
 
 # 场景切换
 func change_scene(scene_path: String) -> void:
