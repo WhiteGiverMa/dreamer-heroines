@@ -28,6 +28,8 @@ extends Resource
 
 @export_group("Advanced")
 @export var pierce_count: int = 0  # 穿透次数，0表示不穿透
+@export var pellet_count: int = 1  # 弹丸数量，1表示单发
+@export var pellet_spread: float = 0.0  # 弹丸散布角度（度）
 @export var use_ammo_system: bool = true  # true=玩家武器，false=敌人无限弹药
 
 func _init() -> void:

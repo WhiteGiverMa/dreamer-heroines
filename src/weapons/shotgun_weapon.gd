@@ -42,7 +42,7 @@ func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
 		var pellet_dir := aim_dir.rotated(deg_to_rad(spread_angle))
 
 		# 发射信号 - 让外部决定如何处理投射物
-		shot_fired.emit(muzzle_pos, pellet_dir, faction_type)
+		shot_fired.emit(muzzle_pos, pellet_dir, faction)
 
 	# 视觉特效（只播放一次，不是每颗弹丸都播放）
 	_spawn_muzzle_flash(muzzle_pos, aim_dir)

@@ -146,6 +146,18 @@ func _get_system(system_name: String) -> Node:
 	if path.is_empty():
 		push_error("[Boot] 未知系统: %s" % system_name)
 		return null
+
+	if not is_inside_tree():
+		return null
+
+	var tree := get_tree()
+	if tree == null or tree.root == null:
+		return null
+
+	if path.begins_with("/root/"):
+		var relative_path := path.trim_prefix("/root/")
+		return tree.root.get_node_or_null(relative_path)
+
 	return get_node_or_null(path)
 
 
@@ -226,6 +238,15 @@ func _update_loading_screen() -> void:
 
 ## 加载主场景
 func _load_main_scene() -> void:
+	if not is_inside_tree():
+		push_warning("[Boot] 节点不在场景树中，跳过主场景加载")
+		return
+
+	var tree := get_tree()
+	if tree == null:
+		push_warning("[Boot] SceneTree 不可用，跳过主场景加载")
+		return
+
 	# 应用已保存的设置
 	_apply_saved_settings()
 	
@@ -237,13 +258,13 @@ func _load_main_scene() -> void:
 		return
 	
 	# 如果当前场景就是主场景，不需要切换
-	if get_tree().current_scene and get_tree().current_scene.scene_file_path == main_scene:
+	if tree.current_scene and tree.current_scene.scene_file_path == main_scene:
 		print("[Boot] 已在主场景，无需切换")
 		return
-	
+
 	# 切换到主场景
 	print("[Boot] 加载主场景: %s" % main_scene)
-	get_tree().change_scene_to_file(main_scene)
+	tree.change_scene_to_file(main_scene)
 
 
 ## 应用已保存的设置
