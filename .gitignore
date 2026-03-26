@@ -1,5 +1,8 @@
 # Godot 4+ specific ignores
-.godot/
+# Keep UID cache for stable resource UID resolution across machines.
+.godot/*
+!.godot/uid_cache.bin
+!.godot/.gdignore
 android/
 
 # Godot-specific ignores

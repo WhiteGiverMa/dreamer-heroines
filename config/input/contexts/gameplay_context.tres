@@ -18,6 +18,8 @@
 [ext_resource type="Resource" uid="uid://i4g8n1s7uaq5" path="res://config/input/actions/dash.tres" id="16_sprint"]
 [ext_resource type="Resource" uid="uid://j5h9o2t8u0r6" path="res://config/input/actions/pause.tres" id="17_pause"]
 [ext_resource type="Resource" uid="uid://k6i0p3u9v1s7" path="res://config/input/actions/weapon_switch.tres" id="18_weapon_switch"]
+[ext_resource type="Resource" path="res://config/input/actions/weapon_primary.tres" id="19_weapon_primary"]
+[ext_resource type="Resource" path="res://config/input/actions/weapon_secondary.tres" id="20_weapon_secondary"]
 
 [sub_resource type="Resource" id="Resource_w_key"]
 script = ExtResource("3_key")
@@ -466,7 +468,63 @@ script = ExtResource("7_action_mapping")
 action = ExtResource("18_weapon_switch")
 input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_weapon_switch_mapping")])
 
+[sub_resource type="Resource" id="Resource_1_key"]
+script = ExtResource("3_key")
+key = 49
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_weapon_primary_pressed"]
+script = ExtResource("9_pressed")
+actuation_threshold = 0.5
+
+[sub_resource type="Resource" id="Resource_weapon_primary_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_1_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_weapon_primary_pressed")])
+
+[sub_resource type="Resource" id="Resource_weapon_primary_action"]
+script = ExtResource("7_action_mapping")
+action = ExtResource("19_weapon_primary")
+input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_weapon_primary_mapping")])
+
+[sub_resource type="Resource" id="Resource_2_key"]
+script = ExtResource("3_key")
+key = 50
+shift = false
+control = false
+alt = false
+meta = false
+allow_additional_modifiers = true
+
+[sub_resource type="Resource" id="Resource_weapon_secondary_pressed"]
+script = ExtResource("9_pressed")
+actuation_threshold = 0.5
+
+[sub_resource type="Resource" id="Resource_weapon_secondary_mapping"]
+script = ExtResource("6_input_mapping")
+override_action_settings = false
+is_remappable = false
+display_name = ""
+display_category = ""
+input = SubResource("Resource_2_key")
+modifiers = Array[Resource("res://addons/guide/modifiers/guide_modifier.gd")]([])
+triggers = Array[Resource("res://addons/guide/triggers/guide_trigger.gd")]([SubResource("Resource_weapon_secondary_pressed")])
+
+[sub_resource type="Resource" id="Resource_weapon_secondary_action"]
+script = ExtResource("7_action_mapping")
+action = ExtResource("20_weapon_secondary")
+input_mappings = Array[ExtResource("6_input_mapping")]([SubResource("Resource_weapon_secondary_mapping")])
+
 [resource]
 script = ExtResource("1_context")
 display_name = "Gameplay"
-mappings = Array[ExtResource("7_action_mapping")]([SubResource("Resource_move_action"), SubResource("Resource_jump_action"), SubResource("Resource_shoot_action"), SubResource("Resource_reload_action"), SubResource("Resource_interact_action"), SubResource("Resource_crouch_action"), SubResource("Resource_sprint_action"), SubResource("Resource_pause_action"), SubResource("Resource_weapon_switch_action")])
+mappings = Array[ExtResource("7_action_mapping")]([SubResource("Resource_move_action"), SubResource("Resource_jump_action"), SubResource("Resource_shoot_action"), SubResource("Resource_reload_action"), SubResource("Resource_interact_action"), SubResource("Resource_crouch_action"), SubResource("Resource_sprint_action"), SubResource("Resource_pause_action"), SubResource("Resource_weapon_switch_action"), SubResource("Resource_weapon_primary_action"), SubResource("Resource_weapon_secondary_action")])

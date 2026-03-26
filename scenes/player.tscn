@@ -8,7 +8,9 @@
 [ext_resource type="Resource" uid="uid://i4g8n1s7uaq5" path="res://config/input/actions/dash.tres" id="6_sprint"]
 [ext_resource type="Resource" uid="uid://h3f7m0r6s8p4" path="res://config/input/actions/crouch.tres" id="7_crouch"]
 [ext_resource type="Resource" uid="uid://k6i0p3u9v1s7" path="res://config/input/actions/weapon_switch.tres" id="8_weapon_switch"]
-[ext_resource type="Script" path="res://src/utils/camera_shake.gd" id="9_camera_shake"]
+[ext_resource type="Resource" path="res://config/input/actions/weapon_primary.tres" id="9_weapon_primary"]
+[ext_resource type="Resource" path="res://config/input/actions/weapon_secondary.tres" id="10_weapon_secondary"]
+[ext_resource type="Script" path="res://src/utils/camera_shake.gd" id="11_camera_shake"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(32, 64)
@@ -169,6 +171,8 @@ reload_action = ExtResource("5_reload")
 dash_action = ExtResource("6_sprint")
 crouch_action = ExtResource("7_crouch")
 weapon_switch_action = ExtResource("8_weapon_switch")
+weapon_primary_action = ExtResource("9_weapon_primary")
+weapon_secondary_action = ExtResource("10_weapon_secondary")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -32)
@@ -195,7 +199,7 @@ position = Vector2(0, -2)
 shape = SubResource("RectangleShape2D_feet")
 
 [node name="Camera2D" type="Camera2D" parent="."]
-script = ExtResource("9_camera_shake")
+script = ExtResource("11_camera_shake")
 position = Vector2(0, -50)
 offset = Vector2(100, 0)
 limit_smoothed = true
