@@ -118,6 +118,9 @@ msgstr "鼠标灵敏度"
 msgid "ui.settings.vsync"
 msgstr "垂直同步"
 
+msgid "ui.settings.developer_mode"
+msgstr "开发者模式 (F12)"
+
 msgid "ui.pause_menu.title"
 msgstr "已暂停"
 

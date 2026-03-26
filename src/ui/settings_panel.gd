@@ -27,6 +27,7 @@ const WINDOW_MODES := ["Windowed", "Fullscreen", "Borderless"]
 @onready var volume_slider: HSlider = %VolumeSlider
 @onready var sensitivity_slider: HSlider = %SensitivitySlider
 @onready var vsync_check: CheckBox = %VSyncCheck
+@onready var developer_mode_check: CheckBox = %DeveloperModeCheck
 @onready var back_button: Button = %BackButton
 
 var _is_updating_controls: bool = false
@@ -89,6 +90,11 @@ func _load_settings() -> void:
 
 	if vsync_check:
 		vsync_check.button_pressed = settings.get("vsync", true)
+
+	if developer_mode_check:
+		developer_mode_check.button_pressed = settings.get("developer_mode_enabled", false)
+		if DeveloperMode:
+			DeveloperMode.set_user_enabled(developer_mode_check.button_pressed)
 	
 	# 分辨率没有保存，保持默认选择
 
@@ -112,6 +118,9 @@ func _connect_signals() -> void:
 	
 	if vsync_check:
 		vsync_check.toggled.connect(_on_vsync_toggled)
+
+	if developer_mode_check:
+		developer_mode_check.toggled.connect(_on_developer_mode_toggled)
 	
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
@@ -194,17 +203,28 @@ func _on_vsync_toggled(enabled: bool) -> void:
 	_save_settings()
 
 
+func _on_developer_mode_toggled(enabled: bool) -> void:
+	if DeveloperMode:
+		DeveloperMode.set_user_enabled(enabled)
+	print("[SettingsPanel] Developer mode changed to: %s" % ("enabled" if enabled else "disabled"))
+	_save_settings()
+
+
 func _save_settings() -> void:
 	"""保存设置到 SaveManager"""
+	var current_settings := SaveManager.load_settings()
 	var settings := {
 		"master_volume": volume_slider.value / 100.0 if volume_slider else 0.8,
-		"music_volume": 0.7,
-		"sfx_volume": 1.0,
+		"music_volume": current_settings.get("music_volume", 0.7),
+		"sfx_volume": current_settings.get("sfx_volume", 1.0),
 		"mouse_sensitivity": sensitivity_slider.value / 100.0 if sensitivity_slider else 1.0,
 		"fullscreen": window_mode_option.selected == 1 if window_mode_option else false,
 		"vsync": vsync_check.button_pressed if vsync_check else true,
 		"window_mode": window_mode_option.selected if window_mode_option else 0,
 		"locale": LocalizationManager.get_locale() if LocalizationManager else "zh_CN",
+		"developer_mode_enabled": developer_mode_check.button_pressed if developer_mode_check else false,
+		"resolution_width": DisplayServer.window_get_size().x,
+		"resolution_height": DisplayServer.window_get_size().y,
 	}
 	SaveManager.save_settings(settings)
 
@@ -287,6 +307,7 @@ func _setup_localized_bindings() -> void:
 	_localized_text_binder.bind("volume_label", "VBoxContainer/VolumeLabel", "ui.settings.master_volume")
 	_localized_text_binder.bind("sensitivity_label", "VBoxContainer/SensitivityLabel", "ui.settings.mouse_sensitivity")
 	_localized_text_binder.bind_node("vsync_text", vsync_check, "ui.settings.vsync")
+	_localized_text_binder.bind_node("developer_mode_text", developer_mode_check, "ui.settings.developer_mode")
 	_localized_text_binder.bind_node("back_text", back_button, "ui.main_menu.button.back")
 
 	_localized_text_binder.start()

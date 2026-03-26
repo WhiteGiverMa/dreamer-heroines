@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using DreamerHeroines.Data;
 using Godot;
@@ -47,6 +48,11 @@ namespace DreamerHeroines.Systems
         private bool _autoSaveEnabled = true;
         private readonly Queue<SaveOperation> _saveQueue = new Queue<SaveOperation>();
         private PlayerData? _cachedPlayerData;
+        private static readonly JsonSerializerOptions _settingsJsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
         #endregion
 
         #region Properties
@@ -537,33 +543,37 @@ namespace DreamerHeroines.Systems
 
         #region Settings
         /// <summary>
-        /// 保存游戏设置
+        /// 保存游戏设置（GDScript Dictionary 入口）
+        /// </summary>
+        public void SaveSettings(Godot.Collections.Dictionary settings)
+        {
+            var current = LoadSettings();
+            var merged = MergeSettingsFromDictionary(current, settings);
+            SaveSettings(merged);
+        }
+
+        /// <summary>
+        /// 保存游戏设置（C# 类型入口）
         /// </summary>
         public void SaveSettings(SettingsSaveData settings)
         {
             try
             {
-                // 使用JSON序列化设置
-                var dict = new Godot.Collections.Dictionary
-                {
-                    ["masterVolume"] = settings.MasterVolume,
-                    ["musicVolume"] = settings.MusicVolume,
-                    ["sfxVolume"] = settings.SFXVolume,
-                    ["mouseSensitivity"] = settings.MouseSensitivity,
-                    ["invertMouseY"] = settings.InvertMouseY,
-                    ["showDamageNumbers"] = settings.ShowDamageNumbers,
-                    ["screenShake"] = settings.ScreenShake,
-                    ["targetFrameRate"] = settings.TargetFrameRate,
-                    ["vsync"] = settings.VSync,
-                    ["fullscreen"] = settings.Fullscreen,
-                    ["language"] = settings.Language,
-                };
+                var payload = LoadRawSettingsPayload();
+                RemoveKnownSettingsAliasKeys(payload);
+                ApplyCanonicalSettingsPayload(payload, settings);
 
-                string json = dict.ToString();
+                string json = JsonSerializer.Serialize(payload, _settingsJsonOptions);
                 using var file = FileAccess.Open(SETTINGS_FILE, FileAccess.ModeFlags.Write);
                 if (file != null)
                 {
                     file.StoreString(json);
+                    file.Close();
+                    GD.Print("Settings saved via C# SaveManager");
+                }
+                else
+                {
+                    throw new Exception("Failed to open settings file for writing");
                 }
             }
             catch (Exception ex)
@@ -577,29 +587,437 @@ namespace DreamerHeroines.Systems
         /// </summary>
         public SettingsSaveData LoadSettings()
         {
-            var settings = new SettingsSaveData();
+            var defaults = new SettingsSaveData();
 
             if (!FileAccess.FileExists(SETTINGS_FILE))
             {
-                return settings;
+                return defaults;
             }
 
             try
             {
                 using var file = FileAccess.Open(SETTINGS_FILE, FileAccess.ModeFlags.Read);
-                if (file != null)
+                if (file == null)
                 {
-                    string json = file.GetAsText();
-                    // 解析JSON并填充设置
-                    // 这里简化处理，实际应使用JSON解析器
+                    return defaults;
                 }
+
+                string json = file.GetAsText();
+                file.Close();
+
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    return defaults;
+                }
+
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                return ParseSettingsElement(root, defaults);
             }
             catch (Exception ex)
             {
                 GD.PushError($"Failed to load settings: {ex.Message}");
+                return defaults;
+            }
+        }
+
+        /// <summary>
+        /// 为 GDScript 返回兼容字段命名的 Dictionary
+        /// </summary>
+        public Godot.Collections.Dictionary LoadSettingsDictionary()
+        {
+            var settings = LoadSettings();
+            return ToGDScriptSettingsDictionary(settings);
+        }
+
+        private Dictionary<string, object?> LoadRawSettingsPayload()
+        {
+            var payload = new Dictionary<string, object?>(StringComparer.Ordinal);
+
+            if (!FileAccess.FileExists(SETTINGS_FILE))
+            {
+                return payload;
             }
 
-            return settings;
+            try
+            {
+                using var file = FileAccess.Open(SETTINGS_FILE, FileAccess.ModeFlags.Read);
+                if (file == null)
+                {
+                    return payload;
+                }
+
+                string json = file.GetAsText();
+                file.Close();
+
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    return payload;
+                }
+
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Object)
+                {
+                    return payload;
+                }
+
+                foreach (var property in root.EnumerateObject())
+                {
+                    payload[property.Name] = property.Value.Clone();
+                }
+            }
+            catch (Exception ex)
+            {
+                GD.PushWarning($"Failed to load raw settings payload for merge: {ex.Message}");
+            }
+
+            return payload;
+        }
+
+        private static void RemoveKnownSettingsAliasKeys(Dictionary<string, object?> payload)
+        {
+            var knownAliases = new[]
+            {
+                "master_volume",
+                "masterVolume",
+                "MasterVolume",
+                "music_volume",
+                "musicVolume",
+                "MusicVolume",
+                "sfx_volume",
+                "sfxVolume",
+                "SFXVolume",
+                "mouse_sensitivity",
+                "mouseSensitivity",
+                "MouseSensitivity",
+                "invert_mouse_y",
+                "invertMouseY",
+                "InvertMouseY",
+                "show_damage_numbers",
+                "showDamageNumbers",
+                "ShowDamageNumbers",
+                "screen_shake",
+                "screenShake",
+                "ScreenShake",
+                "target_frame_rate",
+                "targetFrameRate",
+                "TargetFrameRate",
+                "vsync",
+                "vSync",
+                "VSync",
+                "fullscreen",
+                "Fullscreen",
+                "locale",
+                "language",
+                "Language",
+                "resolution_width",
+                "resolutionWidth",
+                "ResolutionWidth",
+                "resolution_height",
+                "resolutionHeight",
+                "ResolutionHeight",
+                "window_mode",
+                "windowMode",
+                "WindowMode",
+                "developer_mode_enabled",
+                "developerModeEnabled",
+                "DeveloperModeEnabled",
+                "key_bindings",
+                "keyBindings",
+                "KeyBindings",
+            };
+
+            foreach (var key in knownAliases)
+            {
+                payload.Remove(key);
+            }
+        }
+
+        private static void ApplyCanonicalSettingsPayload(
+            Dictionary<string, object?> payload,
+            SettingsSaveData settings
+        )
+        {
+            payload["masterVolume"] = settings.MasterVolume;
+            payload["musicVolume"] = settings.MusicVolume;
+            payload["sfxVolume"] = settings.SFXVolume;
+            payload["mouseSensitivity"] = settings.MouseSensitivity;
+            payload["invertMouseY"] = settings.InvertMouseY;
+            payload["showDamageNumbers"] = settings.ShowDamageNumbers;
+            payload["screenShake"] = settings.ScreenShake;
+            payload["targetFrameRate"] = settings.TargetFrameRate;
+            payload["vSync"] = settings.VSync;
+            payload["fullscreen"] = settings.Fullscreen;
+            payload["language"] = settings.Language;
+            payload["resolutionWidth"] = settings.ResolutionWidth;
+            payload["resolutionHeight"] = settings.ResolutionHeight;
+            payload["windowMode"] = (int)settings.WindowMode;
+            payload["developerModeEnabled"] = settings.DeveloperModeEnabled;
+            payload["keyBindings"] = settings.KeyBindings;
+        }
+
+        private SettingsSaveData MergeSettingsFromDictionary(
+            SettingsSaveData baseSettings,
+            Godot.Collections.Dictionary changes
+        )
+        {
+            var merged = new SettingsSaveData
+            {
+                MasterVolume = baseSettings.MasterVolume,
+                MusicVolume = baseSettings.MusicVolume,
+                SFXVolume = baseSettings.SFXVolume,
+                MouseSensitivity = baseSettings.MouseSensitivity,
+                InvertMouseY = baseSettings.InvertMouseY,
+                ShowDamageNumbers = baseSettings.ShowDamageNumbers,
+                ScreenShake = baseSettings.ScreenShake,
+                TargetFrameRate = baseSettings.TargetFrameRate,
+                VSync = baseSettings.VSync,
+                Fullscreen = baseSettings.Fullscreen,
+                Language = baseSettings.Language,
+                ResolutionWidth = baseSettings.ResolutionWidth,
+                ResolutionHeight = baseSettings.ResolutionHeight,
+                WindowMode = baseSettings.WindowMode,
+                DeveloperModeEnabled = baseSettings.DeveloperModeEnabled,
+                KeyBindings = new Dictionary<string, string>(baseSettings.KeyBindings),
+            };
+
+            if (changes.ContainsKey("master_volume"))
+                merged.MasterVolume = Convert.ToSingle(changes["master_volume"]);
+            if (changes.ContainsKey("masterVolume"))
+                merged.MasterVolume = Convert.ToSingle(changes["masterVolume"]);
+
+            if (changes.ContainsKey("music_volume"))
+                merged.MusicVolume = Convert.ToSingle(changes["music_volume"]);
+            if (changes.ContainsKey("musicVolume"))
+                merged.MusicVolume = Convert.ToSingle(changes["musicVolume"]);
+
+            if (changes.ContainsKey("sfx_volume"))
+                merged.SFXVolume = Convert.ToSingle(changes["sfx_volume"]);
+            if (changes.ContainsKey("sfxVolume"))
+                merged.SFXVolume = Convert.ToSingle(changes["sfxVolume"]);
+
+            if (changes.ContainsKey("mouse_sensitivity"))
+                merged.MouseSensitivity = Convert.ToSingle(changes["mouse_sensitivity"]);
+            if (changes.ContainsKey("mouseSensitivity"))
+                merged.MouseSensitivity = Convert.ToSingle(changes["mouseSensitivity"]);
+
+            if (changes.ContainsKey("fullscreen"))
+                merged.Fullscreen = Convert.ToBoolean(changes["fullscreen"]);
+
+            if (changes.ContainsKey("vsync"))
+                merged.VSync = Convert.ToBoolean(changes["vsync"]);
+            if (changes.ContainsKey("vSync"))
+                merged.VSync = Convert.ToBoolean(changes["vSync"]);
+
+            if (changes.ContainsKey("window_mode"))
+                merged.WindowMode = (WindowMode)Convert.ToInt32(changes["window_mode"]);
+            if (changes.ContainsKey("windowMode"))
+                merged.WindowMode = (WindowMode)Convert.ToInt32(changes["windowMode"]);
+
+            if (changes.ContainsKey("locale"))
+                merged.Language = Convert.ToString(changes["locale"]) ?? baseSettings.Language;
+            if (changes.ContainsKey("language"))
+                merged.Language = Convert.ToString(changes["language"]) ?? baseSettings.Language;
+
+            if (changes.ContainsKey("developer_mode_enabled"))
+                merged.DeveloperModeEnabled = Convert.ToBoolean(changes["developer_mode_enabled"]);
+            if (changes.ContainsKey("developerModeEnabled"))
+                merged.DeveloperModeEnabled = Convert.ToBoolean(changes["developerModeEnabled"]);
+
+            if (changes.ContainsKey("resolution_width"))
+                merged.ResolutionWidth = Convert.ToInt32(changes["resolution_width"]);
+            if (changes.ContainsKey("resolutionWidth"))
+                merged.ResolutionWidth = Convert.ToInt32(changes["resolutionWidth"]);
+
+            if (changes.ContainsKey("resolution_height"))
+                merged.ResolutionHeight = Convert.ToInt32(changes["resolution_height"]);
+            if (changes.ContainsKey("resolutionHeight"))
+                merged.ResolutionHeight = Convert.ToInt32(changes["resolutionHeight"]);
+
+            return merged;
+        }
+
+        private SettingsSaveData ParseSettingsElement(JsonElement root, SettingsSaveData defaults)
+        {
+            var parsed = new SettingsSaveData
+            {
+                MasterVolume = ReadFloat(
+                    root,
+                    new[] { "master_volume", "masterVolume", "MasterVolume" },
+                    defaults.MasterVolume
+                ),
+                MusicVolume = ReadFloat(
+                    root,
+                    new[] { "music_volume", "musicVolume", "MusicVolume" },
+                    defaults.MusicVolume
+                ),
+                SFXVolume = ReadFloat(root, new[] { "sfx_volume", "sfxVolume", "SFXVolume" }, defaults.SFXVolume),
+                MouseSensitivity = ReadFloat(
+                    root,
+                    new[] { "mouse_sensitivity", "mouseSensitivity", "MouseSensitivity" },
+                    defaults.MouseSensitivity
+                ),
+                InvertMouseY = ReadBool(
+                    root,
+                    new[] { "invert_mouse_y", "invertMouseY", "InvertMouseY" },
+                    defaults.InvertMouseY
+                ),
+                ShowDamageNumbers = ReadBool(
+                    root,
+                    new[] { "show_damage_numbers", "showDamageNumbers", "ShowDamageNumbers" },
+                    defaults.ShowDamageNumbers
+                ),
+                ScreenShake = ReadBool(
+                    root,
+                    new[] { "screen_shake", "screenShake", "ScreenShake" },
+                    defaults.ScreenShake
+                ),
+                TargetFrameRate = ReadInt(
+                    root,
+                    new[] { "target_frame_rate", "targetFrameRate", "TargetFrameRate" },
+                    defaults.TargetFrameRate
+                ),
+                VSync = ReadBool(root, new[] { "vsync", "vSync", "VSync" }, defaults.VSync),
+                Fullscreen = ReadBool(root, new[] { "fullscreen", "Fullscreen" }, defaults.Fullscreen),
+                Language = ReadString(root, new[] { "locale", "language", "Language" }, defaults.Language),
+                ResolutionWidth = ReadInt(
+                    root,
+                    new[] { "resolution_width", "resolutionWidth", "ResolutionWidth" },
+                    defaults.ResolutionWidth
+                ),
+                ResolutionHeight = ReadInt(
+                    root,
+                    new[] { "resolution_height", "resolutionHeight", "ResolutionHeight" },
+                    defaults.ResolutionHeight
+                ),
+                WindowMode = (WindowMode)ReadInt(
+                    root,
+                    new[] { "window_mode", "windowMode", "WindowMode" },
+                    (int)defaults.WindowMode
+                ),
+                DeveloperModeEnabled = ReadBool(
+                    root,
+                    new[] { "developer_mode_enabled", "developerModeEnabled", "DeveloperModeEnabled" },
+                    defaults.DeveloperModeEnabled
+                ),
+                KeyBindings = new Dictionary<string, string>(defaults.KeyBindings),
+            };
+
+            if (
+                root.TryGetProperty("keyBindings", out var keyBindingsElement)
+                && keyBindingsElement.ValueKind == JsonValueKind.Object
+            )
+            {
+                parsed.KeyBindings = ReadStringDictionary(keyBindingsElement);
+            }
+            else if (
+                root.TryGetProperty("key_bindings", out var keyBindingsLegacy)
+                && keyBindingsLegacy.ValueKind == JsonValueKind.Object
+            )
+            {
+                parsed.KeyBindings = ReadStringDictionary(keyBindingsLegacy);
+            }
+
+            return parsed;
+        }
+
+        private Godot.Collections.Dictionary ToGDScriptSettingsDictionary(SettingsSaveData settings)
+        {
+            return new Godot.Collections.Dictionary
+            {
+                ["master_volume"] = settings.MasterVolume,
+                ["music_volume"] = settings.MusicVolume,
+                ["sfx_volume"] = settings.SFXVolume,
+                ["mouse_sensitivity"] = settings.MouseSensitivity,
+                ["fullscreen"] = settings.Fullscreen,
+                ["vsync"] = settings.VSync,
+                ["window_mode"] = (int)settings.WindowMode,
+                ["locale"] = settings.Language,
+                ["developer_mode_enabled"] = settings.DeveloperModeEnabled,
+                ["resolution_width"] = settings.ResolutionWidth,
+                ["resolution_height"] = settings.ResolutionHeight,
+            };
+        }
+
+        private static float ReadFloat(JsonElement root, IEnumerable<string> keys, float fallback)
+        {
+            foreach (var key in keys)
+            {
+                if (root.TryGetProperty(key, out var element))
+                {
+                    if (element.ValueKind == JsonValueKind.Number)
+                        return element.GetSingle();
+                    if (
+                        element.ValueKind == JsonValueKind.String
+                        && float.TryParse(element.GetString(), out var parsed)
+                    )
+                        return parsed;
+                }
+            }
+
+            return fallback;
+        }
+
+        private static int ReadInt(JsonElement root, IEnumerable<string> keys, int fallback)
+        {
+            foreach (var key in keys)
+            {
+                if (root.TryGetProperty(key, out var element))
+                {
+                    if (element.ValueKind == JsonValueKind.Number)
+                        return element.GetInt32();
+                    if (element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out var parsed))
+                        return parsed;
+                }
+            }
+
+            return fallback;
+        }
+
+        private static bool ReadBool(JsonElement root, IEnumerable<string> keys, bool fallback)
+        {
+            foreach (var key in keys)
+            {
+                if (root.TryGetProperty(key, out var element))
+                {
+                    if (element.ValueKind == JsonValueKind.True)
+                        return true;
+                    if (element.ValueKind == JsonValueKind.False)
+                        return false;
+                    if (element.ValueKind == JsonValueKind.String && bool.TryParse(element.GetString(), out var parsed))
+                        return parsed;
+                }
+            }
+
+            return fallback;
+        }
+
+        private static string ReadString(JsonElement root, IEnumerable<string> keys, string fallback)
+        {
+            foreach (var key in keys)
+            {
+                if (root.TryGetProperty(key, out var element) && element.ValueKind == JsonValueKind.String)
+                {
+                    return element.GetString() ?? fallback;
+                }
+            }
+
+            return fallback;
+        }
+
+        private static Dictionary<string, string> ReadStringDictionary(JsonElement root)
+        {
+            var result = new Dictionary<string, string>();
+            foreach (var property in root.EnumerateObject())
+            {
+                if (property.Value.ValueKind == JsonValueKind.String)
+                {
+                    result[property.Name] = property.Value.GetString() ?? string.Empty;
+                }
+            }
+
+            return result;
         }
 
         /// <summary>

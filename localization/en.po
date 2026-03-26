@@ -118,6 +118,9 @@ msgstr "Mouse Sensitivity"
 msgid "ui.settings.vsync"
 msgstr "VSync"
 
+msgid "ui.settings.developer_mode"
+msgstr "Developer Mode (F12)"
+
 msgid "ui.pause_menu.title"
 msgstr "PAUSED"
 

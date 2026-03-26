@@ -21,6 +21,7 @@ func _ready() -> void:
 
 func initialize() -> void:
 	print("[SaveManager] 开始初始化...")
+	_migrate_legacy_save_data()
 	
 	# 等待 CSharpSaveManager 依赖
 	var csharp_manager = get_node_or_null("/root/CSharpSaveManager")
@@ -147,12 +148,25 @@ func update_player_data(player_data) -> void:
 
 # 设置
 func save_settings(settings: Dictionary) -> void:
-	# 始终使用 GDScript 实现，以保持与 load_settings 的格式一致
-	_save_settings_to_file(settings)
+	if _csharp_save_manager and _csharp_save_manager.has_method("SaveSettings"):
+		_csharp_save_manager.SaveSettings(settings)
+		return
+
+	push_error("[SaveManager] CSharpSaveManager 不可用，无法保存设置")
 
 func load_settings() -> Dictionary:
-	# 始终使用 GDScript 实现，因为 C# LoadSettings 返回 SettingsSaveData 对象而非 Dictionary
-	return _load_settings_from_file()
+	if _csharp_save_manager:
+		if _csharp_save_manager.has_method("LoadSettingsDictionary"):
+			var loaded_settings = _csharp_save_manager.LoadSettingsDictionary()
+			if loaded_settings is Dictionary:
+				return loaded_settings
+		if _csharp_save_manager.has_method("LoadSettings"):
+			var csharp_settings = _csharp_save_manager.LoadSettings()
+			if csharp_settings:
+				return _convert_csharp_settings_to_dict(csharp_settings)
+
+	push_warning("[SaveManager] CSharpSaveManager 不可用，返回默认设置")
+	return _get_default_settings()
 
 # 信号回调
 func _on_csharp_save_completed(slot: int, success: bool) -> void:
@@ -287,34 +301,6 @@ func _create_save_data() -> Dictionary:
 	
 	return save_data
 
-func _save_settings_to_file(settings: Dictionary) -> void:
-	var file = FileAccess.open("user://settings.json", FileAccess.WRITE)
-	if file:
-		var json = JSON.stringify(settings)
-		file.store_string(json)
-		file.close()
-		_migrate_legacy_save_data()
-
-func _load_settings_from_file() -> Dictionary:
-	_migrate_legacy_save_data()
-
-	var file_path = "user://settings.json"
-	
-	if not FileAccess.file_exists(file_path):
-		return _get_default_settings()
-	
-	var file = FileAccess.open(file_path, FileAccess.READ)
-	if file:
-		var json = file.get_as_text()
-		file.close()
-		
-		var settings = JSON.parse_string(json)
-		if settings:
-			return settings
-	
-	return _get_default_settings()
-
-
 func _migrate_legacy_save_data() -> void:
 	var current_project_name: String = str(ProjectSettings.get_setting("application/config/name", ""))
 	if current_project_name != "Dreamer Heroines":
@@ -368,8 +354,43 @@ func _get_default_settings() -> Dictionary:
 		"fullscreen": false,
 		"vsync": true,
 		"window_mode": 0,  # 0=Windowed, 1=Fullscreen, 2=Borderless
-		"locale": "zh_CN"
+		"locale": "zh_CN",
+		"developer_mode_enabled": false
 	}
+
+func _convert_csharp_settings_to_dict(csharp_settings) -> Dictionary:
+	if csharp_settings is Dictionary:
+		var dict: Dictionary = csharp_settings
+		if not dict.has("developer_mode_enabled"):
+			dict["developer_mode_enabled"] = false
+		return dict
+
+	var master_volume: float = float(_read_csharp_property(csharp_settings, "MasterVolume", 0.8))
+	var music_volume: float = float(_read_csharp_property(csharp_settings, "MusicVolume", 0.7))
+	var sfx_volume: float = float(_read_csharp_property(csharp_settings, "SFXVolume", 1.0))
+	var mouse_sensitivity: float = float(_read_csharp_property(csharp_settings, "MouseSensitivity", 1.0))
+	var fullscreen: bool = bool(_read_csharp_property(csharp_settings, "Fullscreen", false))
+	var vsync: bool = bool(_read_csharp_property(csharp_settings, "VSync", true))
+	var window_mode: int = int(_read_csharp_property(csharp_settings, "WindowMode", 0))
+	var locale: String = str(_read_csharp_property(csharp_settings, "Language", "zh_CN"))
+	var developer_mode_enabled: bool = bool(_read_csharp_property(csharp_settings, "DeveloperModeEnabled", false))
+
+	return {
+		"master_volume": master_volume,
+		"music_volume": music_volume,
+		"sfx_volume": sfx_volume,
+		"mouse_sensitivity": mouse_sensitivity,
+		"fullscreen": fullscreen,
+		"vsync": vsync,
+		"window_mode": window_mode,
+		"locale": locale,
+		"developer_mode_enabled": developer_mode_enabled,
+	}
+
+func _read_csharp_property(obj, property_name: String, fallback):
+	if property_name in obj:
+		return obj.get(property_name)
+	return fallback
 
 func _convert_csharp_summary(summary) -> Dictionary:
 	# 转换C# SaveSummary到GDScript Dictionary

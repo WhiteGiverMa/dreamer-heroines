@@ -196,8 +196,8 @@ namespace DreamerHeroines.Data
     [Serializable]
     public class SettingsSaveData
     {
-        public float MasterVolume { get; set; } = 1.0f;
-        public float MusicVolume { get; set; } = 0.8f;
+        public float MasterVolume { get; set; } = 0.8f;
+        public float MusicVolume { get; set; } = 0.7f;
         public float SFXVolume { get; set; } = 1.0f;
         public float MouseSensitivity { get; set; } = 1.0f;
         public bool InvertMouseY { get; set; } = false;
@@ -213,6 +213,7 @@ namespace DreamerHeroines.Data
         public int ResolutionWidth { get; set; } = 1920;
         public int ResolutionHeight { get; set; } = 1080;
         public WindowMode WindowMode { get; set; } = WindowMode.Windowed;
+        public bool DeveloperModeEnabled { get; set; } = false;
     }
 
     /// <summary>

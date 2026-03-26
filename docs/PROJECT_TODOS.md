@@ -6,6 +6,14 @@
   - Symptom: expected total systems is 7, current initialization path is 9.
   - Goal: align BootSequence test expectations with the current registered systems list.
 
+- [ ] `tests/integration/test_player_weapon_init.gd::test_current_weapon_is_rifle`
+  - Symptom: expected `"Rifle"`, actual is `"rifle_basic"`.
+  - Goal: unify weapon naming contract between runtime weapon id and integration test expectation.
+
+- [ ] `tests/unit/test_enemy_indicator.gd::test_state_transition`
+  - Symptom: null tree access/unexpected errors when boot sequence runs in unit test context.
+  - Goal: isolate boot dependencies in this test (or provide proper scene tree harness) to make transitions deterministic.
+
 - [ ] `src/weapons/shotgun_weapon.gd` parse errors
   - Symptom: `pellet_count` type inference fails, `faction_type` identifier is undeclared.
   - Goal: restore script compileability and make `test_shotgun_scene_loads` pass.
@@ -14,13 +22,9 @@
   - Symptom: assertions about deleting `WeaponBase` / old `rifle.gd` / old `shotgun.gd` mismatch current architecture.
   - Goal: update tests to current weapon architecture or add compatibility layer to remove drift.
 
-- [ ] `tests/unit/test_weapon_stats_resources.gd` field mismatch
-  - Symptom: `WeaponStats` access to `pellet_count` / `pellet_spread` reports missing properties.
-  - Goal: unify `WeaponStats` resource schema and test contract (resource definition and/or test expectations).
-
-- [ ] `tests/unit/test_rifle_weapon.gd` weapon config field assertions fail
-  - Symptom: `WeaponStats should have pellet_count/pellet_spread` fails.
-  - Goal: restore consistency between config model and test expectations.
+- [ ] `WeaponStats` schema mismatch (`test_rifle_weapon.gd` + `test_weapon_stats_resources.gd`)
+  - Symptom: `pellet_count` / `pellet_spread` missing causes both unit suites to fail.
+  - Goal: unify WeaponStats resource schema and test contract (definition or assertions) so both suites share one consistent model.
 
 ## Pause system targeted regression checklist
 

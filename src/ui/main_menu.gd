@@ -521,14 +521,19 @@ func _on_vsync_toggled(enabled: bool) -> void:
 
 ## 保存当前设置到 user://settings.json
 func _save_current_settings() -> void:
+	var current_settings := SaveManager.load_settings()
 	var settings := {
 		"master_volume": volume_slider.value / 100.0 if volume_slider else 0.8,
-		"music_volume": 0.7,
-		"sfx_volume": 1.0,
+		"music_volume": current_settings.get("music_volume", 0.7),
+		"sfx_volume": current_settings.get("sfx_volume", 1.0),
 		"mouse_sensitivity": sensitivity_slider.value / 100.0 if sensitivity_slider else 1.0,
 		"fullscreen": window_mode_option.selected == 1 if window_mode_option else false,
 		"vsync": vsync_check.button_pressed if vsync_check else true,
 		"window_mode": window_mode_option.selected if window_mode_option else 0,
+		"locale": current_settings.get("locale", "zh_CN"),
+		"developer_mode_enabled": current_settings.get("developer_mode_enabled", false),
+		"resolution_width": DisplayServer.window_get_size().x,
+		"resolution_height": DisplayServer.window_get_size().y,
 	}
 	SaveManager.save_settings(settings)
 
