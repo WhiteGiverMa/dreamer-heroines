@@ -200,6 +200,13 @@ namespace DreamerHeroines.Data
         public float MusicVolume { get; set; } = 0.7f;
         public float SFXVolume { get; set; } = 1.0f;
         public float MouseSensitivity { get; set; } = 1.0f;
+        public float CrosshairSize { get; set; } = 20.0f;
+        public float CrosshairAlpha { get; set; } = 1.0f;
+        public bool ShowCenterDot { get; set; } = true;
+        public float CenterDotSize { get; set; } = 2.0f;
+        public float SpreadIncreasePerShot { get; set; } = 5.0f;
+        public float CrosshairRecoveryRate { get; set; } = 30.0f;
+        public float MaxSpreadMultiplier { get; set; } = 3.0f;
         public bool InvertMouseY { get; set; } = false;
         public bool ShowDamageNumbers { get; set; } = true;
         public bool ScreenShake { get; set; } = true;

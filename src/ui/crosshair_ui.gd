@@ -51,6 +51,12 @@ signal spread_changed(new_spread: float)
 		reload_color = value
 		queue_redraw()
 
+## 部署状态颜色
+@export var deploy_color: Color = Color.CYAN:
+	set(value):
+		deploy_color = value
+		queue_redraw()
+
 ## 空弹匣状态颜色
 @export var empty_color: Color = Color.RED:
 	set(value):
@@ -92,6 +98,9 @@ var max_spread: float = 0.0
 ## 是否正在换弹
 var is_reloading: bool = false
 
+## 是否正在部署
+var is_deploying: bool = false
+
 ## 弹匣是否为空
 var is_empty_mag: bool = false
 
@@ -114,10 +123,12 @@ func _draw() -> void:
 	# 计算准星中心点
 	var center := size / 2.0
 	
-	# 确定渲染颜色（优先级：空弹匣 > 换弹 > 正常）
+	# 确定渲染颜色（优先级：空弹匣 > 部署 > 换弹 > 正常）
 	var draw_color: Color
 	if is_empty_mag:
 		draw_color = empty_color
+	elif is_deploying:
+		draw_color = deploy_color
 	elif is_reloading:
 		draw_color = reload_color
 	else:
@@ -241,6 +252,26 @@ func _on_reload_finished() -> void:
 	if not is_reloading:
 		return
 	is_reloading = false
+	queue_redraw()
+
+
+## 部署开始回调
+func _on_deploy_started() -> void:
+	# 设置部署状态，仅在状态改变时重绘
+	if is_deploying:
+		return
+	is_deploying = true
+	# 清除换弹状态
+	is_reloading = false
+	queue_redraw()
+
+
+## 部署结束回调
+func _on_deploy_finished() -> void:
+	# 清除部署状态，仅在状态改变时重绘
+	if not is_deploying:
+		return
+	is_deploying = false
 	queue_redraw()
 
 

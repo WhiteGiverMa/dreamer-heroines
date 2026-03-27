@@ -1,4 +1,4 @@
-class_name Player
+﻿class_name Player
 extends CharacterBody2D
 
 # Player - 玩家控制器
@@ -7,6 +7,11 @@ extends CharacterBody2D
 # Dash 状态枚举
 enum DashState { IDLE, DASHING, COOLDOWN }
 enum DashInterruptMode { NONE, ON_DAMAGE, ON_CONDITION }
+
+# 武器槽位枚举
+enum WeaponSlot { SLOT_PRIMARY = 0, SLOT_SECONDARY = 1 }
+const primary_slot_id: int = WeaponSlot.SLOT_PRIMARY
+const secondary_slot_id: int = WeaponSlot.SLOT_SECONDARY
 
 signal health_changed(current: int, max: int)
 signal ammo_changed(current: int, max: int)
@@ -24,6 +29,8 @@ signal dash_ended()
 @export var dash_action: GUIDEAction
 @export var crouch_action: GUIDEAction
 @export var weapon_switch_action: GUIDEAction
+@export var weapon_primary_action: GUIDEAction
+@export var weapon_secondary_action: GUIDEAction
 
 # 移动参数
 @export_group("Movement")
@@ -97,49 +104,69 @@ var _air_dashes_used: int = 0
 var current_weapon = null
 var weapons: Array = []
 var current_weapon_index: int = 0
+var current_slot_id: int = primary_slot_id
+var previous_slot_id: int = primary_slot_id
 
 func _ready():
 	add_to_group("player")
-	
+
 	# 注册到 GameManager
 	GameManager.register_player(self)
-	
+
 	current_health = max_health
 	invulnerability_timer.wait_time = invulnerability_time
 	if jump_action and not jump_action.just_triggered.is_connected(_on_jump_action_just_triggered):
 		jump_action.just_triggered.connect(_on_jump_action_just_triggered)
 	if jump_action and not jump_action.completed.is_connected(_on_jump_action_completed):
 		jump_action.completed.connect(_on_jump_action_completed)
-	
+
 	# 连接信号
 	invulnerability_timer.timeout.connect(_on_invulnerability_timeout)
 	dash_iframe_timer.timeout.connect(_on_dash_iframe_timeout)
 	is_grounded = is_on_floor()
-	
+
 	# 初始化武器系统
 	_initialize_weapons()
-	
+
 	print("Player initialized")
 
 
 func _initialize_weapons() -> void:
-	# 加载步枪场景
-	var rifle_scene = load("res://scenes/weapons/rifle.tscn")
-	if rifle_scene:
-		var rifle = rifle_scene.instantiate()
-		# 添加到 WeaponPivot/Weapon 节点下
-		var weapon_container = weapon_pivot.get_node_or_null("Weapon")
-		if weapon_container:
-			weapon_container.add_child(rifle)
-			weapons.append(rifle)
-			_equip_weapon(0)
-			# 检测武器类型并打印信息
-			if rifle is Weapon:
-				print("Player equipped Rifle (Weapon component) with stats: %s" % rifle.stats.weapon_name if rifle.stats else "unknown")
-		else:
-			push_error("Weapon container not found!")
-	else:
-		push_error("Failed to load rifle scene!")
+	var weapon_container := weapon_pivot.get_node_or_null("Weapon")
+	if weapon_container == null:
+		push_error("Weapon container not found!")
+		return
+
+	var weapon_scene_paths := [
+		"res://scenes/weapons/rifle.tscn",
+		"res://scenes/weapons/hk416.tscn"
+	]
+
+	for scene_path in weapon_scene_paths:
+		var weapon_scene := load(scene_path) as PackedScene
+		if weapon_scene == null:
+			push_warning("Failed to load weapon scene: %s" % scene_path)
+			continue
+
+		var weapon_instance := weapon_scene.instantiate()
+		weapon_container.add_child(weapon_instance)
+		weapon_instance.visible = false
+		weapons.append(weapon_instance)
+
+	if weapons.is_empty():
+		push_error("Failed to initialize any weapons")
+		return
+
+	current_slot_id = primary_slot_id
+	previous_slot_id = primary_slot_id
+	current_weapon_index = current_slot_id
+	_equip_weapon(current_slot_id)
+
+	for weapon_node in weapons:
+		if weapon_node is Weapon:
+			var weapon := weapon_node as Weapon
+			var weapon_name := weapon.stats.weapon_name if weapon.stats else "unknown"
+			print("Player loaded weapon: %s" % weapon_name)
 
 func _physics_process(delta: float):
 	# 先更新输入状态（包括跳跃按键状态）
@@ -152,10 +179,34 @@ func _physics_process(delta: float):
 	_handle_aiming()
 	_handle_shooting()
 	_handle_weapon_switch()
-	
+
+	# 更新 HUD 进度显示
+	_update_hud_progress(delta)
+
 	move_and_slide()
 	is_grounded = is_on_floor()
 	_update_animation()
+
+
+func _update_hud_progress(delta: float) -> void:
+	"""更新 HUD 部署和换弹进度"""
+	if not GameManager.hud or not current_weapon:
+		return
+
+	# 更新部署进度
+	if current_weapon.is_deploying():
+		var deploy_elapsed = current_weapon._deploy_elapsed if current_weapon.get("_deploy_elapsed") else 0.0
+		GameManager.hud.update_deploy_progress(deploy_elapsed)
+	elif GameManager.hud.is_deploying:
+		# 部署完成
+		GameManager.hud.finish_deploy_progress()
+		GameManager.hud.on_crosshair_deploy_finished()
+
+	# 更新换弹进度（仅当正在换弹时，不包括部署状态）
+	if current_weapon.is_reloading:
+		var progress = current_weapon.get_reload_progress_ratio()
+		var reload_elapsed = progress * current_weapon.stats.reload_time
+		GameManager.hud.update_reload_progress(reload_elapsed)
 
 func _update_jump_held_state() -> void:
 	# 单独更新跳跃按键状态，确保在重力应用前获取最新状态
@@ -170,19 +221,19 @@ func _handle_input(delta: float) -> void:
 		_dash_cooldown_timer -= delta
 		if _dash_cooldown_timer <= 0:
 			dash_state = DashState.IDLE
-	
+
 	# Dash 输入检测（使用 is_action_just_pressed）
 	if dash_state == DashState.IDLE:
 		if EnhancedInput.instance.is_action_just_pressed(dash_action):
 			if _air_dashes_used < max_air_dashes:
 				_start_dash()
-	
+
 	# 下蹲
 	is_crouching = EnhancedInput.instance.is_action_pressed(crouch_action) and is_grounded
-	
+
 	# 跳跃缓冲
 	jump_buffer_timer = max(jump_buffer_timer - delta, 0.0)
-	
+
 	# 土狼时间
 	if is_grounded:
 		coyote_timer = coyote_time
@@ -196,17 +247,17 @@ func _handle_input(delta: float) -> void:
 func _apply_gravity(delta: float) -> void:
 	if is_grounded:
 		return
-	
+
 	# 可变跳高 (Celeste 风格)：按住跳跃期间维持初始上升速度
 	if _var_jump_timer > 0 and velocity.y < 0:
 		# 计时器始终递减，无论是否按住
 		_var_jump_timer = max(_var_jump_timer - delta, 0.0)
-		
+
 		# 如果还在窗口内且按住跳跃，维持初始速度
 		if _jump_held:
 			velocity.y = _var_jump_speed  # 用固定速度覆盖，而非缩放
 			return  # 跳过正常重力
-	
+
 	# 正常重力（窗口结束或未按住）
 	velocity.y += get_gravity().y * gravity_scale * delta
 	velocity.y = min(velocity.y, max_fall_speed)
@@ -230,7 +281,7 @@ func _handle_jump() -> void:
 		_var_jump_timer = VAR_JUMP_TIME * 0.8
 		_var_jump_speed = double_jump_velocity
 		AudioManager.play_sfx("jump")
-	
+
 	# 可变跳高释放：停止可变窗口，让重力正常生效
 	if _jump_release_requested and velocity.y < 0:
 		_var_jump_timer = 0.0
@@ -239,13 +290,13 @@ func _handle_jump() -> void:
 func _handle_movement(delta: float) -> void:
 	# move_action 是 AXIS_2D 类型，直接读取 2D 向量
 	var input_direction = EnhancedInput.instance.get_axis_2d(move_action).x
-	
+
 	var target_speed = max_speed
 	if is_crouching:
 		target_speed *= crouch_multiplier
-	
+
 	var target_velocity = input_direction * target_speed
-	
+
 	if is_grounded:
 		if abs(input_direction) > 0:
 			velocity.x = move_toward(velocity.x, target_velocity, acceleration * delta)
@@ -256,18 +307,18 @@ func _handle_movement(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, target_velocity, air_acceleration * delta)
 		else:
 			velocity.x = move_toward(velocity.x, 0, air_deceleration * delta)
-	
+
 	# 更新朝向
 	if input_direction != 0:
 		facing_direction = sign(input_direction)
 
 func _handle_aiming() -> void:
 	var aim_dir = EnhancedInput.instance.get_aim_direction()
-	
+
 	# 更新武器朝向
 	if weapon_pivot:
 		weapon_pivot.rotation = aim_dir.angle()
-		
+
 		# 根据瞄准方向翻转精灵
 		if abs(aim_dir.x) > 0.1:
 			$Body.flip_h = aim_dir.x < 0
@@ -281,7 +332,7 @@ func _handle_shooting() -> void:
 	if current_weapon == null:
 		push_warning("current_weapon is NULL!")
 		return
-	
+
 	var is_pressed = EnhancedInput.instance.is_action_pressed(shoot_action)
 	if is_pressed:
 		# 使用 Weapon 组件：传递枪口位置和瞄准方向
@@ -290,25 +341,88 @@ func _handle_shooting() -> void:
 			var aim_dir := get_aim_direction()
 			current_weapon.try_shoot(muzzle_pos, aim_dir)
 
-	
+
 	if EnhancedInput.instance.is_action_just_pressed(reload_action) and current_weapon:
 		current_weapon.reload()
 
 func _handle_weapon_switch() -> void:
+	if EnhancedInput.instance.is_action_just_pressed(weapon_primary_action):
+		equip_primary_weapon()
+		return
+	if EnhancedInput.instance.is_action_just_pressed(weapon_secondary_action):
+		equip_secondary_weapon()
+		return
 	if EnhancedInput.instance.is_action_just_pressed(weapon_switch_action):
 		switch_weapon()
 
 func switch_weapon() -> void:
 	if weapons.size() <= 1:
 		return
-	
-	current_weapon_index = (current_weapon_index + 1) % weapons.size()
-	_equip_weapon(current_weapon_index)
+
+	var next_slot := (current_slot_id + 1) % weapons.size()
+	equip_slot(next_slot)
+
+func equip_primary_weapon() -> void:
+	equip_slot(primary_slot_id)
+
+func equip_secondary_weapon() -> void:
+	equip_slot(secondary_slot_id)
+
+func equip_slot(slot: int) -> void:
+	# 直接切换到指定槽位
+	if slot < 0 or slot >= weapons.size():
+		return
+	if current_slot_id == slot:
+		return  # 已经是该槽位，不重启部署
+
+	var outgoing_weapon = current_weapon
+	_dispatch_weapon_interrupt("weapon_switch", outgoing_weapon, true)
+	_equip_weapon(slot)
+	if current_weapon and current_weapon.has_method("start_deploy"):
+		var deploy_time = current_weapon.stats.deploy_time if current_weapon.stats else 0.5
+		current_weapon.start_deploy()
+		# 通知 HUD 开始部署
+		if GameManager.hud:
+			GameManager.hud.start_deploy_progress(deploy_time)
+			GameManager.hud.on_crosshair_deploy_started()
+
+
+func _dispatch_weapon_interrupt(source: String, weapon_override = null, interrupt_deploy: bool = false) -> void:
+	_interrupt_reload(source, weapon_override)
+
+	if not interrupt_deploy:
+		return
+
+	var target_weapon = weapon_override if weapon_override != null else current_weapon
+	if target_weapon == null:
+		return
+	if target_weapon.has_method("is_deploying") and target_weapon.has_method("cancel_deploy") and target_weapon.is_deploying():
+		target_weapon.cancel_deploy(source)
+		# Notify HUD/crosshair that deploy was cancelled
+		if GameManager.hud:
+			GameManager.hud.cancel_deploy_progress()
+			GameManager.hud.on_crosshair_deploy_finished()
+
+
+func _interrupt_reload(source: String, weapon_override = null) -> void:
+	var target_weapon = weapon_override if weapon_override != null else current_weapon
+	if target_weapon and target_weapon.has_method("cancel_reload"):
+		# Check if weapon was reloading before cancelling
+		var was_reloading = target_weapon.is_reloading
+		target_weapon.cancel_reload(source)
+		# Notify HUD/crosshair if reload was cancelled
+		if was_reloading and GameManager.hud:
+			GameManager.hud.cancel_reload_progress()
+			GameManager.hud.on_crosshair_reload_finished()
 
 func _equip_weapon(index: int) -> void:
 	if index < 0 or index >= weapons.size():
 		return
-	
+
+	previous_slot_id = current_slot_id
+	current_slot_id = index
+	current_weapon_index = current_slot_id
+
 	# 卸下当前武器
 	if current_weapon:
 		# 断开旧武器的信号
@@ -322,9 +436,17 @@ func _equip_weapon(index: int) -> void:
 			current_weapon.spread_changed.disconnect(_on_weapon_spread_changed)
 		if current_weapon.has_signal("shot_fired") and current_weapon.shot_fired.is_connected(_on_weapon_shot_fired):
 			current_weapon.shot_fired.disconnect(_on_weapon_shot_fired)
-	
+
 	current_weapon = weapons[index]
-	
+
+	for i in range(weapons.size()):
+		var weapon_node = weapons[i]
+		if weapon_node is Node2D:
+			(weapon_node as Node2D).visible = i == index
+
+	if current_weapon.has_method("set_owner_pivot"):
+		current_weapon.set_owner_pivot(weapon_pivot)
+
 	# 连接武器信号
 	if current_weapon.has_signal("ammo_changed") and not current_weapon.ammo_changed.is_connected(_on_weapon_ammo_changed):
 		current_weapon.ammo_changed.connect(_on_weapon_ammo_changed)
@@ -334,24 +456,26 @@ func _equip_weapon(index: int) -> void:
 		current_weapon.reload_finished.connect(_on_weapon_reload_finished)
 	if current_weapon.has_signal("spread_changed") and not current_weapon.spread_changed.is_connected(_on_weapon_spread_changed):
 		current_weapon.spread_changed.connect(_on_weapon_spread_changed)
-	
+
 	# 设置阵营并连接 shot_fired 信号
 	current_weapon.faction = "player"
 	if current_weapon.has_method("set_use_ammo_system"):
 		current_weapon.set_use_ammo_system(true)
 	_setup_weapon_signals(current_weapon)
-	
+
 	var weapon_name := "Unknown"
 	if current_weapon.stats:
 		weapon_name = current_weapon.stats.weapon_name
 	weapon_changed.emit(weapon_name)
-	
+	if GameManager.hud:
+		GameManager.hud.update_weapon(weapon_name, current_slot_id, weapons.size())
+
 	# 立即更新弹药显示
 	var mag_size := 0
 	if current_weapon.stats:
 		mag_size = current_weapon.stats.magazine_size
 	_on_weapon_ammo_changed(current_weapon.current_ammo_in_mag, mag_size)
-	
+
 	# 立即同步准星扩散状态
 	var base_spread := 0.0
 	if current_weapon.stats:
@@ -371,7 +495,7 @@ func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction: String) -> void:
 	if ProjectileSpawner and current_weapon and current_weapon.stats:
 		var faction_type: int = Faction.Type.ENEMY if faction == "enemy" else Faction.Type.PLAYER
 		ProjectileSpawner.spawn_projectile(pos, dir, current_weapon.stats, faction_type, self)
-	
+
 	# 应用相机震动（玩家特有）
 	if camera and current_weapon and current_weapon.stats:
 		camera.apply_shake(current_weapon.stats.screen_shake_amount)
@@ -387,7 +511,8 @@ func _on_weapon_ammo_changed(current: int, max: int) -> void:
 func _on_weapon_reload_started() -> void:
 	# 通知 HUD 显示换弹进度
 	if GameManager.hud and current_weapon and current_weapon.stats:
-		GameManager.hud.start_reload_progress(current_weapon.stats.reload_time)
+		var checkpoint_percent = current_weapon.stats.reload_checkpoint_percent
+		GameManager.hud.start_reload_progress(current_weapon.stats.reload_time, checkpoint_percent)
 		GameManager.hud.on_crosshair_reload_started(current_weapon.stats.reload_time)
 
 
@@ -405,25 +530,25 @@ func _on_weapon_spread_changed(current_spread: float, base_spread: float) -> voi
 func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 	if is_invulnerable or current_health <= 0:
 		return
-	
+
 	# 根据打断模式处理Dash打断
 	if dash_interrupt_mode == DashInterruptMode.ON_DAMAGE and dash_state == DashState.DASHING:
 		_interrupt_dash()
-	
+
 	current_health -= amount
 	health_changed.emit(current_health, max_health)
-	
+
 	# 击退
 	velocity += knockback
-	
+
 	# 无敌时间
 	is_invulnerable = true
 	invulnerability_timer.start()
-	
+
 	# 受伤特效
 	_flash_sprite()
 	AudioManager.play_sfx("player_hurt")
-	
+
 	if current_health <= 0:
 		_die()
 
@@ -453,10 +578,10 @@ func _flash_sprite() -> void:
 func _update_animation() -> void:
 	if not animation_player:
 		return
-	
+
 	if current_health <= 0:
 		return
-	
+
 	if not is_grounded:
 		if velocity.y < 0:
 			if animation_player.has_animation("jump"):
@@ -479,6 +604,7 @@ func _on_invulnerability_timeout() -> void:
 
 
 func _start_dash() -> void:
+	_dispatch_weapon_interrupt("dash")
 	dash_state = DashState.DASHING
 	_dash_timer = dash_duration
 	if not is_grounded:

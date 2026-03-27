@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -691,6 +692,27 @@ namespace DreamerHeroines.Systems
                 "mouse_sensitivity",
                 "mouseSensitivity",
                 "MouseSensitivity",
+                "crosshair_size",
+                "crosshairSize",
+                "CrosshairSize",
+                "crosshair_alpha",
+                "crosshairAlpha",
+                "CrosshairAlpha",
+                "show_center_dot",
+                "showCenterDot",
+                "ShowCenterDot",
+                "center_dot_size",
+                "centerDotSize",
+                "CenterDotSize",
+                "spread_increase_per_shot",
+                "spreadIncreasePerShot",
+                "SpreadIncreasePerShot",
+                "crosshair_recovery_rate",
+                "crosshairRecoveryRate",
+                "CrosshairRecoveryRate",
+                "max_spread_multiplier",
+                "maxSpreadMultiplier",
+                "MaxSpreadMultiplier",
                 "invert_mouse_y",
                 "invertMouseY",
                 "InvertMouseY",
@@ -743,6 +765,13 @@ namespace DreamerHeroines.Systems
             payload["musicVolume"] = settings.MusicVolume;
             payload["sfxVolume"] = settings.SFXVolume;
             payload["mouseSensitivity"] = settings.MouseSensitivity;
+            payload["crosshairSize"] = settings.CrosshairSize;
+            payload["crosshairAlpha"] = settings.CrosshairAlpha;
+            payload["showCenterDot"] = settings.ShowCenterDot;
+            payload["centerDotSize"] = settings.CenterDotSize;
+            payload["spreadIncreasePerShot"] = settings.SpreadIncreasePerShot;
+            payload["crosshairRecoveryRate"] = settings.CrosshairRecoveryRate;
+            payload["maxSpreadMultiplier"] = settings.MaxSpreadMultiplier;
             payload["invertMouseY"] = settings.InvertMouseY;
             payload["showDamageNumbers"] = settings.ShowDamageNumbers;
             payload["screenShake"] = settings.ScreenShake;
@@ -768,6 +797,13 @@ namespace DreamerHeroines.Systems
                 MusicVolume = baseSettings.MusicVolume,
                 SFXVolume = baseSettings.SFXVolume,
                 MouseSensitivity = baseSettings.MouseSensitivity,
+                CrosshairSize = baseSettings.CrosshairSize,
+                CrosshairAlpha = baseSettings.CrosshairAlpha,
+                ShowCenterDot = baseSettings.ShowCenterDot,
+                CenterDotSize = baseSettings.CenterDotSize,
+                SpreadIncreasePerShot = baseSettings.SpreadIncreasePerShot,
+                CrosshairRecoveryRate = baseSettings.CrosshairRecoveryRate,
+                MaxSpreadMultiplier = baseSettings.MaxSpreadMultiplier,
                 InvertMouseY = baseSettings.InvertMouseY,
                 ShowDamageNumbers = baseSettings.ShowDamageNumbers,
                 ScreenShake = baseSettings.ScreenShake,
@@ -782,60 +818,363 @@ namespace DreamerHeroines.Systems
                 KeyBindings = new Dictionary<string, string>(baseSettings.KeyBindings),
             };
 
-            if (changes.ContainsKey("master_volume"))
-                merged.MasterVolume = Convert.ToSingle(changes["master_volume"]);
-            if (changes.ContainsKey("masterVolume"))
-                merged.MasterVolume = Convert.ToSingle(changes["masterVolume"]);
+            merged.MasterVolume = ReadFloatFromChanges(changes, merged.MasterVolume, "master_volume", "masterVolume");
+            merged.MusicVolume = ReadFloatFromChanges(changes, merged.MusicVolume, "music_volume", "musicVolume");
+            merged.SFXVolume = ReadFloatFromChanges(changes, merged.SFXVolume, "sfx_volume", "sfxVolume");
+            merged.MouseSensitivity = ReadFloatFromChanges(
+                changes,
+                merged.MouseSensitivity,
+                "mouse_sensitivity",
+                "mouseSensitivity"
+            );
+            merged.CrosshairSize = ReadFloatFromChanges(
+                changes,
+                merged.CrosshairSize,
+                "crosshair_size",
+                "crosshairSize"
+            );
+            merged.CrosshairAlpha = ReadFloatFromChanges(
+                changes,
+                merged.CrosshairAlpha,
+                "crosshair_alpha",
+                "crosshairAlpha"
+            );
+            merged.ShowCenterDot = ReadBoolFromChanges(
+                changes,
+                merged.ShowCenterDot,
+                "show_center_dot",
+                "showCenterDot"
+            );
+            merged.CenterDotSize = ReadFloatFromChanges(
+                changes,
+                merged.CenterDotSize,
+                "center_dot_size",
+                "centerDotSize"
+            );
+            merged.SpreadIncreasePerShot = ReadFloatFromChanges(
+                changes,
+                merged.SpreadIncreasePerShot,
+                "spread_increase_per_shot",
+                "spreadIncreasePerShot"
+            );
+            merged.CrosshairRecoveryRate = ReadFloatFromChanges(
+                changes,
+                merged.CrosshairRecoveryRate,
+                "crosshair_recovery_rate",
+                "crosshairRecoveryRate"
+            );
+            merged.MaxSpreadMultiplier = ReadFloatFromChanges(
+                changes,
+                merged.MaxSpreadMultiplier,
+                "max_spread_multiplier",
+                "maxSpreadMultiplier"
+            );
+            merged.InvertMouseY = ReadBoolFromChanges(changes, merged.InvertMouseY, "invert_mouse_y", "invertMouseY");
+            merged.ShowDamageNumbers = ReadBoolFromChanges(
+                changes,
+                merged.ShowDamageNumbers,
+                "show_damage_numbers",
+                "showDamageNumbers"
+            );
+            merged.ScreenShake = ReadBoolFromChanges(changes, merged.ScreenShake, "screen_shake", "screenShake");
+            merged.TargetFrameRate = ReadIntFromChanges(
+                changes,
+                merged.TargetFrameRate,
+                "target_frame_rate",
+                "targetFrameRate"
+            );
+            merged.Fullscreen = ReadBoolFromChanges(changes, merged.Fullscreen, "fullscreen");
+            merged.VSync = ReadBoolFromChanges(changes, merged.VSync, "vsync", "vSync");
 
-            if (changes.ContainsKey("music_volume"))
-                merged.MusicVolume = Convert.ToSingle(changes["music_volume"]);
-            if (changes.ContainsKey("musicVolume"))
-                merged.MusicVolume = Convert.ToSingle(changes["musicVolume"]);
+            merged.WindowMode = (WindowMode)ReadIntFromChanges(
+                changes,
+                (int)merged.WindowMode,
+                "window_mode",
+                "windowMode"
+            );
 
-            if (changes.ContainsKey("sfx_volume"))
-                merged.SFXVolume = Convert.ToSingle(changes["sfx_volume"]);
-            if (changes.ContainsKey("sfxVolume"))
-                merged.SFXVolume = Convert.ToSingle(changes["sfxVolume"]);
+            merged.Language = ReadStringFromChanges(changes, merged.Language, "locale", "language");
 
-            if (changes.ContainsKey("mouse_sensitivity"))
-                merged.MouseSensitivity = Convert.ToSingle(changes["mouse_sensitivity"]);
-            if (changes.ContainsKey("mouseSensitivity"))
-                merged.MouseSensitivity = Convert.ToSingle(changes["mouseSensitivity"]);
+            merged.DeveloperModeEnabled = ReadBoolFromChanges(
+                changes,
+                merged.DeveloperModeEnabled,
+                "developer_mode_enabled",
+                "developerModeEnabled"
+            );
 
-            if (changes.ContainsKey("fullscreen"))
-                merged.Fullscreen = Convert.ToBoolean(changes["fullscreen"]);
+            merged.ResolutionWidth = ReadIntFromChanges(
+                changes,
+                merged.ResolutionWidth,
+                "resolution_width",
+                "resolutionWidth"
+            );
 
-            if (changes.ContainsKey("vsync"))
-                merged.VSync = Convert.ToBoolean(changes["vsync"]);
-            if (changes.ContainsKey("vSync"))
-                merged.VSync = Convert.ToBoolean(changes["vSync"]);
-
-            if (changes.ContainsKey("window_mode"))
-                merged.WindowMode = (WindowMode)Convert.ToInt32(changes["window_mode"]);
-            if (changes.ContainsKey("windowMode"))
-                merged.WindowMode = (WindowMode)Convert.ToInt32(changes["windowMode"]);
-
-            if (changes.ContainsKey("locale"))
-                merged.Language = Convert.ToString(changes["locale"]) ?? baseSettings.Language;
-            if (changes.ContainsKey("language"))
-                merged.Language = Convert.ToString(changes["language"]) ?? baseSettings.Language;
-
-            if (changes.ContainsKey("developer_mode_enabled"))
-                merged.DeveloperModeEnabled = Convert.ToBoolean(changes["developer_mode_enabled"]);
-            if (changes.ContainsKey("developerModeEnabled"))
-                merged.DeveloperModeEnabled = Convert.ToBoolean(changes["developerModeEnabled"]);
-
-            if (changes.ContainsKey("resolution_width"))
-                merged.ResolutionWidth = Convert.ToInt32(changes["resolution_width"]);
-            if (changes.ContainsKey("resolutionWidth"))
-                merged.ResolutionWidth = Convert.ToInt32(changes["resolutionWidth"]);
-
-            if (changes.ContainsKey("resolution_height"))
-                merged.ResolutionHeight = Convert.ToInt32(changes["resolution_height"]);
-            if (changes.ContainsKey("resolutionHeight"))
-                merged.ResolutionHeight = Convert.ToInt32(changes["resolutionHeight"]);
+            merged.ResolutionHeight = ReadIntFromChanges(
+                changes,
+                merged.ResolutionHeight,
+                "resolution_height",
+                "resolutionHeight"
+            );
 
             return merged;
+        }
+
+        private static float ReadFloatFromChanges(
+            Godot.Collections.Dictionary changes,
+            float fallback,
+            params string[] keys
+        )
+        {
+            foreach (var key in keys)
+            {
+                if (TryGetDictionaryValue(changes, key, out var value))
+                {
+                    return ConvertToFloat(value, fallback);
+                }
+            }
+
+            return fallback;
+        }
+
+        private static int ReadIntFromChanges(Godot.Collections.Dictionary changes, int fallback, params string[] keys)
+        {
+            foreach (var key in keys)
+            {
+                if (TryGetDictionaryValue(changes, key, out var value))
+                {
+                    return ConvertToInt(value, fallback);
+                }
+            }
+
+            return fallback;
+        }
+
+        private static bool ReadBoolFromChanges(
+            Godot.Collections.Dictionary changes,
+            bool fallback,
+            params string[] keys
+        )
+        {
+            foreach (var key in keys)
+            {
+                if (TryGetDictionaryValue(changes, key, out var value))
+                {
+                    return ConvertToBool(value, fallback);
+                }
+            }
+
+            return fallback;
+        }
+
+        private static string ReadStringFromChanges(
+            Godot.Collections.Dictionary changes,
+            string fallback,
+            params string[] keys
+        )
+        {
+            foreach (var key in keys)
+            {
+                if (TryGetDictionaryValue(changes, key, out var value))
+                {
+                    return ConvertToStringValue(value, fallback);
+                }
+            }
+
+            return fallback;
+        }
+
+        private static bool TryGetDictionaryValue(Godot.Collections.Dictionary changes, string key, out object? value)
+        {
+            value = null;
+            if (!changes.ContainsKey(key))
+            {
+                return false;
+            }
+
+            value = changes[key];
+            return true;
+        }
+
+        private static float ConvertToFloat(object? value, float fallback)
+        {
+            var normalized = NormalizeGodotValue(value);
+            if (normalized == null)
+            {
+                return fallback;
+            }
+
+            if (normalized is float f)
+                return f;
+            if (normalized is double d)
+                return (float)d;
+            if (normalized is int i)
+                return i;
+            if (normalized is long l)
+                return l;
+            if (normalized is JsonElement element)
+            {
+                if (element.ValueKind == JsonValueKind.Number)
+                    return element.GetSingle();
+                if (
+                    element.ValueKind == JsonValueKind.String
+                    && float.TryParse(
+                        element.GetString(),
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out var parsed
+                    )
+                )
+                    return parsed;
+                return fallback;
+            }
+            if (
+                normalized is string text
+                && float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedFloat)
+            )
+                return parsedFloat;
+
+            try
+            {
+                return Convert.ToSingle(normalized, CultureInfo.InvariantCulture);
+            }
+            catch (Exception)
+            {
+                return fallback;
+            }
+        }
+
+        private static int ConvertToInt(object? value, int fallback)
+        {
+            var normalized = NormalizeGodotValue(value);
+            if (normalized == null)
+            {
+                return fallback;
+            }
+
+            if (normalized is int i)
+                return i;
+            if (normalized is long l)
+                return (int)l;
+            if (normalized is float f)
+                return (int)f;
+            if (normalized is double d)
+                return (int)d;
+            if (normalized is JsonElement element)
+            {
+                if (element.ValueKind == JsonValueKind.Number)
+                {
+                    if (element.TryGetInt32(out var intValue))
+                        return intValue;
+                    if (element.TryGetDouble(out var doubleValue))
+                        return (int)doubleValue;
+                }
+                if (element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out var parsed))
+                    return parsed;
+                return fallback;
+            }
+            if (normalized is string text && int.TryParse(text, out var parsedInt))
+                return parsedInt;
+
+            try
+            {
+                return Convert.ToInt32(normalized, CultureInfo.InvariantCulture);
+            }
+            catch (Exception)
+            {
+                return fallback;
+            }
+        }
+
+        private static bool ConvertToBool(object? value, bool fallback)
+        {
+            var normalized = NormalizeGodotValue(value);
+            if (normalized == null)
+            {
+                return fallback;
+            }
+
+            if (normalized is bool b)
+                return b;
+            if (normalized is int i)
+                return i != 0;
+            if (normalized is long l)
+                return l != 0;
+            if (normalized is float f)
+                return !Mathf.IsZeroApprox(f);
+            if (normalized is double d)
+                return Math.Abs(d) > double.Epsilon;
+            if (normalized is JsonElement element)
+            {
+                if (element.ValueKind == JsonValueKind.True)
+                    return true;
+                if (element.ValueKind == JsonValueKind.False)
+                    return false;
+                if (element.ValueKind == JsonValueKind.Number)
+                {
+                    if (element.TryGetInt32(out var intValue))
+                        return intValue != 0;
+                    if (element.TryGetDouble(out var doubleValue))
+                        return Math.Abs(doubleValue) > double.Epsilon;
+                }
+                if (element.ValueKind == JsonValueKind.String && bool.TryParse(element.GetString(), out var parsed))
+                    return parsed;
+                return fallback;
+            }
+            if (normalized is string text)
+            {
+                if (bool.TryParse(text, out var parsedBool))
+                    return parsedBool;
+                if (int.TryParse(text, out var parsedInt))
+                    return parsedInt != 0;
+                return fallback;
+            }
+
+            try
+            {
+                return Convert.ToBoolean(normalized, CultureInfo.InvariantCulture);
+            }
+            catch (Exception)
+            {
+                return fallback;
+            }
+        }
+
+        private static string ConvertToStringValue(object? value, string fallback)
+        {
+            var normalized = NormalizeGodotValue(value);
+            if (normalized == null)
+            {
+                return fallback;
+            }
+
+            if (normalized is JsonElement element)
+            {
+                if (element.ValueKind == JsonValueKind.String)
+                {
+                    return element.GetString() ?? fallback;
+                }
+
+                return fallback;
+            }
+
+            return Convert.ToString(normalized, CultureInfo.InvariantCulture) ?? fallback;
+        }
+
+        private static object? NormalizeGodotValue(object? value)
+        {
+            if (value == null)
+            {
+                return null;
+            }
+
+            var valueType = value.GetType();
+            if (valueType.FullName != "Godot.Variant")
+            {
+                return value;
+            }
+
+            var objProperty = valueType.GetProperty("Obj");
+            return objProperty?.GetValue(value);
         }
 
         private SettingsSaveData ParseSettingsElement(JsonElement root, SettingsSaveData defaults)
@@ -857,6 +1196,41 @@ namespace DreamerHeroines.Systems
                     root,
                     new[] { "mouse_sensitivity", "mouseSensitivity", "MouseSensitivity" },
                     defaults.MouseSensitivity
+                ),
+                CrosshairSize = ReadFloat(
+                    root,
+                    new[] { "crosshair_size", "crosshairSize", "CrosshairSize" },
+                    defaults.CrosshairSize
+                ),
+                CrosshairAlpha = ReadFloat(
+                    root,
+                    new[] { "crosshair_alpha", "crosshairAlpha", "CrosshairAlpha" },
+                    defaults.CrosshairAlpha
+                ),
+                ShowCenterDot = ReadBool(
+                    root,
+                    new[] { "show_center_dot", "showCenterDot", "ShowCenterDot" },
+                    defaults.ShowCenterDot
+                ),
+                CenterDotSize = ReadFloat(
+                    root,
+                    new[] { "center_dot_size", "centerDotSize", "CenterDotSize" },
+                    defaults.CenterDotSize
+                ),
+                SpreadIncreasePerShot = ReadFloat(
+                    root,
+                    new[] { "spread_increase_per_shot", "spreadIncreasePerShot", "SpreadIncreasePerShot" },
+                    defaults.SpreadIncreasePerShot
+                ),
+                CrosshairRecoveryRate = ReadFloat(
+                    root,
+                    new[] { "crosshair_recovery_rate", "crosshairRecoveryRate", "CrosshairRecoveryRate" },
+                    defaults.CrosshairRecoveryRate
+                ),
+                MaxSpreadMultiplier = ReadFloat(
+                    root,
+                    new[] { "max_spread_multiplier", "maxSpreadMultiplier", "MaxSpreadMultiplier" },
+                    defaults.MaxSpreadMultiplier
                 ),
                 InvertMouseY = ReadBool(
                     root,
@@ -930,6 +1304,13 @@ namespace DreamerHeroines.Systems
                 ["music_volume"] = settings.MusicVolume,
                 ["sfx_volume"] = settings.SFXVolume,
                 ["mouse_sensitivity"] = settings.MouseSensitivity,
+                ["crosshair_size"] = settings.CrosshairSize,
+                ["crosshair_alpha"] = settings.CrosshairAlpha,
+                ["show_center_dot"] = settings.ShowCenterDot,
+                ["center_dot_size"] = settings.CenterDotSize,
+                ["spread_increase_per_shot"] = settings.SpreadIncreasePerShot,
+                ["crosshair_recovery_rate"] = settings.CrosshairRecoveryRate,
+                ["max_spread_multiplier"] = settings.MaxSpreadMultiplier,
                 ["fullscreen"] = settings.Fullscreen,
                 ["vsync"] = settings.VSync,
                 ["window_mode"] = (int)settings.WindowMode,

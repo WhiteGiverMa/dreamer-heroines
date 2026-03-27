@@ -3,7 +3,7 @@
 > **项目**: DreamerHeroines - 2D横板射击游戏
 > **引擎**: Godot 4.6.1
 > **语言**: GDScript + C# (混用架构)
-> **版本**: 0.1.0-undone
+> **版本**: 0.1.0-alpha
 
 ---
 
@@ -24,7 +24,7 @@ dotnet build DreamerHeroines.csproj
 godot --export-release "Windows Desktop" ./build/
 ```
 
-> ⚠️ **重要提醒**: 使用 Godot MCP 调试工具时，必须通过 `run_project` 启动游戏（而非手动启动）。MCP Server 在 Godot 内部作为 autoload 运行，监听 TCP 端口 **9090**。正确流程：
+> ⚠️ **重要提醒**: 使用 Godot MCP 调试工具时，必须通过 `run_project` 启动游戏（而非手动启动）。MCP Server 在 Godot 内部作为 autoload 运行，默认监听 TCP 端口 **9090**，支持通过 `config/mcp_server.json` 配置并在端口占用时自动回退。正确流程：
 > 1. `godot-mcp_run_project` 启动游戏
 > 2. `godot-mcp_game_*` 工具进行运行时调试
 > 3. `godot-mcp_stop_project` 停止游戏
@@ -228,7 +228,6 @@ godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -ginclude_subdirs -ge
 - [游戏设计文档](docs/GDD.md)
 - [技术规范](docs/TECH_SPEC.md) 
 - [资源规范](docs/ASSET_GUIDE.md)
-- [输入系统速查](docs/GUIDE_CHEAT_SHEET.md)
 - [G.U.I.D.E 文档](https://godotneers.github.io/G.U.I.D.E/)
 - [初始化流程规范](docs/INIT_FLOW.md)
 
@@ -253,3 +252,27 @@ curl -X POST localhost:9090 -d '{"command":"dev_cmd","params":{"cmd":"god_mode o
 curl -X POST localhost:9090 -d '{"command":"dev_cmd","params":{"cmd":"spawn melee"}}'
 
 curl -X POST localhost:9090 -d '{"command":"dev_cmd","params":{"cmd":"wave next"}}'
+
+## MCP 端口配置与回退
+
+配置文件：`config/mcp_server.json`
+
+```json
+{
+  "host": "127.0.0.1",
+  "port": 9090,
+  "allow_port_fallback": true,
+  "max_port_tries": 20
+}
+```
+
+- `port`：首选端口。
+- `allow_port_fallback`：当首选端口被占用时，是否尝试 `port + 1 ...`。
+- `max_port_tries`：最多尝试的端口数量（含首选端口）。
+
+运行时端口发现：
+
+- 启动后会打印机器可解析日志：`MCP_SERVER_ENDPOINT <host> <port>`
+- 同时写入运行时文件：`user://mcp_server_runtime.json`
+  - Windows 对应路径通常为：`%APPDATA%/Godot/app_userdata/Dreamer Heroines/mcp_server_runtime.json`
+  - 文件字段：`host`、`port`、`stopped`、`timestamp_unix`

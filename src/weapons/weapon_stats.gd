@@ -20,6 +20,10 @@ extends Resource
 @export var spread: float = 0.0  # 散布角度（度）
 @export var is_automatic: bool = false
 
+@export_group("Deployment")
+@export var deploy_time: float = 0.5
+@export_range(0.0, 1.0, 0.01) var reload_checkpoint_percent: float = 0.5
+
 @export_group("Visual")
 @export var recoil_amount: float = 5.0
 @export var screen_shake_amount: float = 0.3

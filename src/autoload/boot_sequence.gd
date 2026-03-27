@@ -307,6 +307,15 @@ func _apply_saved_settings() -> void:
 	# 存储到 ProjectSettings 或全局变量供游戏使用
 	ProjectSettings.set_setting("game/input/mouse_sensitivity", sensitivity)
 
+	# 应用准星设置（供 UI 或系统读取）
+	ProjectSettings.set_setting("game/ui/crosshair_size", settings.get("crosshair_size", 20.0))
+	ProjectSettings.set_setting("game/ui/crosshair_alpha", settings.get("crosshair_alpha", 1.0))
+	ProjectSettings.set_setting("game/ui/show_center_dot", settings.get("show_center_dot", true))
+	ProjectSettings.set_setting("game/ui/center_dot_size", settings.get("center_dot_size", 2.0))
+	ProjectSettings.set_setting("game/ui/spread_increase_per_shot", settings.get("spread_increase_per_shot", 5.0))
+	ProjectSettings.set_setting("game/ui/crosshair_recovery_rate", settings.get("crosshair_recovery_rate", 30.0))
+	ProjectSettings.set_setting("game/ui/max_spread_multiplier", settings.get("max_spread_multiplier", 3.0))
+
 	# 应用语言
 	var saved_locale: String = settings.get("locale", "")
 	if LocalizationManager:

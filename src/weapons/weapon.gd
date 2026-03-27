@@ -15,6 +15,13 @@ signal out_of_ammo
 # 视觉扩散信号：通知UI当前扩散状态（不影响弹道精度）
 signal spread_changed(current_spread: float, base_spread: float)
 
+enum WeaponState {
+	IDLE,
+	RELOADING_PRE_CHECKPOINT,
+	RELOADING_POST_CHECKPOINT,
+	DEPLOYING
+}
+
 # === 配置 ===
 @export var stats: WeaponStats
 
@@ -29,6 +36,10 @@ var current_reserve_ammo: int = 0
 var can_shoot: bool = true
 var is_reloading: bool = false
 var _use_ammo_system_runtime: bool = true
+var _weapon_state: WeaponState = WeaponState.IDLE
+var _reload_elapsed: float = 0.0
+var _checkpoint_reached: bool = false
+var _deploy_elapsed: float = 0.0
 
 # 视觉扩散状态（仅用于UI反馈，不影响实际弹道）
 var current_visual_spread: float = 0.0
@@ -49,6 +60,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_reload_state(delta)
+	_update_deploy_state(delta)
+
 	if _fire_cooldown_timer > 0:
 		_fire_cooldown_timer -= delta
 		if _fire_cooldown_timer <= 0:
@@ -90,7 +104,7 @@ func _initialize_stats() -> void:
 ## @param aim_dir: 瞄准方向（归一化向量）
 ## @return: 是否成功射击
 func try_shoot(muzzle_pos: Vector2, aim_dir: Vector2) -> bool:
-	if not can_shoot or is_reloading:
+	if not can_shoot or is_reloading or is_deploying():
 		return false
 	
 	# 检查弹药（无限弹药模式跳过）
@@ -142,7 +156,7 @@ func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
 
 ## 换弹
 func reload() -> void:
-	if is_reloading:
+	if is_reloading or is_deploying():
 		return
 	if not stats or not _use_ammo_system_runtime:
 		return
@@ -150,39 +164,108 @@ func reload() -> void:
 		return
 	if current_reserve_ammo <= 0:
 		return
-	
-	is_reloading = true
+
+	_reload_elapsed = _get_reload_start_elapsed()
+	if _reload_elapsed >= _get_reload_duration():
+		_finish_reload()
+		return
+
+	_set_weapon_state(_get_reload_state_for_elapsed(_reload_elapsed))
 	reload_started.emit()
-	
+
 	if stats:
 		AudioManager.play_sfx(stats.weapon_name + "_reload")
-	
-	# 使用 await 等待换弹时间
-	await get_tree().create_timer(stats.reload_time).timeout
-	
-	if is_reloading:  # 检查是否被取消
-		_finish_reload()
 
 
 ## 完成换弹
 func _finish_reload() -> void:
 	if not stats:
 		return
-	
+
 	var ammo_needed := stats.magazine_size - current_ammo_in_mag
 	var ammo_to_reload := mini(ammo_needed, current_reserve_ammo)
-	
+
 	current_ammo_in_mag += ammo_to_reload
 	current_reserve_ammo -= ammo_to_reload
 
-	is_reloading = false
+	_checkpoint_reached = false
+	_reload_elapsed = 0.0
+	_set_weapon_state(WeaponState.IDLE)
 	_emit_ammo_changed()
 	reload_finished.emit()
 
 
 ## 取消换弹
-func cancel_reload() -> void:
-	is_reloading = false
+func cancel_reload(reason: String = "") -> void:
+	if not is_reloading:
+		return
+
+	var checkpoint_elapsed := _get_checkpoint_elapsed()
+	if _reload_elapsed >= checkpoint_elapsed:
+		_checkpoint_reached = true
+		_reload_elapsed = checkpoint_elapsed
+	else:
+		_checkpoint_reached = false
+		_reload_elapsed = 0.0
+
+	_set_weapon_state(WeaponState.IDLE)
+
+	if not reason.is_empty():
+		# 占位分支：reason 由外部调用方用于日志/调试语义
+		pass
+
+
+func start_deploy() -> bool:
+	if _weapon_state == WeaponState.DEPLOYING:
+		return false
+
+	if is_reloading:
+		cancel_reload("deploy_started")
+
+	_set_weapon_state(WeaponState.DEPLOYING)
+	_deploy_elapsed = 0.0
+	return true
+
+
+func cancel_deploy(reason: String = "") -> void:
+	if _weapon_state != WeaponState.DEPLOYING:
+		return
+
+	_deploy_elapsed = 0.0
+	_set_weapon_state(WeaponState.IDLE)
+
+	if not reason.is_empty():
+		# 占位分支：reason 由外部调用方用于日志/调试语义
+		pass
+
+
+func is_deploying() -> bool:
+	return _weapon_state == WeaponState.DEPLOYING
+
+
+func get_reload_progress_ratio() -> float:
+	if not stats:
+		return 0.0
+
+	var reload_duration := _get_reload_duration()
+	if reload_duration <= 0.0:
+		return 1.0
+
+	return clampf(_reload_elapsed / reload_duration, 0.0, 1.0)
+
+
+func get_reload_checkpoint_ratio() -> float:
+	if not stats:
+		return 0.0
+	return clampf(stats.reload_checkpoint_percent, 0.0, 1.0)
+
+
+func has_reload_checkpoint() -> bool:
+	return _checkpoint_reached
+
+
+func get_weapon_state() -> WeaponState:
+	return _weapon_state
 
 
 ## 添加弹药
@@ -263,3 +346,75 @@ func _emit_ammo_changed() -> void:
 	if not stats:
 		return
 	ammo_changed.emit(current_ammo_in_mag, stats.magazine_size)
+
+
+func _update_reload_state(delta: float) -> void:
+	if not is_reloading or not stats:
+		return
+
+	_reload_elapsed += delta
+
+	if _weapon_state == WeaponState.RELOADING_PRE_CHECKPOINT and _reload_elapsed >= _get_checkpoint_elapsed():
+		_checkpoint_reached = true
+		_set_weapon_state(WeaponState.RELOADING_POST_CHECKPOINT)
+
+	if _reload_elapsed >= _get_reload_duration():
+		_finish_reload()
+
+
+func _update_deploy_state(delta: float) -> void:
+	if _weapon_state != WeaponState.DEPLOYING:
+		return
+
+	var deploy_duration := _get_deploy_duration()
+	if deploy_duration <= 0.0:
+		_finish_deploy()
+		return
+
+	_deploy_elapsed += delta
+	if _deploy_elapsed >= deploy_duration:
+		_finish_deploy()
+
+
+func _finish_deploy() -> void:
+	_deploy_elapsed = 0.0
+	_set_weapon_state(WeaponState.IDLE)
+
+
+func _set_weapon_state(new_state: WeaponState) -> void:
+	_weapon_state = new_state
+	is_reloading = (
+		new_state == WeaponState.RELOADING_PRE_CHECKPOINT
+		or new_state == WeaponState.RELOADING_POST_CHECKPOINT
+	)
+
+
+func _get_reload_duration() -> float:
+	if not stats:
+		return 0.0
+	return maxf(stats.reload_time, 0.0)
+
+
+func _get_checkpoint_elapsed() -> float:
+	return _get_reload_duration() * get_reload_checkpoint_ratio()
+
+
+func _get_reload_start_elapsed() -> float:
+	if _checkpoint_reached:
+		return _get_checkpoint_elapsed()
+	return 0.0
+
+
+func _get_reload_state_for_elapsed(elapsed: float) -> WeaponState:
+	if elapsed >= _get_checkpoint_elapsed():
+		_checkpoint_reached = true
+		return WeaponState.RELOADING_POST_CHECKPOINT
+
+	_checkpoint_reached = false
+	return WeaponState.RELOADING_PRE_CHECKPOINT
+
+
+func _get_deploy_duration() -> float:
+	if not stats:
+		return 0.0
+	return maxf(stats.deploy_time, 0.0)

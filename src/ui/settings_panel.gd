@@ -26,6 +26,13 @@ const WINDOW_MODES := ["Windowed", "Fullscreen", "Borderless"]
 @onready var language_option: OptionButton = %LanguageOption
 @onready var volume_slider: HSlider = %VolumeSlider
 @onready var sensitivity_slider: HSlider = %SensitivitySlider
+@onready var crosshair_size_slider: HSlider = %CrosshairSizeSlider
+@onready var crosshair_alpha_slider: HSlider = %CrosshairAlphaSlider
+@onready var center_dot_check: CheckBox = %CenterDotCheck
+@onready var center_dot_size_slider: HSlider = %CenterDotSizeSlider
+@onready var spread_increase_slider: HSlider = %SpreadIncreaseSlider
+@onready var crosshair_recovery_slider: HSlider = %CrosshairRecoverySlider
+@onready var max_spread_multiplier_slider: HSlider = %MaxSpreadMultiplierSlider
 @onready var vsync_check: CheckBox = %VSyncCheck
 @onready var developer_mode_check: CheckBox = %DeveloperModeCheck
 @onready var back_button: Button = %BackButton
@@ -40,6 +47,7 @@ func _ready() -> void:
 
 	_init_controls()
 	_load_settings()
+	_apply_crosshair_settings()
 	_connect_signals()
 	_setup_localized_bindings()
 	_apply_localized_texts()
@@ -68,6 +76,42 @@ func _init_controls() -> void:
 			language_option.add_item(_get_locale_display_name(locale))
 		language_option.selected = _get_locale_index(LocalizationManager.get_locale())
 
+	if crosshair_size_slider:
+		crosshair_size_slider.min_value = 2.0
+		crosshair_size_slider.max_value = 60.0
+		crosshair_size_slider.step = 0.5
+		crosshair_size_slider.value = 20.0
+
+	if crosshair_alpha_slider:
+		crosshair_alpha_slider.min_value = 0.0
+		crosshair_alpha_slider.max_value = 100.0
+		crosshair_alpha_slider.step = 1.0
+		crosshair_alpha_slider.value = 100.0
+
+	if center_dot_size_slider:
+		center_dot_size_slider.min_value = 1.0
+		center_dot_size_slider.max_value = 10.0
+		center_dot_size_slider.step = 0.5
+		center_dot_size_slider.value = 2.0
+
+	if spread_increase_slider:
+		spread_increase_slider.min_value = 0.0
+		spread_increase_slider.max_value = 20.0
+		spread_increase_slider.step = 0.5
+		spread_increase_slider.value = 5.0
+
+	if crosshair_recovery_slider:
+		crosshair_recovery_slider.min_value = 1.0
+		crosshair_recovery_slider.max_value = 120.0
+		crosshair_recovery_slider.step = 1.0
+		crosshair_recovery_slider.value = 30.0
+
+	if max_spread_multiplier_slider:
+		max_spread_multiplier_slider.min_value = 1.0
+		max_spread_multiplier_slider.max_value = 6.0
+		max_spread_multiplier_slider.step = 0.1
+		max_spread_multiplier_slider.value = 3.0
+
 
 func _load_settings() -> void:
 	"""从 SaveManager 加载设置"""
@@ -80,6 +124,27 @@ func _load_settings() -> void:
 	
 	if sensitivity_slider:
 		sensitivity_slider.value = settings.get("mouse_sensitivity", 1.0) * 100
+
+	if crosshair_size_slider:
+		crosshair_size_slider.value = settings.get("crosshair_size", 20.0)
+
+	if crosshair_alpha_slider:
+		crosshair_alpha_slider.value = settings.get("crosshair_alpha", 1.0) * 100.0
+
+	if center_dot_check:
+		center_dot_check.button_pressed = settings.get("show_center_dot", true)
+
+	if center_dot_size_slider:
+		center_dot_size_slider.value = settings.get("center_dot_size", 2.0)
+
+	if spread_increase_slider:
+		spread_increase_slider.value = settings.get("spread_increase_per_shot", 5.0)
+
+	if crosshair_recovery_slider:
+		crosshair_recovery_slider.value = settings.get("crosshair_recovery_rate", 30.0)
+
+	if max_spread_multiplier_slider:
+		max_spread_multiplier_slider.value = settings.get("max_spread_multiplier", 3.0)
 	
 	if window_mode_option:
 		window_mode_option.selected = settings.get("window_mode", 0)
@@ -115,6 +180,27 @@ func _connect_signals() -> void:
 	
 	if sensitivity_slider:
 		sensitivity_slider.value_changed.connect(_on_sensitivity_changed)
+
+	if crosshair_size_slider:
+		crosshair_size_slider.value_changed.connect(_on_crosshair_size_changed)
+
+	if crosshair_alpha_slider:
+		crosshair_alpha_slider.value_changed.connect(_on_crosshair_alpha_changed)
+
+	if center_dot_check:
+		center_dot_check.toggled.connect(_on_center_dot_toggled)
+
+	if center_dot_size_slider:
+		center_dot_size_slider.value_changed.connect(_on_center_dot_size_changed)
+
+	if spread_increase_slider:
+		spread_increase_slider.value_changed.connect(_on_spread_increase_changed)
+
+	if crosshair_recovery_slider:
+		crosshair_recovery_slider.value_changed.connect(_on_crosshair_recovery_changed)
+
+	if max_spread_multiplier_slider:
+		max_spread_multiplier_slider.value_changed.connect(_on_max_spread_multiplier_changed)
 	
 	if vsync_check:
 		vsync_check.toggled.connect(_on_vsync_toggled)
@@ -192,6 +278,84 @@ func _on_sensitivity_changed(_value: float) -> void:
 	_save_settings()
 
 
+func _on_crosshair_size_changed(_value: float) -> void:
+	_apply_crosshair_settings()
+	_save_settings()
+
+
+func _on_crosshair_alpha_changed(_value: float) -> void:
+	_apply_crosshair_settings()
+	_save_settings()
+
+
+func _on_center_dot_toggled(_enabled: bool) -> void:
+	_apply_crosshair_settings()
+	_save_settings()
+
+
+func _on_center_dot_size_changed(_value: float) -> void:
+	_apply_crosshair_settings()
+	_save_settings()
+
+
+func _on_spread_increase_changed(_value: float) -> void:
+	_apply_crosshair_settings()
+	_save_settings()
+
+
+func _on_crosshair_recovery_changed(_value: float) -> void:
+	_apply_crosshair_settings()
+	_save_settings()
+
+
+func _on_max_spread_multiplier_changed(_value: float) -> void:
+	_apply_crosshair_settings()
+	_save_settings()
+
+
+func _get_crosshair_node() -> Node:
+	if not GameManager:
+		return null
+	if not GameManager.hud:
+		return null
+
+	var hud_node: Node = GameManager.hud
+	if not is_instance_valid(hud_node):
+		return null
+
+	if not hud_node.has_node("MainContainer/BottomBar/CenterSection/CrosshairUI"):
+		return null
+
+	return hud_node.get_node("MainContainer/BottomBar/CenterSection/CrosshairUI")
+
+
+func _apply_crosshair_settings() -> void:
+	var crosshair_node := _get_crosshair_node()
+	if crosshair_node == null:
+		return
+
+	if crosshair_size_slider:
+		crosshair_node.crosshair_size = clampf(crosshair_size_slider.value, 2.0, 60.0)
+
+	if crosshair_alpha_slider:
+		crosshair_node.crosshair_alpha = clampf(crosshair_alpha_slider.value / 100.0, 0.0, 1.0)
+
+	if center_dot_check:
+		crosshair_node.show_center_dot = center_dot_check.button_pressed
+
+	if center_dot_size_slider:
+		crosshair_node.center_dot_size = clampf(center_dot_size_slider.value, 1.0, 10.0)
+
+	if spread_increase_slider:
+		crosshair_node.spread_increase_per_shot = clampf(spread_increase_slider.value, 0.0, 20.0)
+
+	if crosshair_recovery_slider:
+		crosshair_node.recovery_rate = clampf(crosshair_recovery_slider.value, 1.0, 120.0)
+
+	if max_spread_multiplier_slider:
+		crosshair_node.max_spread_multiplier = clampf(max_spread_multiplier_slider.value, 1.0, 6.0)
+
+
 func _on_vsync_toggled(enabled: bool) -> void:
 	"""处理 VSync 切换"""
 	DisplayServer.window_set_vsync_mode(
@@ -218,6 +382,13 @@ func _save_settings() -> void:
 		"music_volume": current_settings.get("music_volume", 0.7),
 		"sfx_volume": current_settings.get("sfx_volume", 1.0),
 		"mouse_sensitivity": sensitivity_slider.value / 100.0 if sensitivity_slider else 1.0,
+		"crosshair_size": crosshair_size_slider.value if crosshair_size_slider else 20.0,
+		"crosshair_alpha": crosshair_alpha_slider.value / 100.0 if crosshair_alpha_slider else 1.0,
+		"show_center_dot": center_dot_check.button_pressed if center_dot_check else true,
+		"center_dot_size": center_dot_size_slider.value if center_dot_size_slider else 2.0,
+		"spread_increase_per_shot": spread_increase_slider.value if spread_increase_slider else 5.0,
+		"crosshair_recovery_rate": crosshair_recovery_slider.value if crosshair_recovery_slider else 30.0,
+		"max_spread_multiplier": max_spread_multiplier_slider.value if max_spread_multiplier_slider else 3.0,
 		"fullscreen": window_mode_option.selected == 1 if window_mode_option else false,
 		"vsync": vsync_check.button_pressed if vsync_check else true,
 		"window_mode": window_mode_option.selected if window_mode_option else 0,
@@ -306,6 +477,13 @@ func _setup_localized_bindings() -> void:
 	_localized_text_binder.bind("language_label", "VBoxContainer/LanguageLabel", "ui.settings.language")
 	_localized_text_binder.bind("volume_label", "VBoxContainer/VolumeLabel", "ui.settings.master_volume")
 	_localized_text_binder.bind("sensitivity_label", "VBoxContainer/SensitivityLabel", "ui.settings.mouse_sensitivity")
+	_localized_text_binder.bind("crosshair_size_label", "VBoxContainer/CrosshairSizeLabel", "ui.settings.crosshair_size")
+	_localized_text_binder.bind("crosshair_alpha_label", "VBoxContainer/CrosshairAlphaLabel", "ui.settings.crosshair_alpha")
+	_localized_text_binder.bind("center_dot_size_label", "VBoxContainer/CenterDotSizeLabel", "ui.settings.center_dot_size")
+	_localized_text_binder.bind("spread_increase_label", "VBoxContainer/SpreadIncreaseLabel", "ui.settings.spread_increase_per_shot")
+	_localized_text_binder.bind("crosshair_recovery_label", "VBoxContainer/CrosshairRecoveryLabel", "ui.settings.crosshair_recovery_rate")
+	_localized_text_binder.bind("max_spread_multiplier_label", "VBoxContainer/MaxSpreadMultiplierLabel", "ui.settings.max_spread_multiplier")
+	_localized_text_binder.bind_node("center_dot_text", center_dot_check, "ui.settings.show_center_dot")
 	_localized_text_binder.bind_node("vsync_text", vsync_check, "ui.settings.vsync")
 	_localized_text_binder.bind_node("developer_mode_text", developer_mode_check, "ui.settings.developer_mode")
 	_localized_text_binder.bind_node("back_text", back_button, "ui.main_menu.button.back")

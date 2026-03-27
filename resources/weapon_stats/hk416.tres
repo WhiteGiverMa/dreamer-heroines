@@ -1,12 +1,12 @@
-[gd_resource type="Resource" script_class="WeaponStats" load_steps=2 format=3 uid="uid://rifle_stats_001"]
+[gd_resource type="Resource" script_class="WeaponStats" load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://src/weapons/weapon_stats.gd" id="1_script"]
 
 [resource]
 script = ExtResource("1_script")
-weapon_id = "rifle_basic"
-weapon_name = "rifle_basic"
-description = "标准军用步枪，平衡的伤害和射速"
+weapon_id = "hk416"
+weapon_name = "hk416"
+description = "HK416 突击步枪，稳定且可靠"
 damage = 15.0
 fire_rate = 0.1
 reload_time = 1.5
@@ -16,9 +16,9 @@ magazine_size = 30
 max_ammo = 120
 projectile_speed = 800.0
 max_range = 1000.0
-spread = 2.0
+spread = 1.8
 is_automatic = true
-recoil_amount = 5.0
+recoil_amount = 4.8
 screen_shake_amount = 0.3
 muzzle_flash_effect = "rifle"
 shell_casing_scene = null

@@ -351,6 +351,13 @@ func _get_default_settings() -> Dictionary:
 		"music_volume": 0.7,
 		"sfx_volume": 1.0,
 		"mouse_sensitivity": 1.0,
+		"crosshair_size": 20.0,
+		"crosshair_alpha": 1.0,
+		"show_center_dot": true,
+		"center_dot_size": 2.0,
+		"spread_increase_per_shot": 5.0,
+		"crosshair_recovery_rate": 30.0,
+		"max_spread_multiplier": 3.0,
 		"fullscreen": false,
 		"vsync": true,
 		"window_mode": 0,  # 0=Windowed, 1=Fullscreen, 2=Borderless
@@ -369,6 +376,13 @@ func _convert_csharp_settings_to_dict(csharp_settings) -> Dictionary:
 	var music_volume: float = float(_read_csharp_property(csharp_settings, "MusicVolume", 0.7))
 	var sfx_volume: float = float(_read_csharp_property(csharp_settings, "SFXVolume", 1.0))
 	var mouse_sensitivity: float = float(_read_csharp_property(csharp_settings, "MouseSensitivity", 1.0))
+	var crosshair_size: float = float(_read_csharp_property(csharp_settings, "CrosshairSize", 20.0))
+	var crosshair_alpha: float = float(_read_csharp_property(csharp_settings, "CrosshairAlpha", 1.0))
+	var show_center_dot: bool = bool(_read_csharp_property(csharp_settings, "ShowCenterDot", true))
+	var center_dot_size: float = float(_read_csharp_property(csharp_settings, "CenterDotSize", 2.0))
+	var spread_increase_per_shot: float = float(_read_csharp_property(csharp_settings, "SpreadIncreasePerShot", 5.0))
+	var crosshair_recovery_rate: float = float(_read_csharp_property(csharp_settings, "CrosshairRecoveryRate", 30.0))
+	var max_spread_multiplier: float = float(_read_csharp_property(csharp_settings, "MaxSpreadMultiplier", 3.0))
 	var fullscreen: bool = bool(_read_csharp_property(csharp_settings, "Fullscreen", false))
 	var vsync: bool = bool(_read_csharp_property(csharp_settings, "VSync", true))
 	var window_mode: int = int(_read_csharp_property(csharp_settings, "WindowMode", 0))
@@ -380,6 +394,13 @@ func _convert_csharp_settings_to_dict(csharp_settings) -> Dictionary:
 		"music_volume": music_volume,
 		"sfx_volume": sfx_volume,
 		"mouse_sensitivity": mouse_sensitivity,
+		"crosshair_size": crosshair_size,
+		"crosshair_alpha": crosshair_alpha,
+		"show_center_dot": show_center_dot,
+		"center_dot_size": center_dot_size,
+		"spread_increase_per_shot": spread_increase_per_shot,
+		"crosshair_recovery_rate": crosshair_recovery_rate,
+		"max_spread_multiplier": max_spread_multiplier,
 		"fullscreen": fullscreen,
 		"vsync": vsync,
 		"window_mode": window_mode,

@@ -16,6 +16,9 @@ var health_warning_threshold: float = 0.3
 # 弹药显示
 @onready var ammo_label: Label = $MainContainer/BottomBar/WeaponSection/AmmoLabel
 @onready var reload_progress: ProgressBar = $MainContainer/BottomBar/WeaponSection/ReloadProgress
+@onready var checkpoint_marker: ColorRect = $MainContainer/BottomBar/WeaponSection/ReloadProgress/CheckpointMarker
+@onready var deploy_progress: ProgressBar = $MainContainer/BottomBar/WeaponSection/DeployProgress
+@onready var slot_label: Label = $MainContainer/BottomBar/WeaponSection/SlotLabel
 
 # 武器显示
 @onready var weapon_name_label: Label = $MainContainer/BottomBar/WeaponSection/WeaponNameLabel
@@ -58,11 +61,20 @@ var kill_target: int = 25
 var reload_duration: float = 0.0
 var reload_elapsed: float = 0.0
 var is_reloading: bool = false
+var reload_checkpoint_ratio: float = 0.5
 var _last_ammo_current: int = 0
 var _last_ammo_max: int = 0
 var _last_ammo_reserve: int = -1
 var _current_objective_base_text: String = ""
 var _localized_text_binder = null
+
+# 部署进度状态
+var deploy_duration: float = 0.0
+var deploy_elapsed: float = 0.0
+var is_deploying: bool = false
+
+# 武器槽位
+var current_slot: int = 0  # 0 = primary, 1 = secondary
 
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var hit_marker_timer: Timer = $HitMarkerTimer
@@ -87,6 +99,7 @@ func _ready() -> void:
 	_update_wave_display()
 	update_enemy_count(live_enemy_count)
 	update_arena_score(kill_count, kill_target)
+	_apply_saved_crosshair_settings()
 	# 弹药显示会在武器切换时更新
 
 	# 隐藏需要动态显示的元素
@@ -100,6 +113,26 @@ func _ready() -> void:
 	_apply_localized_texts()
 
 	print("HUD initialized")
+
+
+func _apply_saved_crosshair_settings() -> void:
+	if not crosshair:
+		return
+
+	if not SaveManager:
+		return
+
+	var settings := SaveManager.load_settings()
+	if settings.is_empty():
+		return
+
+	crosshair.crosshair_size = settings.get("crosshair_size", 20.0)
+	crosshair.crosshair_alpha = settings.get("crosshair_alpha", 1.0)
+	crosshair.show_center_dot = settings.get("show_center_dot", true)
+	crosshair.center_dot_size = settings.get("center_dot_size", 2.0)
+	crosshair.spread_increase_per_shot = settings.get("spread_increase_per_shot", 5.0)
+	crosshair.recovery_rate = settings.get("crosshair_recovery_rate", 30.0)
+	crosshair.max_spread_multiplier = settings.get("max_spread_multiplier", 3.0)
 
 
 func _setup_localized_bindings() -> void:
@@ -236,19 +269,43 @@ func hide_reload_progress() -> void:
 
 
 # 换弹进度控制（被 Player 信号调用）
-func start_reload_progress(duration: float) -> void:
+func start_reload_progress(duration: float, checkpoint_percent: float = 0.5) -> void:
 	reload_duration = duration
 	reload_elapsed = 0.0
 	is_reloading = true
+	reload_checkpoint_ratio = checkpoint_percent
 
 	if reload_progress:
 		reload_progress.visible = true
 		reload_progress.max_value = duration
 		reload_progress.value = 0.0
 
+	# 设置检查点标记位置
+	if checkpoint_marker and reload_progress:
+		var marker_x = reload_progress.size.x * checkpoint_percent
+		checkpoint_marker.position.x = marker_x - 2  # 居中偏移
+		checkpoint_marker.visible = true
+
+	# 隐藏部署进度
+	if deploy_progress:
+		deploy_progress.visible = false
+	is_deploying = false
+
 	# 显示换弹中文本
 	if ammo_label:
 		ammo_label.modulate = Color(1, 0.8, 0.2, 1)  # 黄色表示换弹中
+
+
+func update_reload_progress(elapsed: float) -> void:
+	"""更新换弹进度（由 Player 每帧调用）"""
+	reload_elapsed = elapsed
+	if reload_progress:
+		reload_progress.value = reload_elapsed
+
+	# 更新弹药标签显示进度
+	if ammo_label and reload_duration > 0:
+		var progress = reload_elapsed / reload_duration
+		ammo_label.text = LocalizationManager.call("tr", "ui.hud.reloading_progress", {"value": int(progress * 100)})
 
 
 func finish_reload_progress() -> void:
@@ -259,35 +316,98 @@ func finish_reload_progress() -> void:
 	if reload_progress:
 		reload_progress.visible = false
 
+	if checkpoint_marker:
+		checkpoint_marker.visible = false
+
 	# 恢复弹药颜色
 	if ammo_label:
 		ammo_label.modulate = Color(1, 1, 1, 1)
 
 
-func _update_reload_progress(delta: float) -> void:
-	if not is_reloading:
-		return
-
-	reload_elapsed += delta
-
+func cancel_reload_progress() -> void:
+	"""取消换弹进度显示"""
+	is_reloading = false
 	if reload_progress:
-		reload_progress.value = reload_elapsed
+		reload_progress.visible = false
+	if checkpoint_marker:
+		checkpoint_marker.visible = false
+	if ammo_label:
+		ammo_label.modulate = Color(1, 1, 1, 1)
 
-	# 更新弹药标签显示进度
-	if ammo_label and reload_duration > 0:
-		var progress = reload_elapsed / reload_duration
-		ammo_label.text = LocalizationManager.call("tr", "ui.hud.reloading_progress", {"value": int(progress * 100)})
+
+func _update_reload_progress(delta: float) -> void:
+	# 已由 Player 调用 update_reload_progress，此处仅作备用
+	pass
+
+
+# 部署进度控制
+func start_deploy_progress(duration: float) -> void:
+	"""开始显示部署进度"""
+	deploy_duration = duration
+	deploy_elapsed = 0.0
+	is_deploying = true
+
+	if deploy_progress:
+		deploy_progress.visible = true
+		deploy_progress.max_value = duration
+		deploy_progress.value = 0.0
+
+	# 隐藏换弹进度
+	if reload_progress:
+		reload_progress.visible = false
+	if checkpoint_marker:
+		checkpoint_marker.visible = false
+	is_reloading = false
+
+	# 显示部署中文本
+	if ammo_label:
+		ammo_label.modulate = Color(0.2, 0.8, 1.0, 1)  # 青色表示部署中
+
+
+func update_deploy_progress(elapsed: float) -> void:
+	"""更新部署进度（由 Player 每帧调用）"""
+	deploy_elapsed = elapsed
+	if deploy_progress:
+		deploy_progress.value = deploy_elapsed
+
+
+func finish_deploy_progress() -> void:
+	"""完成部署进度显示"""
+	is_deploying = false
+	deploy_duration = 0.0
+	deploy_elapsed = 0.0
+
+	if deploy_progress:
+		deploy_progress.visible = false
+
+	# 恢复弹药颜色
+	if ammo_label and not is_reloading:
+		ammo_label.modulate = Color(1, 1, 1, 1)
+
+
+func cancel_deploy_progress() -> void:
+	"""取消部署进度显示"""
+	is_deploying = false
+	if deploy_progress:
+		deploy_progress.visible = false
+	if ammo_label and not is_reloading:
+		ammo_label.modulate = Color(1, 1, 1, 1)
 
 
 # 武器更新
-func update_weapon(weapon_name: String, weapon_index: int, total_weapons: int) -> void:
-	current_weapon_index = weapon_index
+func update_weapon(weapon_name: String, slot_id: int, total_weapons: int) -> void:
+	current_weapon_index = slot_id
+	current_slot = slot_id
 
 	if weapon_name_label:
 		weapon_name_label.text = weapon_name
 
+	# 更新武器槽位数字显示 (1 = primary, 2 = secondary)
+	if slot_label:
+		slot_label.text = str(slot_id + 1)
+
 	# 更新武器槽位显示
-	_update_weapon_slots(weapon_index, total_weapons)
+	_update_weapon_slots(slot_id, total_weapons)
 
 
 func _update_weapon_slots(active_index: int, total: int) -> void:
@@ -320,6 +440,13 @@ func _update_score_display() -> void:
 	if _localized_text_binder:
 		_localized_text_binder.refresh("score")
 		_localized_text_binder.refresh("lives")
+
+
+func update_lives(lives: int) -> void:
+	if _localized_text_binder:
+		_localized_text_binder.refresh("lives")
+	elif lives_label:
+		lives_label.text = LocalizationManager.call("tr", "ui.hud.lives", {"value": lives})
 
 
 # 目标显示
@@ -640,6 +767,18 @@ func on_crosshair_reload_started(duration: float) -> void:
 func on_crosshair_reload_finished() -> void:
 	if crosshair:
 		crosshair._on_reload_finished()
+
+
+## 部署开始转发
+func on_crosshair_deploy_started() -> void:
+	if crosshair:
+		crosshair._on_deploy_started()
+
+
+## 部署结束转发
+func on_crosshair_deploy_finished() -> void:
+	if crosshair:
+		crosshair._on_deploy_finished()
 
 
 ## 弹药变化转发

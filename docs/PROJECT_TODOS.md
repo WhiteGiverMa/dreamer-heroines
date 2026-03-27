@@ -1,5 +1,7 @@
 # Project TODOs
 
+> 定时清空
+
 ## Known legacy issues (pending)
 
 - [x] `tests/unit/test_boot_sequence.gd::test_total_systems_calculated`

@@ -46,8 +46,8 @@ var current_weapon_index: int = 0
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var detection_area: Area2D = $DetectionArea
 @onready var attack_timer: Timer = $AttackTimer
-@onready var ground_check: RayCast2D = $GroundCheck
-@onready var wall_check: RayCast2D = $WallCheck
+@onready var ground_check: RayCast2D = get_node_or_null("GroundCheck") as RayCast2D
+@onready var wall_check: RayCast2D = get_node_or_null("WallCheck") as RayCast2D
 
 func _ready():
 	add_to_group("enemy")

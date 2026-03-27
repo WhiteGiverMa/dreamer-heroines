@@ -1,0 +1,23 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/weapons/hk416_weapon.gd" id="1_hk416_script"]
+[ext_resource type="Resource" path="res://resources/weapon_stats/hk416.tres" id="2_hk416_stats"]
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_hk416"]
+size = Vector2(64, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hk416_muzzle"]
+size = Vector2(10, 10)
+
+[node name="HK416" type="Node2D"]
+script = ExtResource("1_hk416_script")
+stats = ExtResource("2_hk416_stats")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = SubResource("PlaceholderTexture2D_hk416")
+
+[node name="Muzzle" type="Marker2D" parent="."]
+position = Vector2(35, 0)
+
+[node name="EjectionPort" type="Marker2D" parent="."]
+position = Vector2(-10, -8)

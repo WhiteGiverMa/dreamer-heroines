@@ -115,6 +115,27 @@ msgstr "Master Volume"
 msgid "ui.settings.mouse_sensitivity"
 msgstr "Mouse Sensitivity"
 
+msgid "ui.settings.crosshair_size"
+msgstr "Crosshair Size"
+
+msgid "ui.settings.crosshair_alpha"
+msgstr "Crosshair Alpha"
+
+msgid "ui.settings.show_center_dot"
+msgstr "Show Center Dot"
+
+msgid "ui.settings.center_dot_size"
+msgstr "Center Dot Size"
+
+msgid "ui.settings.spread_increase_per_shot"
+msgstr "Spread Increase per Shot"
+
+msgid "ui.settings.crosshair_recovery_rate"
+msgstr "Crosshair Recovery Rate"
+
+msgid "ui.settings.max_spread_multiplier"
+msgstr "Max Spread Multiplier"
+
 msgid "ui.settings.vsync"
 msgstr "VSync"
 

@@ -115,6 +115,27 @@ msgstr "主音量"
 msgid "ui.settings.mouse_sensitivity"
 msgstr "鼠标灵敏度"
 
+msgid "ui.settings.crosshair_size"
+msgstr "准星大小"
+
+msgid "ui.settings.crosshair_alpha"
+msgstr "准星透明度"
+
+msgid "ui.settings.show_center_dot"
+msgstr "显示中心点"
+
+msgid "ui.settings.center_dot_size"
+msgstr "中心点大小"
+
+msgid "ui.settings.spread_increase_per_shot"
+msgstr "每发扩散增量"
+
+msgid "ui.settings.crosshair_recovery_rate"
+msgstr "准星恢复速度"
+
+msgid "ui.settings.max_spread_multiplier"
+msgstr "最大扩散倍率"
+
 msgid "ui.settings.vsync"
 msgstr "垂直同步"
 

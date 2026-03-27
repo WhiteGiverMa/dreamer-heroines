@@ -9,21 +9,114 @@ var _client: StreamPeerTCP
 var _buffer: String = ""
 var _busy: bool = false
 var _busy_since: float = 0.0
-const PORT: int = 9090
+const DEFAULT_PORT: int = 9090
+const DEFAULT_HOST: String = "127.0.0.1"
+const DEFAULT_MAX_PORT_TRIES: int = 20
+const CONFIG_PATH: String = "res://config/mcp_server.json"
+const RUNTIME_INFO_PATH: String = "user://mcp_server_runtime.json"
 const BUSY_TIMEOUT: float = 30.0
 var _key_map: Dictionary
 var _held_keys: Dictionary = {}
+var _listen_host: String = DEFAULT_HOST
+var _listen_port: int = DEFAULT_PORT
+var _allow_port_fallback: bool = true
+var _max_port_tries: int = DEFAULT_MAX_PORT_TRIES
 
 func _ready() -> void:
 	# Ensure MCP server keeps processing even when game is paused
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_init_key_map()
+	_load_server_config()
 	_server = TCPServer.new()
-	var err: int = _server.listen(PORT, "127.0.0.1")
+	var err: int = _listen_with_fallback()
 	if err != OK:
-		push_error("McpInteractionServer: Failed to listen on port %d, error: %d" % [PORT, err])
+		push_error("McpInteractionServer: Failed to listen on %s, start_port=%d, max_port_tries=%d, error=%d" % [_listen_host, _listen_port, _max_port_tries, err])
 		return
-	print("McpInteractionServer: Listening on 127.0.0.1:%d" % PORT)
+	print("McpInteractionServer: Listening on %s:%d" % [_listen_host, _listen_port])
+	# Machine-readable marker for external MCP clients/wrappers.
+	print("MCP_SERVER_ENDPOINT %s %d" % [_listen_host, _listen_port])
+	_write_runtime_info()
+
+
+func _load_server_config() -> void:
+	var config: Dictionary = {}
+	if FileAccess.file_exists(CONFIG_PATH):
+		var file: FileAccess = FileAccess.open(CONFIG_PATH, FileAccess.READ)
+		if file != null:
+			var text: String = file.get_as_text()
+			var json: JSON = JSON.new()
+			if json.parse(text) == OK and json.data is Dictionary:
+				config = json.data
+			else:
+				push_warning("McpInteractionServer: Invalid config JSON at %s, using defaults" % CONFIG_PATH)
+
+	_listen_host = str(config.get("host", DEFAULT_HOST))
+	if _listen_host.is_empty():
+		_listen_host = DEFAULT_HOST
+
+	_listen_port = clampi(int(config.get("port", DEFAULT_PORT)), 1, 65535)
+	_allow_port_fallback = bool(config.get("allow_port_fallback", true))
+	_max_port_tries = max(1, int(config.get("max_port_tries", DEFAULT_MAX_PORT_TRIES)))
+
+	# Optional environment overrides for local debugging/CI
+	if OS.has_environment("MCP_SERVER_HOST"):
+		var env_host: String = OS.get_environment("MCP_SERVER_HOST").strip_edges()
+		if not env_host.is_empty():
+			_listen_host = env_host
+
+	if OS.has_environment("MCP_SERVER_PORT"):
+		var env_port: int = int(OS.get_environment("MCP_SERVER_PORT"))
+		if env_port >= 1 and env_port <= 65535:
+			_listen_port = env_port
+
+	if OS.has_environment("MCP_SERVER_ALLOW_FALLBACK"):
+		var env_fallback: String = OS.get_environment("MCP_SERVER_ALLOW_FALLBACK").to_lower()
+		_allow_port_fallback = env_fallback in ["1", "true", "yes", "on"]
+
+	if OS.has_environment("MCP_SERVER_MAX_PORT_TRIES"):
+		var env_max_tries: int = int(OS.get_environment("MCP_SERVER_MAX_PORT_TRIES"))
+		if env_max_tries > 0:
+			_max_port_tries = env_max_tries
+
+
+func _listen_with_fallback() -> int:
+	var start_port: int = _listen_port
+	var attempts: int = 1
+	if _allow_port_fallback:
+		attempts = _max_port_tries
+
+	var last_err: int = ERR_UNAVAILABLE
+	for offset in range(attempts):
+		var port: int = start_port + offset
+		if port > 65535:
+			break
+		var err: int = _server.listen(port, _listen_host)
+		if err == OK:
+			if port != start_port:
+				push_warning("McpInteractionServer: Port %d busy, fallback to %d" % [start_port, port])
+			_listen_port = port
+			return OK
+		last_err = err
+		if err != ERR_ALREADY_IN_USE:
+			break
+
+	return last_err
+
+
+func _write_runtime_info(is_stopped: bool = false) -> void:
+	var payload: Dictionary = {
+		"host": _listen_host,
+		"port": _listen_port,
+		"stopped": is_stopped,
+		"timestamp_unix": Time.get_unix_time_from_system()
+	}
+
+	var file: FileAccess = FileAccess.open(RUNTIME_INFO_PATH, FileAccess.WRITE)
+	if file == null:
+		push_warning("McpInteractionServer: Failed to write runtime info at %s" % RUNTIME_INFO_PATH)
+		return
+
+	file.store_string(JSON.stringify(payload))
 
 
 func _process(_delta: float) -> void:
@@ -4437,7 +4530,8 @@ func _exit_tree() -> void:
 	if _client != null:
 		_client.disconnect_from_host()
 		_client = null
-	if _server != null:
+	if _server != null and _server.is_listening():
 		_server.stop()
-		_server = null
+	_server = null
+	_write_runtime_info(true)
 	print("McpInteractionServer: Stopped")
