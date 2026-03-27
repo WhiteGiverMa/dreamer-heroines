@@ -1,8 +1,165 @@
 # 音频素材来源文档
 
 > **项目**: DreamerHeroines
-> **更新日期**: 2026-03-24
+> **更新日期**: 2026-03-27
 > **用途**: 占位符音频素材下载指南
+
+---
+
+## 音频总线架构
+
+### 12 总线拓扑结构
+
+本项目采用 12 总线分层架构，实现精细的音频路由控制：
+
+```
+Master (root)
+├── Music → Master
+├── SFX → Master (聚合总线，不直接使用)
+│   ├── SFX_Player → SFX
+│   ├── SFX_Weapons → SFX
+│   ├── SFX_Enemies → SFX
+│   ├── SFX_Impacts → SFX
+│   └── SFX_Skills → SFX
+├── UI → Master
+├── Voice → Master (保留总线，暂无 UI 控制)
+├── Ambience → Reverb
+└── Reverb → Master (含 AudioEffectReverb)
+```
+
+### 总线分类说明
+
+| 层级 | 总线名 | 发送目标 | 用途 |
+|------|--------|----------|------|
+| 根 | Master | — | 最终输出，禁止直接发送 |
+| 顶层 | Music | Master | 背景音乐 |
+| 顶层 | SFX | Master | 聚合总线，不直接使用 |
+| 顶层 | UI | Master | UI 音效 |
+| 顶层 | Voice | Master | 角色语音（保留） |
+| 顶层 | Ambience | Reverb | 环境音，路由到混响 |
+| 顶层 | Reverb | Master | 混响处理器 |
+| 子级 | SFX_Player | SFX | 玩家动作音效 |
+| 子级 | SFX_Weapons | SFX | 武器音效 |
+| 子级 | SFX_Enemies | SFX | 敌人音效 |
+| 子级 | SFX_Impacts | SFX | 撞击/命中音效 |
+| 子级 | SFX_Skills | SFX | 技能音效 |
+
+> **总线契约**: 完整定义见 `src/autoload/audio_manager.gd` 顶部 `AUDIO BUS CONTRACT` 注释
+
+---
+
+### 声音类别归属表
+
+| 类别 | 总线 | 音效 ID 示例 |
+|------|------|--------------|
+| 玩家动作 | SFX_Player | `sfx_jump`, `sfx_player_hurt`, `sfx_player_death` |
+| 武器音效 | SFX_Weapons | `sfx_gunshot_pistol`, `sfx_reload_generic`, `sfx_empty_click` |
+| 敌人音效 | SFX_Enemies | `sfx_enemy_shoot`, `sfx_enemy_melee`, `sfx_enemy_hurt`, `sfx_enemy_death` |
+| 撞击音效 | SFX_Impacts | `sfx_explosion_small`, `sfx_explosion_large`, `sfx_impact_bullet` |
+| 技能音效 | SFX_Skills | `sfx_skill_cast`, `sfx_skill_hit` |
+| UI 音效 | UI | `sfx_ui_click`, `sfx_ui_hover` |
+| 环境音 | Ambience | `sfx_ambience_wind`, `sfx_ambience_rain` |
+| 角色语音 | Voice | （保留，暂无具体音效） |
+
+### 路由策略
+
+`AudioManager.play_sfx(key)` 根据 key 前缀自动路由到对应总线：
+
+1. 检查 `_CATEGORY_TO_BUS` 映射，匹配前缀
+2. 首次匹配生效
+3. 未知 key 降级到父总线 `SFX`（保持向后兼容）
+
+---
+
+### Reverb 策略
+
+**仅 Ambience 总线路由到 Reverb**
+
+- `Ambience → Reverb → Master`
+- 战斗总线（SFX_*）保持干声 (dry)，不经过混响
+- UI、Music、Voice 直接发送到 Master
+
+混响参数（`AudioEffectReverb`）：
+- `room_size = 0.3`
+- `wet = 0.2`
+- `damping = 0.3`
+
+> 这种设计使环境音具有空间感，而战斗音效保持清晰定位。
+
+---
+
+### Voice 总线状态
+
+Voice 总线已实现但**未在设置界面暴露**：
+- 总线存在于 `default_bus_layout.tres`
+- 发送到 Master
+- 设置界面仅有 Master、Music、SFX、UI 四个音量滑块
+- 后续版本将添加 Voice 音量控制
+
+---
+
+## 规范化声音 ID
+
+### 规范格式
+
+所有音效 ID 遵循 `sfx_{category}_{name}` 格式：
+
+| 前缀 | 类别 | 示例 |
+|------|------|------|
+| `sfx_player_` | 玩家动作 | `sfx_player_hurt`, `sfx_player_death` |
+| `sfx_gunshot_` | 武器射击 | `sfx_gunshot_pistol`, `sfx_gunshot_rifle` |
+| `sfx_reload_` | 换弹 | `sfx_reload_generic` |
+| `sfx_enemy_` | 敌人 | `sfx_enemy_shoot`, `sfx_enemy_death` |
+| `sfx_explosion_` | 爆炸 | `sfx_explosion_small`, `sfx_explosion_large` |
+| `sfx_impact_` | 撞击 | `sfx_impact_bullet` |
+| `sfx_skill_` | 技能 | `sfx_skill_cast` |
+| `sfx_ui_` | UI | `sfx_ui_click`, `sfx_ui_hover` |
+| `sfx_ambience_` | 环境音 | `sfx_ambience_wind` |
+
+### 遗留别名映射
+
+`AudioManager` 自动将遗留键转换为规范格式：
+
+| 遗留键 | 规范键 | 用途 |
+|--------|--------|------|
+| `jump` | `sfx_jump` | 玩家跳跃 |
+| `player_hurt` | `sfx_player_hurt` | 玩家受伤 |
+| `player_death` | `sfx_player_death` | 玩家死亡 |
+| `enemy_shoot` | `sfx_enemy_shoot` | 敌人射击 |
+| `enemy_melee` | `sfx_enemy_melee` | 敌人近战 |
+| `enemy_hurt` | `sfx_enemy_hurt` | 敌人受伤 |
+| `enemy_death` | `sfx_enemy_death` | 敌人死亡 |
+| `empty_click` | `sfx_empty_click` | 空仓挂机 |
+| `shoot` | `sfx_gunshot_pistol` | 通用射击（备用） |
+
+### 动态武器音效规范化
+
+武器音效支持动态键转换：
+
+| 动态键模式 | 转换规则 | 示例 |
+|------------|----------|------|
+| `{weapon}_shoot` | → `sfx_gunshot_{weapon}` | `rifle_shoot` → `sfx_gunshot_rifle` |
+| `{weapon}_reload` | → `sfx_reload_{weapon}` 或 `sfx_reload_generic` | `rifle_reload` → `sfx_reload_generic` |
+
+### 规范化工作流程
+
+```
+play_sfx("rifle_shoot")
+    ↓
+_normalize_sound_key("rifle_shoot")
+    ↓ (检测到 _shoot 后缀)
+"sfx_gunshot_rifle"
+    ↓
+sound_library.has("sfx_gunshot_rifle")?
+    ↓ 是
+播放音效，路由到 SFX_Weapons
+```
+
+### 未知键处理
+
+- 未知键触发一次性警告：`"Sound not found in library (warn once): {key}"`
+- 警告消息显示规范化后的键
+- 未知 SFX 键降级路由到父总线 `SFX`
 
 ---
 
@@ -135,25 +292,6 @@ Import 面板设置:
 - Compress > Mode: QOA (默认)
 ```
 
-### 音频总线
-
-```
-Master
-├── Music
-├── SFX
-│   ├── SFX_Player
-│   ├── SFX_Weapons
-│   ├── SFX_Enemies
-│   ├── SFX_Impacts
-│   └── SFX_Skills
-├── UI
-├── Voice
-├── Ambience → Reverb
-└── Reverb → Master
-```
-
-> **总线契约**: 参见 `src/autoload/audio_manager.gd` 顶部 AUDIO BUS CONTRACT 注释
-
 ---
 
 ## 许可证说明
@@ -239,54 +377,6 @@ AudioManager.play_sfx("sfx_gunshot_rifle", volume_db=-3.0, pitch_scale=1.1)
 | `sfx_explosion_large` | explosion_large.wav | 大爆炸 |
 | `sfx_ui_click` | click.wav | 按钮点击 |
 | `sfx_ui_hover` | hover.wav | 按钮悬停 |
-
----
-
-## 遗留别名与规范化
-
-`AudioManager` 包含一个**规范化层**，自动将遗留/非规范化音效键转换为规范的 `sfx_*` 键。这确保了向后兼容性，现有游戏脚本无需修改即可工作。
-
-### 静态别名映射
-
-| 遗留键 | 规范键 | 用途 |
-|--------|--------|------|
-| `jump` | `sfx_jump` | 玩家跳跃 |
-| `player_hurt` | `sfx_player_hurt` | 玩家受伤 |
-| `player_death` | `sfx_player_death` | 玩家死亡 |
-| `enemy_shoot` | `sfx_enemy_shoot` | 敌人射击 |
-| `enemy_melee` | `sfx_enemy_melee` | 敌人近战 |
-| `enemy_hurt` | `sfx_enemy_hurt` | 敌人受伤 |
-| `enemy_death` | `sfx_enemy_death` | 敌人死亡 |
-| `empty_click` | `sfx_empty_click` | 空仓挂机 |
-| `shoot` | `sfx_gunshot_pistol` | 通用射击（备用） |
-
-### 动态武器音效规范化
-
-武器音效支持动态键，格式为 `{weapon_name}_shoot` 和 `{weapon_name}_reload`：
-
-| 动态键模式 | 转换规则 | 示例 |
-|------------|----------|------|
-| `{weapon_name}_shoot` | → `sfx_gunshot_{weapon_name}` | `rifle_shoot` → `sfx_gunshot_rifle` |
-| `{weapon_name}_reload` | → `sfx_reload_{weapon_name}` 或 `sfx_reload_generic` | `rifle_reload` → `sfx_reload_generic` |
-
-### 规范化工作流程
-
-```
-play_sfx("rifle_shoot")
-    ↓
-_normalize_sound_key("rifle_shoot")
-    ↓ (检测到 _shoot 后缀)
-"sfx_gunshot_rifle"
-    ↓
-sound_library.has("sfx_gunshot_rifle")?
-    ↓ 是
-播放音效
-```
-
-### 未知键处理
-
-- 未知键仍会触发一次性警告：`"Sound not found in library (warn once): {key}"`
-- 警告消息中会显示规范化后的键
 
 ---
 
