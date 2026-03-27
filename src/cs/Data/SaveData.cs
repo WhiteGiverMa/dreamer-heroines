@@ -199,6 +199,7 @@ namespace DreamerHeroines.Data
         public float MasterVolume { get; set; } = 0.8f;
         public float MusicVolume { get; set; } = 0.7f;
         public float SFXVolume { get; set; } = 1.0f;
+        public float UiVolume { get; set; } = 0.7f;
         public float MouseSensitivity { get; set; } = 1.0f;
         public float CrosshairSize { get; set; } = 20.0f;
         public float CrosshairAlpha { get; set; } = 1.0f;

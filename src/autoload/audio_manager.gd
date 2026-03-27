@@ -77,6 +77,10 @@ const _LEGACY_SOUND_ALIASES: Dictionary = {
 	"enemy_melee": "sfx_enemy_melee",
 	"enemy_hurt": "sfx_enemy_hurt",
 	"enemy_death": "sfx_enemy_death",
+	"enemy_dive": "sfx_enemy_dive",
+	# Level interaction sounds
+	"checkpoint_unlock": "sfx_checkpoint_unlock",
+	"checkpoint_activate": "sfx_checkpoint_activate",
 	# Weapon sounds (legacy bare keys)
 	"empty_click": "sfx_empty_click",
 	"shoot": "sfx_gunshot_pistol",  # Generic fallback
@@ -95,6 +99,7 @@ const _CATEGORY_TO_BUS: Dictionary = {
 	"sfx_reload_": "SFX_Weapons",
 	"sfx_empty_click": "SFX_Weapons",
 	"sfx_enemy_": "SFX_Enemies",
+	"sfx_checkpoint_": "SFX_Skills",
 	"sfx_explosion_": "SFX_Impacts",
 	"sfx_impact_": "SFX_Impacts",
 	"sfx_skill_": "SFX_Skills",
@@ -309,6 +314,22 @@ func _get_bus_name(bus_type: BusType) -> String:
 			return music_bus
 		BusType.UI:
 			return ui_bus
+		BusType.VOICE:
+			return "Voice"
+		BusType.AMBIENCE:
+			return "Ambience"
+		BusType.REVERB:
+			return "Reverb"
+		BusType.SFX_PLAYER:
+			return "SFX_Player"
+		BusType.SFX_WEAPONS:
+			return "SFX_Weapons"
+		BusType.SFX_ENEMIES:
+			return "SFX_Enemies"
+		BusType.SFX_IMPACTS:
+			return "SFX_Impacts"
+		BusType.SFX_SKILLS:
+			return "SFX_Skills"
 	return "Master"
 
 func _fade_music_in(duration: float) -> void:

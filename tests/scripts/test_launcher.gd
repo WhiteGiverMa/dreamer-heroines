@@ -359,6 +359,9 @@ const _LEGACY_TO_CANONICAL: Dictionary = {
 	"enemy_melee": "sfx_enemy_melee",
 	"enemy_hurt": "sfx_enemy_hurt",
 	"enemy_death": "sfx_enemy_death",
+	"enemy_dive": "sfx_enemy_dive",
+	"checkpoint_unlock": "sfx_checkpoint_unlock",
+	"checkpoint_activate": "sfx_checkpoint_activate",
 	"empty_click": "sfx_empty_click",
 	"shoot": "sfx_gunshot_pistol",
 }
@@ -495,13 +498,16 @@ func _run_audio_settings_persistence_test() -> Dictionary:
 		result.error = "AudioManager autoload 不存在"
 		return result
 
-	# Test that settings can be saved and loaded
+	# Test that settings can be saved and loaded through SaveManager persistence path
 	var test_settings: Dictionary = {
 		"master_volume": 0.5,
 		"music_volume": 0.4,
 		"sfx_volume": 0.9,
 		"ui_volume": 0.6,
 	}
+
+	# backup existing saved settings to avoid polluting developer environment
+	var original_settings: Dictionary = save_manager.load_settings()
 
 	# Store original volume states to restore later
 	var original_volumes: Dictionary = {}
@@ -510,35 +516,51 @@ func _run_audio_settings_persistence_test() -> Dictionary:
 		if bus_idx >= 0:
 			original_volumes[bus_name] = AudioServer.get_bus_volume_db(bus_idx)
 
-	# Apply test settings via AudioManager
-	audio_manager.set_bus_volume(AudioManager.BusType.MASTER, test_settings.master_volume)
-	audio_manager.set_bus_volume(AudioManager.BusType.MUSIC, test_settings.music_volume)
-	audio_manager.set_bus_volume(AudioManager.BusType.SFX, test_settings.sfx_volume)
-	audio_manager.set_bus_volume(AudioManager.BusType.UI, test_settings.ui_volume)
+	# Persist through SaveManager, then load and apply through AudioManager
+	save_manager.save_settings(test_settings)
+	var loaded_settings: Dictionary = save_manager.load_settings()
+	audio_manager._load_saved_volumes()
 
-	# Get the values back
-	var retrieved_master = audio_manager.get_bus_volume(AudioManager.BusType.MASTER)
-	var retrieved_music = audio_manager.get_bus_volume(AudioManager.BusType.MUSIC)
-	var retrieved_sfx = audio_manager.get_bus_volume(AudioManager.BusType.SFX)
-	var retrieved_ui = audio_manager.get_bus_volume(AudioManager.BusType.UI)
+	# Get values from both persisted payload and runtime buses
+	var loaded_master = float(loaded_settings.get("master_volume", -1.0))
+	var loaded_music = float(loaded_settings.get("music_volume", -1.0))
+	var loaded_sfx = float(loaded_settings.get("sfx_volume", -1.0))
+	var loaded_ui = float(loaded_settings.get("ui_volume", -1.0))
 
-	# Restore original volumes
+	var runtime_master = audio_manager.get_bus_volume(AudioManager.BusType.MASTER)
+	var runtime_music = audio_manager.get_bus_volume(AudioManager.BusType.MUSIC)
+	var runtime_sfx = audio_manager.get_bus_volume(AudioManager.BusType.SFX)
+	var runtime_ui = audio_manager.get_bus_volume(AudioManager.BusType.UI)
+
+	# Restore original runtime volumes
 	for bus_name: String in original_volumes:
 		var bus_idx = AudioServer.get_bus_index(bus_name)
 		AudioServer.set_bus_volume_db(bus_idx, original_volumes[bus_name])
+
+	# Restore original persisted settings
+	save_manager.save_settings(original_settings)
 
 	# Verify retrieved values match (within floating point tolerance)
 	var tolerance := 0.01
 	var volume_errors: Array[String] = []
 
-	if absf(retrieved_master - test_settings.master_volume) > tolerance:
-		volume_errors.append("master: %.2f != %.2f" % [retrieved_master, test_settings.master_volume])
-	if absf(retrieved_music - test_settings.music_volume) > tolerance:
-		volume_errors.append("music: %.2f != %.2f" % [retrieved_music, test_settings.music_volume])
-	if absf(retrieved_sfx - test_settings.sfx_volume) > tolerance:
-		volume_errors.append("sfx: %.2f != %.2f" % [retrieved_sfx, test_settings.sfx_volume])
-	if absf(retrieved_ui - test_settings.ui_volume) > tolerance:
-		volume_errors.append("ui: %.2f != %.2f" % [retrieved_ui, test_settings.ui_volume])
+	if absf(loaded_master - test_settings.master_volume) > tolerance:
+		volume_errors.append("saved master: %.2f != %.2f" % [loaded_master, test_settings.master_volume])
+	if absf(loaded_music - test_settings.music_volume) > tolerance:
+		volume_errors.append("saved music: %.2f != %.2f" % [loaded_music, test_settings.music_volume])
+	if absf(loaded_sfx - test_settings.sfx_volume) > tolerance:
+		volume_errors.append("saved sfx: %.2f != %.2f" % [loaded_sfx, test_settings.sfx_volume])
+	if absf(loaded_ui - test_settings.ui_volume) > tolerance:
+		volume_errors.append("saved ui: %.2f != %.2f" % [loaded_ui, test_settings.ui_volume])
+
+	if absf(runtime_master - test_settings.master_volume) > tolerance:
+		volume_errors.append("runtime master: %.2f != %.2f" % [runtime_master, test_settings.master_volume])
+	if absf(runtime_music - test_settings.music_volume) > tolerance:
+		volume_errors.append("runtime music: %.2f != %.2f" % [runtime_music, test_settings.music_volume])
+	if absf(runtime_sfx - test_settings.sfx_volume) > tolerance:
+		volume_errors.append("runtime sfx: %.2f != %.2f" % [runtime_sfx, test_settings.sfx_volume])
+	if absf(runtime_ui - test_settings.ui_volume) > tolerance:
+		volume_errors.append("runtime ui: %.2f != %.2f" % [runtime_ui, test_settings.ui_volume])
 
 	if volume_errors.size() > 0:
 		result.error = "音量不匹配: %s" % str(volume_errors)

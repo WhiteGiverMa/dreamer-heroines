@@ -617,7 +617,7 @@ namespace DreamerHeroines.Systems
             }
             catch (Exception ex)
             {
-                GD.PushError($"Failed to load settings: {ex.Message}");
+                GD.PushError($"Failed to load settings: {ex}");
                 return defaults;
             }
         }
@@ -689,6 +689,10 @@ namespace DreamerHeroines.Systems
                 "sfx_volume",
                 "sfxVolume",
                 "SFXVolume",
+                "ui_volume",
+                "uiVolume",
+                "UiVolume",
+                "UIVolume",
                 "mouse_sensitivity",
                 "mouseSensitivity",
                 "MouseSensitivity",
@@ -764,6 +768,7 @@ namespace DreamerHeroines.Systems
             payload["masterVolume"] = settings.MasterVolume;
             payload["musicVolume"] = settings.MusicVolume;
             payload["sfxVolume"] = settings.SFXVolume;
+            payload["uiVolume"] = settings.UiVolume;
             payload["mouseSensitivity"] = settings.MouseSensitivity;
             payload["crosshairSize"] = settings.CrosshairSize;
             payload["crosshairAlpha"] = settings.CrosshairAlpha;
@@ -796,6 +801,7 @@ namespace DreamerHeroines.Systems
                 MasterVolume = baseSettings.MasterVolume,
                 MusicVolume = baseSettings.MusicVolume,
                 SFXVolume = baseSettings.SFXVolume,
+                UiVolume = baseSettings.UiVolume,
                 MouseSensitivity = baseSettings.MouseSensitivity,
                 CrosshairSize = baseSettings.CrosshairSize,
                 CrosshairAlpha = baseSettings.CrosshairAlpha,
@@ -821,6 +827,7 @@ namespace DreamerHeroines.Systems
             merged.MasterVolume = ReadFloatFromChanges(changes, merged.MasterVolume, "master_volume", "masterVolume");
             merged.MusicVolume = ReadFloatFromChanges(changes, merged.MusicVolume, "music_volume", "musicVolume");
             merged.SFXVolume = ReadFloatFromChanges(changes, merged.SFXVolume, "sfx_volume", "sfxVolume");
+            merged.UiVolume = ReadFloatFromChanges(changes, merged.UiVolume, "ui_volume", "uiVolume", "UiVolume");
             merged.MouseSensitivity = ReadFloatFromChanges(
                 changes,
                 merged.MouseSensitivity,
@@ -1192,6 +1199,11 @@ namespace DreamerHeroines.Systems
                     defaults.MusicVolume
                 ),
                 SFXVolume = ReadFloat(root, new[] { "sfx_volume", "sfxVolume", "SFXVolume" }, defaults.SFXVolume),
+                UiVolume = ReadFloat(
+                    root,
+                    new[] { "ui_volume", "uiVolume", "UiVolume", "UIVolume" },
+                    defaults.UiVolume
+                ),
                 MouseSensitivity = ReadFloat(
                     root,
                     new[] { "mouse_sensitivity", "mouseSensitivity", "MouseSensitivity" },
@@ -1303,6 +1315,7 @@ namespace DreamerHeroines.Systems
                 ["master_volume"] = settings.MasterVolume,
                 ["music_volume"] = settings.MusicVolume,
                 ["sfx_volume"] = settings.SFXVolume,
+                ["ui_volume"] = settings.UiVolume,
                 ["mouse_sensitivity"] = settings.MouseSensitivity,
                 ["crosshair_size"] = settings.CrosshairSize,
                 ["crosshair_alpha"] = settings.CrosshairAlpha,
@@ -1347,9 +1360,31 @@ namespace DreamerHeroines.Systems
                 if (root.TryGetProperty(key, out var element))
                 {
                     if (element.ValueKind == JsonValueKind.Number)
-                        return element.GetInt32();
+                    {
+                        if (element.TryGetInt32(out var intValue))
+                        {
+                            return intValue;
+                        }
+
+                        if (element.TryGetDouble(out var doubleValue))
+                        {
+                            return Convert.ToInt32(Math.Round(doubleValue, MidpointRounding.AwayFromZero));
+                        }
+                    }
+
                     if (element.ValueKind == JsonValueKind.String && int.TryParse(element.GetString(), out var parsed))
                         return parsed;
+
+                    if (element.ValueKind == JsonValueKind.String)
+                    {
+                        var raw = element.GetString();
+                        if (
+                            double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedDouble)
+                        )
+                        {
+                            return Convert.ToInt32(Math.Round(parsedDouble, MidpointRounding.AwayFromZero));
+                        }
+                    }
                 }
             }
 

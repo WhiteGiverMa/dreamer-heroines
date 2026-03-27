@@ -152,7 +152,7 @@ func save_settings(settings: Dictionary) -> void:
 		_csharp_save_manager.SaveSettings(settings)
 		return
 
-	push_error("[SaveManager] CSharpSaveManager 不可用，无法保存设置")
+	_save_settings_to_file(settings)
 
 func load_settings() -> Dictionary:
 	if _csharp_save_manager:
@@ -165,7 +165,46 @@ func load_settings() -> Dictionary:
 			if csharp_settings:
 				return _convert_csharp_settings_to_dict(csharp_settings)
 
-	push_warning("[SaveManager] CSharpSaveManager 不可用，返回默认设置")
+	return _load_settings_from_file()
+
+func _save_settings_to_file(settings: Dictionary) -> void:
+	var merged_settings: Dictionary = _get_default_settings()
+	for key in settings.keys():
+		merged_settings[key] = settings[key]
+
+	var file := FileAccess.open("user://settings.json", FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(merged_settings, "\t"))
+		file.close()
+		print("[SaveManager] 已通过 GDScript 后备路径保存设置")
+		return
+
+	push_error("[SaveManager] 设置文件写入失败: user://settings.json")
+
+func _load_settings_from_file() -> Dictionary:
+	var file_path := "user://settings.json"
+	if not FileAccess.file_exists(file_path):
+		return _get_default_settings()
+
+	var file := FileAccess.open(file_path, FileAccess.READ)
+	if not file:
+		push_warning("[SaveManager] 设置文件读取失败，使用默认设置")
+		return _get_default_settings()
+
+	var text := file.get_as_text()
+	file.close()
+
+	if text.strip_edges().is_empty():
+		return _get_default_settings()
+
+	var parsed = JSON.parse_string(text)
+	if parsed is Dictionary:
+		var merged_settings: Dictionary = _get_default_settings()
+		for key in parsed.keys():
+			merged_settings[key] = parsed[key]
+		return merged_settings
+
+	push_warning("[SaveManager] 设置文件格式无效，使用默认设置")
 	return _get_default_settings()
 
 # 信号回调
