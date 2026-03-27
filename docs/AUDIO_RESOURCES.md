@@ -138,8 +138,21 @@ Import 面板设置:
 ### 音频总线
 
 ```
-Master → Music / SFX / UI
+Master
+├── Music
+├── SFX
+│   ├── SFX_Player
+│   ├── SFX_Weapons
+│   ├── SFX_Enemies
+│   ├── SFX_Impacts
+│   └── SFX_Skills
+├── UI
+├── Voice
+├── Ambience → Reverb
+└── Reverb → Master
 ```
+
+> **总线契约**: 参见 `src/autoload/audio_manager.gd` 顶部 AUDIO BUS CONTRACT 注释
 
 ---
 
@@ -229,4 +242,52 @@ AudioManager.play_sfx("sfx_gunshot_rifle", volume_db=-3.0, pitch_scale=1.1)
 
 ---
 
-*最后更新: 2026-03-24*
+## 遗留别名与规范化
+
+`AudioManager` 包含一个**规范化层**，自动将遗留/非规范化音效键转换为规范的 `sfx_*` 键。这确保了向后兼容性，现有游戏脚本无需修改即可工作。
+
+### 静态别名映射
+
+| 遗留键 | 规范键 | 用途 |
+|--------|--------|------|
+| `jump` | `sfx_jump` | 玩家跳跃 |
+| `player_hurt` | `sfx_player_hurt` | 玩家受伤 |
+| `player_death` | `sfx_player_death` | 玩家死亡 |
+| `enemy_shoot` | `sfx_enemy_shoot` | 敌人射击 |
+| `enemy_melee` | `sfx_enemy_melee` | 敌人近战 |
+| `enemy_hurt` | `sfx_enemy_hurt` | 敌人受伤 |
+| `enemy_death` | `sfx_enemy_death` | 敌人死亡 |
+| `empty_click` | `sfx_empty_click` | 空仓挂机 |
+| `shoot` | `sfx_gunshot_pistol` | 通用射击（备用） |
+
+### 动态武器音效规范化
+
+武器音效支持动态键，格式为 `{weapon_name}_shoot` 和 `{weapon_name}_reload`：
+
+| 动态键模式 | 转换规则 | 示例 |
+|------------|----------|------|
+| `{weapon_name}_shoot` | → `sfx_gunshot_{weapon_name}` | `rifle_shoot` → `sfx_gunshot_rifle` |
+| `{weapon_name}_reload` | → `sfx_reload_{weapon_name}` 或 `sfx_reload_generic` | `rifle_reload` → `sfx_reload_generic` |
+
+### 规范化工作流程
+
+```
+play_sfx("rifle_shoot")
+    ↓
+_normalize_sound_key("rifle_shoot")
+    ↓ (检测到 _shoot 后缀)
+"sfx_gunshot_rifle"
+    ↓
+sound_library.has("sfx_gunshot_rifle")?
+    ↓ 是
+播放音效
+```
+
+### 未知键处理
+
+- 未知键仍会触发一次性警告：`"Sound not found in library (warn once): {key}"`
+- 警告消息中会显示规范化后的键
+
+---
+
+*最后更新: 2026-03-27*

@@ -3,7 +3,46 @@ extends "res://src/base/game_system.gd"
 # AudioManager - 音频管理
 # 统一管理游戏音效和背景音
 
-enum BusType { MASTER, SFX, MUSIC, UI }
+# =============================================================================
+# AUDIO BUS CONTRACT - 音频总线契约 (v1.0)
+# =============================================================================
+# 本文件定义了游戏中所有音频总线的拓扑结构。所有更改必须先在此
+# 注释中更新契约，然后才能修改 runtime 行为。
+#
+# 稳定顶层总线 (Stable Top-Level Buses):
+#   - Master    →  所有总线的最终目标，禁止直接发送
+#   - Music     →  背景音乐，Send→Master
+#   - SFX       →  音效聚合总线（不直接使用），Send→Master
+#   - UI        →  UI音效，Send→Master
+#
+# SFX 子总线 (SFX Child Buses):
+#   - SFX_Player    →  玩家动作音效，Send→SFX
+#   - SFX_Weapons  →  武器音效，Send→SFX
+#   - SFX_Enemies  →  敌人音效，Send→SFX
+#   - SFX_Impacts  →  撞击/命中音效，Send→SFX
+#   - SFX_Skills   →  技能音效，Send→SFX
+#
+# 附加顶层总线 (Additional Top-Level Buses):
+#   - Voice     →  角色语音（对话/喊叫），Send→Master
+#   - Ambience  →  环境音/氛围音，Send→Reverb
+#   - Reverb    →  混响处理器，Send→Master
+#
+# 发送拓扑 (Send Topology):
+#   Music→Master, SFX→Master, SFX_*→SFX, UI→Master,
+#   Voice→Master, Ambience→Reverb, Reverb→Master
+#
+# 路由策略 (Routing Policy):
+#   - play_sfx(key) 根据 key 前缀自动路由到对应 SFX_* 子总线
+#   - 未知 SFX key 降级路由到父总线 SFX（保持向后兼容）
+#   - 旧 play_sfx() 调用仍然有效（路由到 SFX）
+#   - Voice 总线存在但尚未在设置界面暴露
+#   - Ambience 路由到 Reverb；战斗总线保持干声(dry)
+#
+# 总线数量: 12 个 (1 Master + 3 顶层 + 5 SFX_* + 3 附加)
+# =============================================================================
+
+enum BusType { MASTER, SFX, MUSIC, UI, VOICE, AMBIENCE, REVERB,
+	SFX_PLAYER, SFX_WEAPONS, SFX_ENEMIES, SFX_IMPACTS, SFX_SKILLS }
 
 @export var sfx_bus: String = "SFX"
 @export var music_bus: String = "Music"
@@ -16,6 +55,37 @@ var max_sfx_players: int = 16
 var sound_library: Dictionary = {}
 var music_library: Dictionary = {}
 var _missing_audio_warned: Dictionary = {}
+
+# =============================================================================
+# LEGACY SOUND ID NORMALIZATION
+# =============================================================================
+# Maps legacy/unnormalized sound keys to canonical sfx_* IDs.
+# This ensures backward compatibility with gameplay scripts using old key formats.
+#
+# Alias types:
+#   - Static: "legacy_key" -> "canonical_key"
+#   - Dynamic: "{weapon_name}_shoot" -> "sfx_gunshot_{weapon_name}"
+#                "{weapon_name}_reload" -> "sfx_reload_{weapon_name}"
+# =============================================================================
+const _LEGACY_SOUND_ALIASES: Dictionary = {
+	# Player action sounds
+	"jump": "sfx_jump",
+	"player_hurt": "sfx_player_hurt",
+	"player_death": "sfx_player_death",
+	# Enemy sounds
+	"enemy_shoot": "sfx_enemy_shoot",
+	"enemy_melee": "sfx_enemy_melee",
+	"enemy_hurt": "sfx_enemy_hurt",
+	"enemy_death": "sfx_enemy_death",
+	# Weapon sounds (legacy bare keys)
+	"empty_click": "sfx_empty_click",
+	"shoot": "sfx_gunshot_pistol",  # Generic fallback
+}
+
+# Known weapon name prefixes for dynamic normalization
+# These are stripped from weapon_name and matched against registered sfx_gunshot_* keys
+const _WEAPON_SHOOT_PREFIX: String = "_shoot"
+const _WEAPON_RELOAD_PREFIX: String = "_reload"
 
 var default_volumes: Dictionary = {
 	"Master": 1.0,
@@ -33,6 +103,7 @@ func initialize() -> void:
 	print("[AudioManager] 开始初始化...")
 	_setup_audio_players()
 	_setup_default_bus_volumes()
+	_validate_required_buses()
 	preload_common_sounds()
 	print("[AudioManager] 初始化完")
 	_mark_ready()
@@ -55,17 +126,70 @@ func _setup_default_bus_volumes():
 		if bus_idx >= 0:
 			AudioServer.set_bus_volume_db(bus_idx, linear_to_db(default_volumes[bus_name]))
 
+const REQUIRED_BUSES: Array[String] = [
+	"Master", "Music", "SFX", "UI", "Voice", "Ambience", "Reverb",
+	"SFX_Player", "SFX_Weapons", "SFX_Enemies", "SFX_Impacts", "SFX_Skills"
+]
+
+func _validate_required_buses() -> void:
+	for bus_name in REQUIRED_BUSES:
+		if AudioServer.get_bus_index(bus_name) < 0:
+			push_warning("[AudioManager] Required audio bus missing: " + bus_name)
+
 func play_sfx(sound_name: String, volume_db: float = 0.0, pitch_scale: float = 1.0) -> void:
-	if not sound_library.has(sound_name):
-		_warn_missing_audio_once("sfx", sound_name)
+	var normalized_key = _normalize_sound_key(sound_name)
+	if not sound_library.has(normalized_key):
+		_warn_missing_audio_once("sfx", sound_name + " (normalized: " + normalized_key + ")")
 		return
-	var stream = sound_library[sound_name]
+	var stream = sound_library[normalized_key]
 	var player = _get_available_sfx_player()
 	if player:
 		player.stream = stream
 		player.volume_db = volume_db
 		player.pitch_scale = pitch_scale
 		player.play()
+
+# =============================================================================
+# Sound ID Normalization
+# =============================================================================
+# Converts legacy/unnormalized sound keys to canonical sfx_* IDs.
+# Runs before library lookup in play_sfx().
+#
+# Resolution order:
+#   1. Check static _LEGACY_SOUND_ALIASES map
+#   2. Dynamic weapon patterns: {weapon_name}_shoot -> sfx_gunshot_{weapon_name}
+#                              {weapon_name}_reload -> sfx_reload_{weapon_name}
+#   3. Return original key if no normalization found
+# =============================================================================
+func _normalize_sound_key(sound_name: String) -> String:
+	# 1. Check static alias map first
+	if _LEGACY_SOUND_ALIASES.has(sound_name):
+		return _LEGACY_SOUND_ALIASES[sound_name]
+
+	# 2. Dynamic weapon sound normalization
+	#    {weapon_name}_shoot -> sfx_gunshot_{weapon_name}
+	if sound_name.ends_with(_WEAPON_SHOOT_PREFIX):
+		var weapon_name = sound_name.substr(0, sound_name.length() - _WEAPON_SHOOT_PREFIX.length())
+		# Try exact match first (e.g., "sfx_gunshot_rifle" if registered)
+		var canonical = "sfx_gunshot_" + weapon_name
+		if sound_library.has(canonical):
+			return canonical
+		# Fallback: try registered sfx_gunshot_* variants
+		return canonical
+
+	#    {weapon_name}_reload -> sfx_reload_{weapon_name}
+	if sound_name.ends_with(_WEAPON_RELOAD_PREFIX):
+		var weapon_name = sound_name.substr(0, sound_name.length() - _WEAPON_RELOAD_PREFIX.length())
+		var canonical = "sfx_reload_" + weapon_name
+		if sound_library.has(canonical):
+			return canonical
+		# Fallback to generic reload if weapon-specific not found
+		if sound_library.has("sfx_reload_generic"):
+			return "sfx_reload_generic"
+		return canonical
+
+	# 3. No normalization found, return original
+	return sound_name
 
 func play_music(music_name: String, fade_duration: float = 1.0, loop: bool = true) -> void:
 	if not music_library.has(music_name):
