@@ -25,6 +25,9 @@ const WINDOW_MODES := ["Windowed", "Fullscreen", "Borderless"]
 @onready var window_mode_option: OptionButton = %WindowModeOption
 @onready var language_option: OptionButton = %LanguageOption
 @onready var volume_slider: HSlider = %VolumeSlider
+@onready var music_slider: HSlider = %MusicSlider
+@onready var sfx_slider: HSlider = %SFXSlider
+@onready var ui_slider: HSlider = %UISlider
 @onready var sensitivity_slider: HSlider = %SensitivitySlider
 @onready var crosshair_size_slider: HSlider = %CrosshairSizeSlider
 @onready var crosshair_alpha_slider: HSlider = %CrosshairAlphaSlider
@@ -38,6 +41,7 @@ const WINDOW_MODES := ["Windowed", "Fullscreen", "Borderless"]
 @onready var back_button: Button = %BackButton
 
 var _is_updating_controls: bool = false
+var _is_loading_settings: bool = false
 var _localized_text_binder = null
 
 
@@ -115,12 +119,34 @@ func _init_controls() -> void:
 
 func _load_settings() -> void:
 	"""从 SaveManager 加载设置"""
+	_is_loading_settings = true
 	var settings = SaveManager.load_settings()
 	if settings.is_empty():
 		return
 	
 	if volume_slider:
-		volume_slider.value = settings.get("master_volume", 0.8) * 100
+		var master_vol = settings.get("master_volume", 0.8)
+		volume_slider.value = master_vol * 100
+		if AudioManager:
+			AudioManager.set_bus_volume(AudioManager.BusType.MASTER, master_vol)
+
+	if music_slider:
+		var music_vol = settings.get("music_volume", 0.7)
+		music_slider.value = music_vol * 100
+		if AudioManager:
+			AudioManager.set_bus_volume(AudioManager.BusType.MUSIC, music_vol)
+
+	if sfx_slider:
+		var sfx_vol = settings.get("sfx_volume", 1.0)
+		sfx_slider.value = sfx_vol * 100
+		if AudioManager:
+			AudioManager.set_bus_volume(AudioManager.BusType.SFX, sfx_vol)
+
+	if ui_slider:
+		var ui_vol = settings.get("ui_volume", 0.7)
+		ui_slider.value = ui_vol * 100
+		if AudioManager:
+			AudioManager.set_bus_volume(AudioManager.BusType.UI, ui_vol)
 	
 	if sensitivity_slider:
 		sensitivity_slider.value = settings.get("mouse_sensitivity", 1.0) * 100
@@ -162,6 +188,7 @@ func _load_settings() -> void:
 			DeveloperMode.set_user_enabled(developer_mode_check.button_pressed)
 	
 	# 分辨率没有保存，保持默认选择
+	_is_loading_settings = false
 
 
 func _connect_signals() -> void:
@@ -178,6 +205,15 @@ func _connect_signals() -> void:
 	if volume_slider:
 		volume_slider.value_changed.connect(_on_volume_changed)
 	
+	if music_slider:
+		music_slider.value_changed.connect(_on_music_volume_changed)
+
+	if sfx_slider:
+		sfx_slider.value_changed.connect(_on_sfx_volume_changed)
+
+	if ui_slider:
+		ui_slider.value_changed.connect(_on_ui_volume_changed)
+
 	if sensitivity_slider:
 		sensitivity_slider.value_changed.connect(_on_sensitivity_changed)
 
@@ -265,12 +301,36 @@ func _on_language_selected(index: int) -> void:
 
 
 func _on_volume_changed(value: float) -> void:
-	"""处理音量变化"""
+	"""处理主音量变化"""
 	# value 范围 0-100，转换为 0-1
 	if AudioManager:
 		AudioManager.set_bus_volume(AudioManager.BusType.MASTER, value / 100.0)
-	
-	_save_settings()
+	if not _is_loading_settings:
+		_save_settings()
+
+
+func _on_music_volume_changed(value: float) -> void:
+	"""处理音乐音量变化"""
+	if AudioManager:
+		AudioManager.set_bus_volume(AudioManager.BusType.MUSIC, value / 100.0)
+	if not _is_loading_settings:
+		_save_settings()
+
+
+func _on_sfx_volume_changed(value: float) -> void:
+	"""处理音效音量变化"""
+	if AudioManager:
+		AudioManager.set_bus_volume(AudioManager.BusType.SFX, value / 100.0)
+	if not _is_loading_settings:
+		_save_settings()
+
+
+func _on_ui_volume_changed(value: float) -> void:
+	"""处理UI音量变化"""
+	if AudioManager:
+		AudioManager.set_bus_volume(AudioManager.BusType.UI, value / 100.0)
+	if not _is_loading_settings:
+		_save_settings()
 
 
 func _on_sensitivity_changed(_value: float) -> void:
@@ -379,8 +439,9 @@ func _save_settings() -> void:
 	var current_settings := SaveManager.load_settings()
 	var settings := {
 		"master_volume": volume_slider.value / 100.0 if volume_slider else 0.8,
-		"music_volume": current_settings.get("music_volume", 0.7),
-		"sfx_volume": current_settings.get("sfx_volume", 1.0),
+		"music_volume": music_slider.value / 100.0 if music_slider else 0.7,
+		"sfx_volume": sfx_slider.value / 100.0 if sfx_slider else 1.0,
+		"ui_volume": ui_slider.value / 100.0 if ui_slider else 0.7,
 		"mouse_sensitivity": sensitivity_slider.value / 100.0 if sensitivity_slider else 1.0,
 		"crosshair_size": crosshair_size_slider.value if crosshair_size_slider else 20.0,
 		"crosshair_alpha": crosshair_alpha_slider.value / 100.0 if crosshair_alpha_slider else 1.0,
@@ -402,6 +463,7 @@ func _save_settings() -> void:
 
 func _on_back_pressed() -> void:
 	"""处理返回按钮点击"""
+	_save_settings()
 	close_requested.emit()
 
 

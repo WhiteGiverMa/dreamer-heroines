@@ -86,6 +86,36 @@ layout_mode = 2
 max_value = 100.0
 value = 80.0
 
+[node name="MusicLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Music Volume"
+
+[node name="MusicSlider" type="HSlider" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 100.0
+value = 70.0
+
+[node name="SFXLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "SFX Volume"
+
+[node name="SFXSlider" type="HSlider" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 100.0
+value = 100.0
+
+[node name="UILabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "UI Volume"
+
+[node name="UISlider" type="HSlider" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 100.0
+value = 70.0
+
 [node name="SensitivityLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 text = "Mouse Sensitivity"

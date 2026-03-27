@@ -82,6 +82,27 @@ const _LEGACY_SOUND_ALIASES: Dictionary = {
 	"shoot": "sfx_gunshot_pistol",  # Generic fallback
 }
 
+# =============================================================================
+# CATEGORY TO BUS ROUTING MATRIX
+# =============================================================================
+# Maps normalized sound key prefixes to audio bus names.
+# First-match wins. Unknown keys fallback to "SFX".
+# =============================================================================
+const _CATEGORY_TO_BUS: Dictionary = {
+	"sfx_player_": "SFX_Player",
+	"sfx_jump": "SFX_Player",
+	"sfx_gunshot_": "SFX_Weapons",
+	"sfx_reload_": "SFX_Weapons",
+	"sfx_empty_click": "SFX_Weapons",
+	"sfx_enemy_": "SFX_Enemies",
+	"sfx_explosion_": "SFX_Impacts",
+	"sfx_impact_": "SFX_Impacts",
+	"sfx_skill_": "SFX_Skills",
+	"sfx_ui_": "UI",
+	"sfx_ambience_": "Ambience",
+	"music_": "Music",
+}
+
 # Known weapon name prefixes for dynamic normalization
 # These are stripped from weapon_name and matched against registered sfx_gunshot_* keys
 const _WEAPON_SHOOT_PREFIX: String = "_shoot"
@@ -103,6 +124,7 @@ func initialize() -> void:
 	print("[AudioManager] 开始初始化...")
 	_setup_audio_players()
 	_setup_default_bus_volumes()
+	_load_saved_volumes()
 	_validate_required_buses()
 	preload_common_sounds()
 	print("[AudioManager] 初始化完")
@@ -126,6 +148,29 @@ func _setup_default_bus_volumes():
 		if bus_idx >= 0:
 			AudioServer.set_bus_volume_db(bus_idx, linear_to_db(default_volumes[bus_name]))
 
+func _load_saved_volumes() -> void:
+	"""从 SaveManager 加载保存的音量设置并应用到总线"""
+	if not SaveManager:
+		print("[AudioManager] SaveManager 不可用，使用默认音量")
+		return
+
+	var settings = SaveManager.load_settings()
+	if settings.is_empty():
+		print("[AudioManager] 没有保存的设置，使用默认音量")
+		return
+
+	# 应用保存的音量到各总线
+	if settings.has("master_volume"):
+		set_bus_volume(BusType.MASTER, settings.get("master_volume", 1.0))
+	if settings.has("music_volume"):
+		set_bus_volume(BusType.MUSIC, settings.get("music_volume", 0.7))
+	if settings.has("sfx_volume"):
+		set_bus_volume(BusType.SFX, settings.get("sfx_volume", 0.8))
+	if settings.has("ui_volume"):
+		set_bus_volume(BusType.UI, settings.get("ui_volume", 0.7))
+
+	print("[AudioManager] 已从保存的设置加载音量")
+
 const REQUIRED_BUSES: Array[String] = [
 	"Master", "Music", "SFX", "UI", "Voice", "Ambience", "Reverb",
 	"SFX_Player", "SFX_Weapons", "SFX_Enemies", "SFX_Impacts", "SFX_Skills"
@@ -147,6 +192,7 @@ func play_sfx(sound_name: String, volume_db: float = 0.0, pitch_scale: float = 1
 		player.stream = stream
 		player.volume_db = volume_db
 		player.pitch_scale = pitch_scale
+		player.bus = _get_bus_from_category(normalized_key)
 		player.play()
 
 # =============================================================================
@@ -190,6 +236,18 @@ func _normalize_sound_key(sound_name: String) -> String:
 
 	# 3. No normalization found, return original
 	return sound_name
+
+# =============================================================================
+# Category to Bus Routing
+# =============================================================================
+# Determines the correct audio bus for a normalized sound key.
+# First-match prefix wins. Unknown keys fallback to "SFX".
+# =============================================================================
+func _get_bus_from_category(normalized_key: String) -> String:
+	for prefix: String in _CATEGORY_TO_BUS.keys():
+		if normalized_key.begins_with(prefix):
+			return _CATEGORY_TO_BUS[prefix]
+	return "SFX"  # Fallback for unknown categories
 
 func play_music(music_name: String, fade_duration: float = 1.0, loop: bool = true) -> void:
 	if not music_library.has(music_name):

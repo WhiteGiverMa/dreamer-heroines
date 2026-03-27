@@ -350,6 +350,7 @@ func _get_default_settings() -> Dictionary:
 		"master_volume": 0.8,
 		"music_volume": 0.7,
 		"sfx_volume": 1.0,
+		"ui_volume": 0.7,
 		"mouse_sensitivity": 1.0,
 		"crosshair_size": 20.0,
 		"crosshair_alpha": 1.0,
@@ -375,6 +376,7 @@ func _convert_csharp_settings_to_dict(csharp_settings) -> Dictionary:
 	var master_volume: float = float(_read_csharp_property(csharp_settings, "MasterVolume", 0.8))
 	var music_volume: float = float(_read_csharp_property(csharp_settings, "MusicVolume", 0.7))
 	var sfx_volume: float = float(_read_csharp_property(csharp_settings, "SFXVolume", 1.0))
+	var ui_volume: float = float(_read_csharp_property(csharp_settings, "UiVolume", 0.7))
 	var mouse_sensitivity: float = float(_read_csharp_property(csharp_settings, "MouseSensitivity", 1.0))
 	var crosshair_size: float = float(_read_csharp_property(csharp_settings, "CrosshairSize", 20.0))
 	var crosshair_alpha: float = float(_read_csharp_property(csharp_settings, "CrosshairAlpha", 1.0))
@@ -393,6 +395,7 @@ func _convert_csharp_settings_to_dict(csharp_settings) -> Dictionary:
 		"master_volume": master_volume,
 		"music_volume": music_volume,
 		"sfx_volume": sfx_volume,
+		"ui_volume": ui_volume,
 		"mouse_sensitivity": mouse_sensitivity,
 		"crosshair_size": crosshair_size,
 		"crosshair_alpha": crosshair_alpha,
