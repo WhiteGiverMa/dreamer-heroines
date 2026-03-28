@@ -1,7 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://src/weapons/hk416_weapon.gd" id="1_hk416_script"]
 [ext_resource type="Resource" path="res://resources/weapon_stats/hk416.tres" id="2_hk416_stats"]
+[ext_resource type="Script" path="res://src/weapons/weapon_lighting.gd" id="3_weapon_lighting_script"]
+[ext_resource type="Resource" path="res://resources/lighting_configs/hk416_flashlight.tres" id="4_hk416_flashlight"]
 
 [sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_hk416"]
 size = Vector2(64, 20)
@@ -21,3 +23,8 @@ position = Vector2(35, 0)
 
 [node name="EjectionPort" type="Marker2D" parent="."]
 position = Vector2(-10, -8)
+
+[node name="WeaponLighting" type="Node2D" parent="."]
+position = Vector2(28, 6)
+script = ExtResource("3_weapon_lighting_script")
+config = ExtResource("4_hk416_flashlight")

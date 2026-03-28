@@ -49,6 +49,7 @@ var _fire_cooldown_timer: float = 0.0
 
 # 子节点引用
 @onready var muzzle: Marker2D = $Muzzle
+@onready var lighting: WeaponLighting = get_node_or_null("WeaponLighting") as WeaponLighting
 
 
 func _ready() -> void:
@@ -328,9 +329,64 @@ func is_using_ammo_system() -> bool:
 func _spawn_muzzle_flash(pos: Vector2, dir: Vector2) -> void:
 	if not stats or stats.muzzle_flash_effect.is_empty():
 		return
-	
-	if EffectManager:
-		EffectManager.play_muzzle_flash(pos, dir.angle(), stats.muzzle_flash_effect)
+
+	# Request light budget for muzzle flash
+	if LightBudgetManager:
+		LightBudgetManager.request_light(LightBudgetManager.Priority.MEDIUM)
+
+	# Create Sprite2D for muzzle flash (NOT PointLight2D)
+	var flash := Sprite2D.new()
+	flash.name = "MuzzleFlash"
+
+	# Load and apply tracer_glow material (additive blending)
+	var glow_material := load("res://resources/materials/tracer_glow.tres") as CanvasItemMaterial
+	if glow_material:
+		flash.material = glow_material
+
+	# Load muzzle flash texture from light config
+	var muzzle_texture: Texture2D = null
+	var light_settings := load("res://resources/lighting_configs/muzzle_flash_light.tres")
+	if light_settings and light_settings.has_method("get_texture"):
+		muzzle_texture = light_settings.get_texture()
+
+	# Fallback: create procedural white texture if no texture file exists
+	if not muzzle_texture:
+		muzzle_texture = _create_white_texture()
+
+	flash.texture = muzzle_texture
+	flash.position = pos
+	flash.rotation = dir.angle()
+	flash.modulate = Color(1, 1, 1, 3.0)  # Start at energy 3.0
+	flash.scale = Vector2.ONE  # Start at scale 1.0
+
+	# Add to scene tree before creating Tweens
+	get_tree().current_scene.add_child(flash)
+
+	# Create Tween for energy (alpha) and scale fade
+	var tween := create_tween()
+	tween.set_parallel(true)
+
+	# Animate energy: 3.0 -> 0.0 (via modulate alpha)
+	tween.tween_property(flash, "modulate:a", 0.0, 0.05)
+	# Animate scale: 1.0 -> 2.0
+	tween.tween_property(flash, "scale", Vector2.ONE * 2.0, 0.05)
+
+	# Queue free after animation completes
+	tween.chain().tween_callback(flash.queue_free)
+
+	# Release light budget when flash is freed
+	flash.tree_exiting.connect(func():
+		if LightBudgetManager:
+			LightBudgetManager.release_light()
+	)
+
+
+func _create_white_texture() -> ImageTexture:
+	# Create a simple 8x8 white texture for muzzle flash fallback
+	var image := Image.create(8, 8, false, Image.FORMAT_RGBA8)
+	image.fill(Color.WHITE)
+	var texture := ImageTexture.create_from_image(image)
+	return texture
 
 
 func _spawn_shell_casing() -> void:
