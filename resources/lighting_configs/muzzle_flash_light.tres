@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="LightSettings" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/lighting_configs/light_settings.gd" id="1"]
+[ext_resource type="Texture2D" id="2" path="res://assets/textures/muzzle_flash.png" force_import="true"]
+
+[resource]
+script = ExtResource("1")
+color = Color(1, 1, 1, 1)
+energy = 3.0
+texture = ExtResource("2")
+range = 150.0
+shadows_enabled = false
+priority = 2
