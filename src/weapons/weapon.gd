@@ -47,6 +47,12 @@ var current_visual_spread: float = 0.0
 # 计时器
 var _fire_cooldown_timer: float = 0.0
 
+# 时间累加器模式（用于自动武器射击速率控制）
+var _time_accumulator: float = 0.0
+var _fire_input_held: bool = false
+var _aim_muzzle_pos: Vector2 = Vector2.ZERO
+var _aim_direction: Vector2 = Vector2.RIGHT
+
 # 子节点引用
 @onready var muzzle: Marker2D = $Muzzle
 @onready var lighting: WeaponLighting = _resolve_weapon_lighting()
@@ -69,11 +75,36 @@ func _physics_process(delta: float) -> void:
 	_update_reload_state(delta)
 	_update_deploy_state(delta)
 
+	# 更新冷却计时器（用于 try_shoot 单发模式）
 	if _fire_cooldown_timer > 0:
 		_fire_cooldown_timer -= delta
 		if _fire_cooldown_timer <= 0:
 			_fire_cooldown_timer = 0.0
 			can_shoot = true
+
+	# 累加器模式：通过时间累积控制射速
+	var fire_input_this_frame := _fire_input_held
+
+	if fire_input_this_frame and not is_reloading and not is_deploying():
+		_time_accumulator += delta
+
+		var fire_interval := stats.fire_rate if stats else 0.1
+
+		# 暂停爆发保护：限制最大累加值
+		_time_accumulator = minf(_time_accumulator, fire_interval * 3.0)
+
+		if _time_accumulator >= fire_interval:
+			var shots := int(_time_accumulator / fire_interval)
+			_time_accumulator = fmod(_time_accumulator, fire_interval)
+
+			for i in mini(shots, 3):
+				# 累加器模式：只检查弹药，不检查 can_shoot（由累加器控制速率）
+				if _can_fire_accumulator():
+					_fire_single_shot(_aim_muzzle_pos, _aim_direction)
+	else:
+		# 输入释放时重置累加器
+		if not fire_input_this_frame:
+			_time_accumulator = 0.0
 
 
 func _update_visual_spread(delta: float) -> void:
@@ -113,54 +144,97 @@ func _initialize_stats() -> void:
 ## @param aim_dir: 瞄准方向（归一化向量）
 ## @return: 是否成功射击
 func try_shoot(muzzle_pos: Vector2, aim_dir: Vector2) -> bool:
-	if not can_shoot or is_reloading or is_deploying():
-		return false
-	
+	_aim_muzzle_pos = muzzle_pos
+	_aim_direction = aim_dir
+	set_fire_input(true)
+
 	# 检查弹药（无限弹药模式跳过）
 	if stats and _use_ammo_system_runtime:
 		if current_ammo_in_mag <= 0:
 			out_of_ammo.emit()
 			AudioManager.play_sfx("empty_click")
 			return false
-	
-	_fire(muzzle_pos, aim_dir)
+
+	if is_reloading or is_deploying():
+		return false
+
+	if not can_shoot:
+		return false
+
+	# 立即发射一发
+	_fire_single_shot(muzzle_pos, aim_dir)
+	can_shoot = false
+	_fire_cooldown_timer = stats.fire_rate if stats else 0.1
+	# 重置累加器，避免立即再次射击
+	_time_accumulator = 0.0
 	return true
 
 
 ## 执行射击
 func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
+	_fire_single_shot(muzzle_pos, aim_dir)
+
+
+## 单次射击（用于累加器模式）
+func _fire_single_shot(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
 	# 消耗弹药
 	if stats and _use_ammo_system_runtime:
 		current_ammo_in_mag -= 1
 		_emit_ammo_changed()
-	
-	# 设置冷却
-	can_shoot = false
-	_fire_cooldown_timer = stats.fire_rate if stats else 0.1
-	
+
 	# 应用散布
 	var final_dir := aim_dir
 	if stats and stats.spread > 0:
 		var random_angle = randf_range(-stats.spread, stats.spread)
 		final_dir = aim_dir.rotated(deg_to_rad(random_angle))
-	
+
 	# 视觉扩散增加（不影响实际弹道）
 	if stats:
 		current_visual_spread = stats.spread + 10.0  # 射击时视觉扩散峰值
 		spread_changed.emit(current_visual_spread, stats.spread)
-	
+
 	# 发射信号 - 让外部决定如何处理投射物
 	shot_fired.emit(muzzle_pos, final_dir, faction)
-	
+
 	# 视觉特效
 	_spawn_muzzle_flash(muzzle_pos, final_dir)
 	_spawn_shell_casing()
-	
+
 	# 音效
 	if stats:
 		AudioManager.play_sfx(stats.weapon_name + "_shoot")
 	else:
 		AudioManager.play_sfx("shoot")
+
+
+## 检查是否可以射击（用于累加器模式）
+func _can_fire() -> bool:
+	if not can_shoot or is_reloading or is_deploying():
+		return false
+
+	# 检查弹药（无限弹药模式跳过）
+	if stats and _use_ammo_system_runtime:
+		if current_ammo_in_mag <= 0:
+			out_of_ammo.emit()
+			AudioManager.play_sfx("empty_click")
+			return false
+
+	return true
+
+
+## 检查是否可以射击（累加器模式专用 - 不检查 can_shoot）
+func _can_fire_accumulator() -> bool:
+	if is_reloading or is_deploying():
+		return false
+
+	# 检查弹药（无限弹药模式跳过）
+	if stats and _use_ammo_system_runtime:
+		if current_ammo_in_mag <= 0:
+			out_of_ammo.emit()
+			AudioManager.play_sfx("empty_click")
+			return false
+
+	return true
 
 
 ## 换弹
@@ -173,6 +247,9 @@ func reload() -> void:
 		return
 	if current_reserve_ammo <= 0:
 		return
+
+	_time_accumulator = 0.0
+	_fire_input_held = false
 
 	_reload_elapsed = _get_reload_start_elapsed()
 	if _reload_elapsed >= _get_reload_duration():
@@ -199,6 +276,7 @@ func _finish_reload() -> void:
 
 	_checkpoint_reached = false
 	_reload_elapsed = 0.0
+	_time_accumulator = 0.0
 	_set_weapon_state(WeaponState.IDLE)
 	_emit_ammo_changed()
 	reload_finished.emit()
@@ -233,6 +311,8 @@ func start_deploy() -> bool:
 
 	_set_weapon_state(WeaponState.DEPLOYING)
 	_deploy_elapsed = 0.0
+	_time_accumulator = 0.0
+	_fire_input_held = false
 	return true
 
 
@@ -334,6 +414,10 @@ func set_use_ammo_system(enabled: bool) -> void:
 		current_reserve_ammo = 999
 
 	_emit_ammo_changed()
+
+
+func set_fire_input(held: bool) -> void:
+	_fire_input_held = held
 
 
 func is_using_ammo_system() -> bool:
