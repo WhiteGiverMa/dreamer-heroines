@@ -49,7 +49,7 @@ var _fire_cooldown_timer: float = 0.0
 
 # 子节点引用
 @onready var muzzle: Marker2D = $Muzzle
-@onready var lighting: WeaponLighting = get_node_or_null("WeaponLighting") as WeaponLighting
+@onready var lighting: WeaponLighting = _resolve_weapon_lighting()
 
 
 func _ready() -> void:
@@ -61,14 +61,22 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	# 仅处理纯视觉恢复，避免将战斗节奏绑定到渲染帧
+	_update_visual_spread(delta)
+
+
+func _physics_process(delta: float) -> void:
 	_update_reload_state(delta)
 	_update_deploy_state(delta)
 
 	if _fire_cooldown_timer > 0:
 		_fire_cooldown_timer -= delta
 		if _fire_cooldown_timer <= 0:
+			_fire_cooldown_timer = 0.0
 			can_shoot = true
-	
+
+
+func _update_visual_spread(delta: float) -> void:
 	# 恢复视觉扩散（仅视觉，不影响弹道精度）
 	if stats and current_visual_spread > stats.spread:
 		var recovery_rate := 50.0  # 视觉恢复速率（度/秒）
@@ -284,6 +292,14 @@ func get_muzzle_position() -> Vector2:
 	if muzzle:
 		return muzzle.global_position
 	return global_position
+
+
+func _resolve_weapon_lighting() -> WeaponLighting:
+	var direct_lighting := get_node_or_null("WeaponLighting") as WeaponLighting
+	if direct_lighting != null:
+		return direct_lighting
+
+	return get_node_or_null("Muzzle/WeaponLighting") as WeaponLighting
 
 
 ## 获取当前弹药状态

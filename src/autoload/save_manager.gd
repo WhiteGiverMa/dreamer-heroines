@@ -11,6 +11,7 @@ signal auto_save_triggered
 const MAX_SLOTS = 10
 
 var _csharp_save_manager = null
+var _gameplay_save_state_provider: Node = null
 var current_save_data = null
 var current_slot: int = -1
 
@@ -42,6 +43,7 @@ func _initialize_csharp_manager() -> void:
 	
 	if csharp_manager:
 		_csharp_save_manager = csharp_manager
+		_apply_gameplay_save_state_provider()
 		_connect_csharp_signals()
 	else:
 		# 如果没有，尝试动态加载C#脚本
@@ -65,6 +67,14 @@ func _connect_csharp_signals() -> void:
 		_csharp_save_manager.SaveDeleted.connect(_on_csharp_save_deleted)
 	if _csharp_save_manager.has_signal("AutoSaveTriggered"):
 		_csharp_save_manager.AutoSaveTriggered.connect(_on_auto_save_triggered)
+
+func set_gameplay_save_state_provider(provider: Node) -> void:
+	_gameplay_save_state_provider = provider
+	_apply_gameplay_save_state_provider()
+
+func _apply_gameplay_save_state_provider() -> void:
+	if _csharp_save_manager and _csharp_save_manager.has_method("SetGameplaySaveStateProvider"):
+		_csharp_save_manager.call("SetGameplaySaveStateProvider", _gameplay_save_state_provider)
 
 # 保存操作
 func save_to_slot(slot: int, show_notification: bool = true) -> void:
@@ -402,7 +412,8 @@ func _get_default_settings() -> Dictionary:
 		"vsync": true,
 		"window_mode": 0,  # 0=Windowed, 1=Fullscreen, 2=Borderless
 		"locale": "zh_CN",
-		"developer_mode_enabled": false
+		"developer_mode_enabled": false,
+		"lighting_enabled": true
 	}
 
 func _convert_csharp_settings_to_dict(csharp_settings) -> Dictionary:
@@ -429,6 +440,7 @@ func _convert_csharp_settings_to_dict(csharp_settings) -> Dictionary:
 	var window_mode: int = int(_read_csharp_property(csharp_settings, "WindowMode", 0))
 	var locale: String = str(_read_csharp_property(csharp_settings, "Language", "zh_CN"))
 	var developer_mode_enabled: bool = bool(_read_csharp_property(csharp_settings, "DeveloperModeEnabled", false))
+	var lighting_enabled: bool = bool(_read_csharp_property(csharp_settings, "LightingEnabled", true))
 
 	return {
 		"master_volume": master_volume,
@@ -448,6 +460,7 @@ func _convert_csharp_settings_to_dict(csharp_settings) -> Dictionary:
 		"window_mode": window_mode,
 		"locale": locale,
 		"developer_mode_enabled": developer_mode_enabled,
+		"lighting_enabled": lighting_enabled,
 	}
 
 func _read_csharp_property(obj, property_name: String, fallback):

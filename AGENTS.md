@@ -1,278 +1,182 @@
-# AGENTS.md - Godot 4.6.1 项目规范
+﻿# AGENTS.md - DreamerHeroines 执行手册
 
-> **项目**: DreamerHeroines - 2D横板射击游戏
-> **引擎**: Godot 4.6.1
-> **语言**: GDScript + C# (混用架构)
-> **版本**: 0.1.0-alpha
+> 项目：DreamerHeroines / 逐梦少女
+> 引擎：Godot 4.6.1
+> 架构：GDScript + C# 混用
+> 目标：让 Agent 快速找到入口、遵守约束、完成验证
 
----
+## 先看这里
 
-## 构建与运行
+- 本文件里的入口路径、autoload 顺序、端口等属于**当前项目事实**；改启动/全局系统前，先回查 `project.godot` 的 `[autoload]` 与相关配置
+- 这是 **2D 横板射击** Godot 项目，主入口不是 `scenes/main.tscn`，而是 `project.godot` 中配置的 `res://scenes/ui/main_menu.tscn`
+- 运行时初始化核心在 `src/autoload/boot_sequence.tscn` + `src/autoload/boot_sequence.gd`
+- 全局系统大量依赖 **autoload**；改启动、存档、输入、关卡流程时，先看 `project.godot` 的 `[autoload]`
+- 输入系统不是原生直连，项目通过 **G.U.I.D.E + `EnhancedInput` 包装层**工作
+- 测试分两套：`tests/scenes/test_launcher.tscn`（集成/自动化入口）和 GUT headless（单元测试）
+
+## 高优先级定位
+
+| 任务 | 优先查看 | 说明 |
+|---|---|---|
+| 启动失败 / 初始化顺序 | `src/autoload/boot_sequence.gd` | 5 阶段启动链，很多问题都在依赖顺序 |
+| 主流程 / 暂停 / 分数 / 死亡 | `src/autoload/game_manager.gd` | 核心状态协调器 |
+| 关卡加载 / 进度 / checkpoint | `src/levels/level_manager.gd` | 不在 `autoload/`，但被 autoload 使用 |
+| 存档 | `src/autoload/save_manager.gd`, `src/cs/Systems/SaveManager.cs` | GDScript 包装 C# 实现 |
+| 输入 | `src/autoload/enhanced_input.gd`, `config/input/` | 先看 wrapper，再看 GUIDE 资源 |
+| UI / 设置 / 准星 | `src/ui/`, `scenes/ui/`, `src/data/crosshair_settings.gd` | UI 逻辑和场景分离 |
+| 武器系统 | `src/weapons/`, `config/weapon_stats.json` | 优先围绕 `weapon.gd` 与配置数据排查 |
+| 测试新增/修复 | `tests/scripts/test_launcher.gd`, `tests/unit/`, `tests/integration/` | 集成测试入口不是 GUT 本身 |
+| MCP 调试 | `config/mcp_server.json`, `project.godot` | 依赖 autoload 的 MCP server |
+
+## 项目特有约定
+
+### 语言分工
+
+- 仓库当前偏向 **GDScript 主流程 + C# 补强**；不要随意把现有 GDScript 主流程迁到 C#
+
+### 输入系统
+
+- 优先使用 `EnhancedInput`，不要直接把新逻辑耦合到 GUIDE 底层 API
+- 输入资源在：
+  - `config/input/actions/*.tres`
+  - `config/input/contexts/*.tres`
+- 输入/菜单切换问题，优先排查 context 是否启停正确
+
+### 启动链路
+
+`BootSequence` 按阶段初始化：
+
+1. `CSharpSaveManager`, `AudioManager`, `EffectManager`, `ProjectileSpawner`, `LocalizationManager`
+2. `EnhancedInput`
+3. `SaveManager`
+4. `LevelManager`
+5. `GameManager`
+
+- 改初始化逻辑时，先确认依赖在哪个 phase；不要只在单个 manager 内“补救”顺序问题
+- 全局系统基类是 `src/base/game_system.gd`
+
+### 武器系统
+
+- 武器主逻辑优先看 `src/weapons/weapon.gd`
+- 武器数值配置来自 `config/weapon_stats.json`
+- 新功能优先沿着 `weapon.gd` / `WeaponStats` 方向扩展，不要在别处重复堆武器状态机
+
+### 配置与数据
+
+- 可调参数优先看 `config/`，不要先在脚本里硬编码
+- 常见入口：
+  - `config/gameplay_params.json`
+  - `config/weapon_stats.json`
+  - `config/enemy_stats.json`
+  - `config/levels/`
+  - `config/waves/`
+
+### 碰撞层
+
+项目固定使用以下 2D physics layer：
+
+1. Player
+2. Enemies
+3. World
+4. Projectiles
+5. Items
+6. Platforms
+
+改碰撞时同时核对：`project.godot`、`src/utils/layers.gd`、相关 scene/body mask。
+
+## 代码风格：只保留会踩坑的部分
+
+- GDScript **必须使用 Tab 缩进**，不是空格；C# 使用 4 空格
+- `.editorconfig` 是实际落地规则；`pyproject.toml` 约束 gdtoolkit
+
+## 常用命令
 
 ```bash
 # 打开编辑器
 godot --editor --path .
 
-# 运行场景
-godot --scene scenes/main.tscn
+# 运行项目主入口（项目配置）
+godot --path .
+
+# 直接运行测试关卡
 godot --scene scenes/test_level.tscn
 
 # C# 构建
 dotnet build DreamerHeroines.csproj
 
-# 导出
-godot --export-release "Windows Desktop" ./build/
-```
+# GUT 单元测试（headless）
+godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -ginclude_subdirs -gexit
 
-> ⚠️ **重要提醒**: 使用 Godot MCP 调试工具时，必须通过 `run_project` 启动游戏（而非手动启动）。MCP Server 在 Godot 内部作为 autoload 运行，默认监听 TCP 端口 **9090**，支持通过 `config/mcp_server.json` 配置并在端口占用时自动回退。正确流程：
-> 1. `godot-mcp_run_project` 启动游戏
-> 2. `godot-mcp_game_*` 工具进行运行时调试
-> 3. `godot-mcp_stop_project` 停止游戏
-
----
-
-## 代码风格
-
-> **如无必要，勿增实体**
-
-遵循 [Godot 官方风格指南](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html)。
-
-### GDScript
-
-**缩进**: 使用 **Tab**（非空格），编辑器显示为 4 个空格宽度。
-
-**命名约定**:
-
-| 类型 | 规范 | 示例 |
-|------|------|------|
-| 类名 | `PascalCase` | `class_name Player` |
-| 函数 | `snake_case` | `func handle_input():` |
-| 变量 | `snake_case` | `var max_speed: float` |
-| 常量 | `UPPER_SNAKE_CASE` | `const MAX_SPEED = 300.0` |
-| 信号 | `snake_case`（过去式） | `signal health_changed` |
-| 私有成员 | `_snake_case`（下划线前缀） | `var _internal_counter` |
-| 布尔变量 | `is_` / `can_` / `has_` 前缀 | `var is_active: bool` |
-
-**代码示例**:
-
-```gdscript
-class_name Player
-extends CharacterBody2D
-
-const MAX_SPEED := 300.0
-@export var max_speed: float = 300.0
-
-var health: int = 100
-signal health_changed(current: int, max: int)
-
-func _ready() -> void:
-func _handle_input() -> void:
-```
-
-### C#
-
-**缩进**: 使用 **4 个空格**。
-
-**命名约定**:
-
-| 类型 | 规范 | 示例 |
-|------|------|------|
-| 命名空间 | `PascalCase` | `namespace DreamerHeroines.Core` |
-
-**代码示例**:
-
-```csharp
-namespace DreamerHeroines.Core
-{
-    public class PlayerData     // 类名: PascalCase
-    {
-        private int _health;    // 私有字段: _camelCase
-        public int Health { get; set; }  // 公共属性: PascalCase
-    }
-}
-```
-
-### 语言选择
-
-| 场景 | 语言 | 原因 |
-|------|------|------|
-| 玩家/敌人/武器逻辑 | GDScript | 热重载，便于调优 |
-| 数据类 (存档/玩家数据) | C# | 类型安全 |
-| 数学工具类 | C# | 性能优势 |
-| UI/场景逻辑 | GDScript | 与 Godot 集成更好 |
-
----
-
-## 项目结构
-
-```
-config/             # 配置文件 (JSON)
-├── gameplay_params.json
-├── weapon_stats.json
-└── enemy_stats.json
-
-scenes/             # 场景文件
-├── main.tscn       # 主场景
-├── player.tscn     # 玩家
-├── levels/         # 关卡
-├── ui/             # UI
-├── weapons/        # 武器
-└── enemies/        # 敌人
-
-src/                # 源代码
-├── autoload/       # 单例
-├── characters/     # 角色
-├── weapons/        # 武器系统
-├── enemies/        # 敌人AI
-├── levels/         # 关卡管理
-├── ui/             # UI脚本
-├── utils/          # 工具类
-└── cs/             # C# 代码
-```
-
----
-
-## 核心约定
-
-### 物理层级
-
-| 层级 | 名称 | 用途 |
-|------|------|------|
-| 1 | Player | 玩家 |
-| 2 | Enemies | 敌人 |
-| 3 | World | 世界 |
-| 4 | Projectiles | 投射物 |
-| 5 | Items | 物品 |
-| 6 | Platforms | 平台 |
-
-### 自动加载单例
-
-- GameManager
-- AudioManager
-- InputManager
-- SaveManager (C#)
-- LevelManager
-
-### 错误处理
-
-- GDScript: `push_error()`, `push_warning()`
-- C#: `GD.PushError()`, try-catch
-
----
-
-## 代码格式化
-
-```bash
-# 安装工具
-pip install gdtoolkit
-dotnet tool install -g csharpier
-
-# 格式化脚本
-.\scripts\format.ps1              # 全部格式化
-.\scripts\format.ps1 -GDScript    # 仅 GDScript
-.\scripts\format.ps1 -CSharp      # 仅 C#
-.\scripts\format.ps1 -Lint        # 仅检查
-```
-
-**风格规则**:
-- 缩进: Tab (GDScript) / 4空格 (C#)
-- 行长: 120字符
-- 引号: 双引号
-
----
-
-## 输入系统 (G.U.I.D.E)
-
-本项目使用 G.U.I.D.E 插件管理输入。详细用法请参考：
-
-**[GUIDE_CHEAT_SHEET.md](docs/GUIDE_CHEAT_SHEET.md)**
-
-资源位置:
-- 动作定义: `config/input/actions/*.tres`
-- 映射上下文: `config/input/contexts/*.tres`
-
----
-
-## 自动化测试
-
-### Agent 快速使用
-
-```bash
-# 运行自动化集成测试
+# 自动化/集成测试入口
 godot tests/scenes/test_launcher.tscn
 
-# 运行单元测试 (headless)
-godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -ginclude_subdirs -gexit
+# 格式化 / 检查
+.\scripts\format.ps1
+.\scripts\format.ps1 -Check
+.\scripts\format.ps1 -GDScript
+.\scripts\format.ps1 -CSharp
 ```
 
-### 添加测试用例
+## MCP / 运行时调试
 
-编辑 `tests/scripts/test_launcher.gd`:
+- 使用 Godot MCP 调试时，**必须通过 `run_project` 启动**，不要手动开游戏再假设 MCP 已挂上
+- 默认配置在 `config/mcp_server.json`，首选端口 `9090`，允许向上回退
+- 启动后会输出：`MCP_SERVER_ENDPOINT <host> <port>`
+- 运行时端口文件：`user://mcp_server_runtime.json`
 
-1. 在 `_get_test_cases()` 添加测试定义
-2. 在 `_run_test()` 添加执行逻辑
+常用开发命令：
 
-### 测试文件位置
-
-| 类型 | 路径 |
-|------|------|
-| 测试场景 | `tests/scenes/test_launcher.tscn` |
-| 测试脚本 | `tests/scripts/test_launcher.gd` |
-| 单元测试 | `tests/unit/*.gd` |
-| 集成测试 | `tests/integration/*.gd` |
-| Godot exe | `G:\dev\Godot_v4.6.1\godot.exe` |
----
-
-## 文档索引
-
-- [游戏设计文档](docs/GDD.md)
-- [技术规范](docs/TECH_SPEC.md) 
-- [资源规范](docs/ASSET_GUIDE.md)
-- [G.U.I.D.E 文档](https://godotneers.github.io/G.U.I.D.E/)
-- [初始化流程规范](docs/INIT_FLOW.md)
-
----
-
-## Git
-
-**频繁提交：**
-
-- 改动 -> 验收
-  - 通过 -> *立即提交*
-  - 不通过 -> 返回*继续「改动 + 测试」*，直到通过后立即提交
-
-## 启用开发者模式
-
+```bash
 curl -X POST localhost:9090 -d '{"command":"dev_mode","params":{"enabled":true}}'
-
-### 执行命令
-
 curl -X POST localhost:9090 -d '{"command":"dev_cmd","params":{"cmd":"god_mode on"}}'
-
 curl -X POST localhost:9090 -d '{"command":"dev_cmd","params":{"cmd":"spawn melee"}}'
-
 curl -X POST localhost:9090 -d '{"command":"dev_cmd","params":{"cmd":"wave next"}}'
-
-## MCP 端口配置与回退
-
-配置文件：`config/mcp_server.json`
-
-```json
-{
-  "host": "127.0.0.1",
-  "port": 9090,
-  "allow_port_fallback": true,
-  "max_port_tries": 20
-}
 ```
 
-- `port`：首选端口。
-- `allow_port_fallback`：当首选端口被占用时，是否尝试 `port + 1 ...`。
-- `max_port_tries`：最多尝试的端口数量（含首选端口）。
+## 测试工作流
 
-运行时端口发现：
+- **单元测试**：`tests/unit/`，主要走 GUT headless
+- **集成测试**：`tests/integration/`，仍通过 GUT 体系组织
+- **自动化入口**：`tests/scenes/test_launcher.tscn` + `tests/scripts/test_launcher.gd`
+- 新增自动化用例时：
+  1. 在 `_get_test_cases()` 注册
+  2. 在对应执行逻辑里补分支
 
-- 启动后会打印机器可解析日志：`MCP_SERVER_ENDPOINT <host> <port>`
-- 同时写入运行时文件：`user://mcp_server_runtime.json`
-  - Windows 对应路径通常为：`%APPDATA%/Godot/app_userdata/Dreamer Heroines/mcp_server_runtime.json`
-  - 文件字段：`host`、`port`、`stopped`、`timestamp_unix`
+如果测试和输入相关：
+
+- 先确认 GUIDE context 是否启用
+- headless 不能覆盖所有依赖渲染循环的输入行为
+- 需要真实运行时交互时，优先 MCP + `run_project`
+
+## 不要这样做
+
+- 不要绕过 `EnhancedInput` 直接散落调用底层输入实现
+- 不要在不检查 phase 依赖的前提下修改启动顺序
+- 不要绕开 `weapon.gd` / `config/weapon_stats.json`，在别处重复实现武器主逻辑
+- 不要绕过 hooks：禁止 `git commit --no-verify` / `-n`
+- 不要忘记修复尾随空格；仓库已有 `scripts/fix-trailing-whitespace.ps1 -Restage`
+- 不要默认 headless 可以验证所有输入行为
+
+## 提交与验证
+
+- 改代码后先验证，再提交
+- 推荐 Git 包装器：
+
+```powershell
+.\scripts\git-wrapper.ps1 status
+.\scripts\git-wrapper.ps1 commit -m "message"
+```
+
+- 若提交被尾随空格拦截：
+
+```powershell
+.\scripts\fix-trailing-whitespace.ps1 -Restage
+```
+
+## 相关文档
+
+- 需要补背景时，再看：`docs/GDD.md`、`docs/TECH_SPEC.md`、`docs/INIT_FLOW.md`、`docs/GUIDE_CHEAT_SHEET.md`、`tests/README.md`
+
+## 参考项目
+
+参考项目地址：`G:\dev\godot-references`

@@ -4,34 +4,6 @@ extends Resource
 # LevelData - 关卡数据配置
 # 存储关卡的静态配置数据
 
-@export_group("Level Info")
-@export var level_id: String = ""
-@export var level_name: String = "未命名关卡"
-@export var level_description: String = ""
-@export var level_index: int = 0
-@export var is_unlocked: bool = true
-@export var is_completed: bool = false
-
-@export_group("Gameplay Settings")
-@export var time_limit: float = 0.0  # 0表示无时间限制
-@export var max_lives: int = 3
-@export var starting_health: int = 100
-@export var starting_ammo: Dictionary = {}  # weapon_id: ammo_count
-
-@export_group("Objectives")
-@export var primary_objective: ObjectiveType = ObjectiveType.ELIMINATE_ALL
-@export var secondary_objectives: Array[ObjectiveData] = []
-
-@export_group("Rewards")
-@export var completion_exp: int = 100
-@export var completion_gold: int = 50
-@export var unlocks_on_complete: Array[String] = []  # 完成后解锁的关卡ID
-
-@export_group("Spawn Settings")
-@export var player_spawn_position: Vector2 = Vector2.ZERO
-@export var enemy_spawn_groups: Array[EnemySpawnGroup] = []
-@export var checkpoints: Array[CheckpointData] = []
-
 enum ObjectiveType {
 	ELIMINATE_ALL,      # 消灭所有敌人
 	SURVIVE_TIME,       # 存活一定时间
@@ -67,6 +39,34 @@ class CheckpointData:
 	var position: Vector2 = Vector2.ZERO
 	var is_unlocked: bool = false
 	var unlock_condition: String = ""  # 解锁条件描述
+
+@export_group("Level Info")
+@export var level_id: String = ""
+@export var level_name: String = "未命名关卡"
+@export var level_description: String = ""
+@export var level_index: int = 0
+@export var is_unlocked: bool = true
+@export var is_completed: bool = false
+
+@export_group("Gameplay Settings")
+@export var time_limit: float = 0.0  # 0表示无时间限制
+@export var max_lives: int = 3
+@export var starting_health: int = 100
+@export var starting_ammo: Dictionary = {}  # weapon_id: ammo_count
+
+@export_group("Objectives")
+@export var primary_objective: ObjectiveType = ObjectiveType.ELIMINATE_ALL
+@export var secondary_objectives: Array[ObjectiveData] = []
+
+@export_group("Rewards")
+@export var completion_exp: int = 100
+@export var completion_gold: int = 50
+@export var unlocks_on_complete: Array[String] = []  # 完成后解锁的关卡ID
+
+@export_group("Spawn Settings")
+@export var player_spawn_position: Vector2 = Vector2.ZERO
+@export var enemy_spawn_groups: Array[EnemySpawnGroup] = []
+@export var checkpoints: Array[CheckpointData] = []
 
 func _init() -> void:
 	resource_name = "LevelData"

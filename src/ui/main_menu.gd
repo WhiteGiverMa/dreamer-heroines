@@ -1,5 +1,7 @@
 extends Control
 
+const DisplaySettingsBoundary = preload("res://src/autoload/display_settings_boundary.gd")
+
 # MainMenu - 主菜单
 # 游戏启动时的主菜单界面
 
@@ -53,15 +55,10 @@ var _pending_delete_slot: int = -1
 var _pending_new_game_slot: int = -1
 
 # 分辨率预设
-const RESOLUTIONS := [
-	{"name": "720p", "width": 1280, "height": 720},
-	{"name": "1080p", "width": 1920, "height": 1080},
-	{"name": "1440p", "width": 2560, "height": 1440},
-	{"name": "Native", "width": 0, "height": 0}  # 0 = 使用屏幕分辨率
-]
+const RESOLUTIONS = DisplaySettingsBoundary.RESOLUTIONS
 
 # 窗口模式
-const WINDOW_MODES := ["Windowed", "Fullscreen", "Borderless"]
+const WINDOW_MODES = DisplaySettingsBoundary.WINDOW_MODES
 
 func _ready() -> void:
 	# 自动获取按钮引用（如果 export 变量未设置）
@@ -473,26 +470,17 @@ func _on_resolution_selected(index: int) -> void:
 	
 	# Native 分辨率使用当前屏幕大小
 	if width == 0 or height == 0:
-		var screen_size = DisplayServer.screen_get_size()
+		var screen_size = DisplaySettingsBoundary.get_screen_size()
 		width = screen_size.x
 		height = screen_size.y
 	
-	# 直接调用 DisplayServer 应用分辨率
-	DisplayServer.window_set_size(Vector2i(width, height))
+	DisplaySettingsBoundary.set_resolution(width, height)
 	
 	# 保存设置
 	_save_current_settings()
 
 func _on_window_mode_selected(index: int) -> void:
-	# 直接调用 DisplayServer API 应用窗口模式
-	# 0=Windowed, 1=Fullscreen, 2=Borderless(ExclusiveFullscreen)
-	match index:
-		0:  # Windowed
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		1:  # Fullscreen
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-		2:  # Borderless (ExclusiveFullscreen)
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+	DisplaySettingsBoundary.set_window_mode(index)
 	
 	# 保存设置
 	_save_current_settings()
@@ -511,10 +499,7 @@ func _on_sensitivity_changed(_value: float) -> void:
 	_save_current_settings()
 
 func _on_vsync_toggled(enabled: bool) -> void:
-	# 调用 DisplayServer 设置 VSync (C# SaveManager 没有 ApplyVSync 方法)
-	DisplayServer.window_set_vsync_mode(
-		DisplayServer.VSYNC_ENABLED if enabled else DisplayServer.VSYNC_DISABLED
-	)
+	DisplaySettingsBoundary.set_vsync(enabled)
 	
 	# 保存设置
 	_save_current_settings()
@@ -522,6 +507,7 @@ func _on_vsync_toggled(enabled: bool) -> void:
 ## 保存当前设置到 user://settings.json
 func _save_current_settings() -> void:
 	var current_settings := SaveManager.load_settings()
+	var window_size := DisplaySettingsBoundary.get_window_size()
 	var settings := {
 		"master_volume": volume_slider.value / 100.0 if volume_slider else 0.8,
 		"music_volume": current_settings.get("music_volume", 0.7),
@@ -532,8 +518,8 @@ func _save_current_settings() -> void:
 		"window_mode": window_mode_option.selected if window_mode_option else 0,
 		"locale": current_settings.get("locale", "zh_CN"),
 		"developer_mode_enabled": current_settings.get("developer_mode_enabled", false),
-		"resolution_width": DisplayServer.window_get_size().x,
-		"resolution_height": DisplayServer.window_get_size().y,
+		"resolution_width": window_size.x,
+		"resolution_height": window_size.y,
 	}
 	SaveManager.save_settings(settings)
 

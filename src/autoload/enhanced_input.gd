@@ -7,8 +7,7 @@ extends "res://src/base/game_system.gd"
 static var instance: EnhancedInput
 #endregion
 
-#region 瞄准方向 (保留自 InputManager)
-var aim_direction: Vector2 = Vector2.RIGHT
+#region 鼠标世界坐标缓存
 var mouse_world_position: Vector2 = Vector2.ZERO
 
 # 跟踪动作边沿状态（按 tick 缓存，避免多调用方消费同一边沿）
@@ -18,26 +17,22 @@ var _edge_cache: Dictionary = {}
 
 
 func _process(_delta: float) -> void:
-	_update_aim_direction()
+	_update_mouse_world_position()
 
 
-func _update_aim_direction() -> void:
-	# 鼠标瞄准 - 基于玩家位置计算方向
-	if get_viewport():
-		var player := _get_player()
-		if player:
-			mouse_world_position = get_viewport().get_camera_2d().get_global_mouse_position()
-			var aim_origin := player.global_position
-			if player.has_method("get_weapon_aim_origin"):
-				aim_origin = player.get_weapon_aim_origin()
+func _physics_process(_delta: float) -> void:
+	_update_mouse_world_position()
 
-			var aim_vector := mouse_world_position - aim_origin
-			if aim_vector.length_squared() > 0.0001:
-				aim_direction = aim_vector.normalized()
-			else:
-				aim_direction = Vector2.RIGHT
-		else:
-			aim_direction = Vector2.RIGHT
+
+func _update_mouse_world_position() -> void:
+	if not get_viewport():
+		return
+
+	var camera := get_viewport().get_camera_2d()
+	if camera == null:
+		return
+
+	mouse_world_position = camera.get_global_mouse_position()
 
 
 func _get_tick_key() -> String:
@@ -63,20 +58,6 @@ func _evaluate_action_edge(action: GUIDEAction) -> Dictionary:
 	_edge_cache[action_id] = result
 	_previous_states[action_id] = is_currently_pressed
 	return result
-
-
-func _get_player() -> Node2D:
-	var tree := get_tree()
-	if tree:
-		var players := tree.get_nodes_in_group("player")
-		if players.size() > 0:
-			return players[0] as Node2D
-	return null
-
-
-## 获取当前瞄准方向
-func get_aim_direction() -> Vector2:
-	return aim_direction
 
 
 ## 获取鼠标世界坐标

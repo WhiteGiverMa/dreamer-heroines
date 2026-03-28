@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://player12345"]
+[gd_scene load_steps=14 format=3 uid="uid://player12345"]
 
 [ext_resource type="Script" path="res://src/characters/player.gd" id="1_player"]
 [ext_resource type="Resource" uid="uid://c8a2h5m1n3k9" path="res://config/input/actions/move.tres" id="2_move"]
@@ -11,6 +11,7 @@
 [ext_resource type="Resource" path="res://config/input/actions/weapon_primary.tres" id="9_weapon_primary"]
 [ext_resource type="Resource" path="res://config/input/actions/weapon_secondary.tres" id="10_weapon_secondary"]
 [ext_resource type="Script" path="res://src/utils/camera_shake.gd" id="11_camera_shake"]
+[ext_resource type="Resource" uid="uid://toggle_light_action" path="res://config/input/actions/toggle_light.tres" id="12_toggle_light"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(32, 64)
@@ -173,6 +174,7 @@ crouch_action = ExtResource("7_crouch")
 weapon_switch_action = ExtResource("8_weapon_switch")
 weapon_primary_action = ExtResource("9_weapon_primary")
 weapon_secondary_action = ExtResource("10_weapon_secondary")
+toggle_light_action = ExtResource("12_toggle_light")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -32)

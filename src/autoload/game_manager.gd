@@ -33,6 +33,7 @@ var runtime_ui_layer: CanvasLayer = null
 
 var is_game_paused: bool = false
 var _game_and_ui_request_count: int = 0
+var _pending_playtime_seconds: float = 0.0
 
 # 测试注入点（默认使用 autoload 节点）
 # 仅用于单元测试注入替身，运行时代码不要设置这些字段。
@@ -44,6 +45,10 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	system_name = "game_manager"
 	# 不在这里执行初始化，等待 BootSequence 调用
+
+func _process(delta: float) -> void:
+	if is_gameplay_active():
+		_pending_playtime_seconds += delta
 
 func initialize() -> void:
 	print("[GameManager] 开始初始化...")
@@ -59,6 +64,9 @@ func initialize() -> void:
 	if level_mgr and not level_mgr.is_initialized:
 		print("[GameManager] 等待 LevelManager 初始化...")
 		await level_mgr.system_ready
+
+	if save_mgr and save_mgr.has_method("set_gameplay_save_state_provider"):
+		save_mgr.set_gameplay_save_state_provider(self)
 	
 	print("[GameManager] 初始化完成")
 	_mark_ready()
@@ -127,6 +135,17 @@ func set_paused(paused: bool, restore_playing_state: bool = true) -> void:
 
 func is_playing() -> bool:
 	return current_state == GameState.PLAYING
+
+func is_gameplay_active() -> bool:
+	return is_playing()
+
+func consume_pending_playtime_seconds() -> int:
+	var whole_seconds := int(floor(_pending_playtime_seconds))
+	if whole_seconds <= 0:
+		return 0
+
+	_pending_playtime_seconds -= whole_seconds
+	return whole_seconds
 
 func add_score(points: int) -> void:
 	current_score += points

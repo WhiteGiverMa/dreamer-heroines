@@ -49,6 +49,7 @@ namespace DreamerHeroines.Systems
         private bool _autoSaveEnabled = true;
         private readonly Queue<SaveOperation> _saveQueue = new Queue<SaveOperation>();
         private PlayerData? _cachedPlayerData;
+        private IGameplaySaveState _gameplaySaveState = UnavailableGameplaySaveState.Instance;
         private static readonly JsonSerializerOptions _settingsJsonOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -183,9 +184,8 @@ namespace DreamerHeroines.Systems
         public override void _Process(double delta)
         {
             // 处理自动保存
-            var gameManager = GetNode<Node>("/root/GameManager");
-            bool isPlaying = gameManager?.Call("is_playing").AsBool() ?? false;
-            if (_autoSaveEnabled && _currentSaveData != null && isPlaying)
+            bool isGameplayActive = _gameplaySaveState.IsGameplayActive;
+            if (_autoSaveEnabled && _currentSaveData != null && isGameplayActive)
             {
                 _autoSaveTimer += delta;
                 if (_autoSaveTimer >= AutoSaveInterval)
@@ -201,6 +201,52 @@ namespace DreamerHeroines.Systems
         #endregion
 
         #region Save Operations
+        /// <summary>
+        /// 设置游戏存档状态提供器。
+        /// </summary>
+        public void SetGameplaySaveStateProvider(Node? gameplaySaveStateProvider)
+        {
+            if (gameplaySaveStateProvider is IGameplaySaveState typedGameplaySaveState)
+            {
+                _gameplaySaveState = typedGameplaySaveState;
+                return;
+            }
+
+            if (gameplaySaveStateProvider != null)
+            {
+                _gameplaySaveState = new NodeGameplaySaveStateAdapter(gameplaySaveStateProvider);
+                return;
+            }
+
+            _gameplaySaveState = UnavailableGameplaySaveState.Instance;
+        }
+
+        /// <summary>
+        /// 创建测试用当前存档。
+        /// </summary>
+        public void CreateNewSaveForTesting(int slot, string displayName)
+        {
+            CreateNewSave(slot, displayName);
+        }
+
+        /// <summary>
+        /// 设置测试用当前玩家总时长。
+        /// </summary>
+        public void SetCurrentPlayerTotalPlayTimeForTesting(int totalPlayTime)
+        {
+            PlayerData playerData = GetPlayerData() ?? new PlayerData();
+            playerData.TotalPlayTime = totalPlayTime;
+            UpdatePlayerData(playerData);
+        }
+
+        /// <summary>
+        /// 获取测试用当前玩家总时长。
+        /// </summary>
+        public int GetCurrentPlayerTotalPlayTimeForTesting()
+        {
+            return _currentSaveData?.Player.TotalPlayTime ?? 0;
+        }
+
         /// <summary>
         /// 创建新存档
         /// </summary>
@@ -1559,10 +1605,12 @@ namespace DreamerHeroines.Systems
                 _currentSaveData.Player = ConvertToSaveData(_cachedPlayerData);
             }
 
-            // 更新游戏时间
-            if (GameStateManager.Instance != null)
+            // 更新游戏时间（不可用状态按 false + 0 处理）
+            int pendingPlaytimeSeconds = _gameplaySaveState.ConsumePendingPlaytimeSeconds();
+            if (pendingPlaytimeSeconds > 0)
             {
-                _currentSaveData.Player.TotalPlayTime += (int)GameStateManager.Instance.StateTime;
+                _cachedPlayerData?.AddPlayTime(pendingPlaytimeSeconds);
+                _currentSaveData.Player.TotalPlayTime += pendingPlaytimeSeconds;
             }
         }
 

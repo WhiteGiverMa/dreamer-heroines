@@ -212,6 +212,12 @@ layout_mode = 2
 button_pressed = false
 text = "开发者模式 (F12)"
 
+[node name="LightingEffectsCheck" type="CheckBox" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "光效"
+
 [node name="BackButton" type="Button" parent="."]
 unique_name_in_owner = true
 layout_mode = 1

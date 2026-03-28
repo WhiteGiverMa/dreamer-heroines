@@ -1,6 +1,7 @@
 class_name SettingsPanel
 extends Panel
 
+const DisplaySettingsBoundary = preload("res://src/autoload/display_settings_boundary.gd")
 const LocalizedTextBinderClass = preload("res://src/ui/localized_text_binder.gd")
 
 # SettingsPanel - 设置面板
@@ -10,15 +11,10 @@ const LocalizedTextBinderClass = preload("res://src/ui/localized_text_binder.gd"
 signal close_requested
 
 # 分辨率预设
-const RESOLUTIONS := [
-	{"name": "720p", "width": 1280, "height": 720},
-	{"name": "1080p", "width": 1920, "height": 1080},
-	{"name": "1440p", "width": 2560, "height": 1440},
-	{"name": "Native", "width": 0, "height": 0}  # 0 = 使用屏幕分辨率
-]
+const RESOLUTIONS = DisplaySettingsBoundary.RESOLUTIONS
 
 # 窗口模式
-const WINDOW_MODES := ["Windowed", "Fullscreen", "Borderless"]
+const WINDOW_MODES = DisplaySettingsBoundary.WINDOW_MODES
 
 # 节点引用 (使用 unique_name_in_owner)
 @onready var resolution_option: OptionButton = %ResolutionOption
@@ -38,6 +34,7 @@ const WINDOW_MODES := ["Windowed", "Fullscreen", "Borderless"]
 @onready var max_spread_multiplier_slider: HSlider = %MaxSpreadMultiplierSlider
 @onready var vsync_check: CheckBox = %VSyncCheck
 @onready var developer_mode_check: CheckBox = %DeveloperModeCheck
+@onready var lighting_effects_check: CheckBox = %LightingEffectsCheck
 @onready var back_button: Button = %BackButton
 
 var _is_updating_controls: bool = false
@@ -49,9 +46,13 @@ func _ready() -> void:
 	if LocalizationManager:
 		LocalizationManager.locale_changed.connect(_on_locale_changed)
 
+	# 连接准星设置服务
+	if CrosshairSettingsService:
+		CrosshairSettingsService.settings_changed.connect(_on_crosshair_settings_changed)
+
 	_init_controls()
 	_load_settings()
-	_apply_crosshair_settings()
+	_sync_controls_with_service()
 	_connect_signals()
 	_setup_localized_bindings()
 	_apply_localized_texts()
@@ -120,8 +121,9 @@ func _init_controls() -> void:
 func _load_settings() -> void:
 	"""从 SaveManager 加载设置"""
 	_is_loading_settings = true
-	var settings = SaveManager.load_settings()
+	var settings = _get_saved_settings()
 	if settings.is_empty():
+		_is_loading_settings = false
 		return
 	
 	if volume_slider:
@@ -186,9 +188,18 @@ func _load_settings() -> void:
 		developer_mode_check.button_pressed = settings.get("developer_mode_enabled", false)
 		if DeveloperMode:
 			DeveloperMode.set_user_enabled(developer_mode_check.button_pressed)
+
+	if lighting_effects_check:
+		lighting_effects_check.button_pressed = settings.get("lighting_enabled", true)
+		if LightBudgetManager:
+			LightBudgetManager.set_lighting_enabled(lighting_effects_check.button_pressed)
 	
 	# 分辨率没有保存，保持默认选择
 	_is_loading_settings = false
+
+
+func _get_saved_settings() -> Dictionary:
+	return SaveManager.load_settings()
 
 
 func _connect_signals() -> void:
@@ -243,6 +254,9 @@ func _connect_signals() -> void:
 
 	if developer_mode_check:
 		developer_mode_check.toggled.connect(_on_developer_mode_toggled)
+
+	if lighting_effects_check:
+		lighting_effects_check.toggled.connect(_on_lighting_effects_toggled)
 	
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
@@ -256,12 +270,11 @@ func _on_resolution_selected(index: int) -> void:
 	
 	# Native 分辨率使用当前屏幕大小
 	if width == 0 or height == 0:
-		var screen_size = DisplayServer.screen_get_size()
+		var screen_size = DisplaySettingsBoundary.get_screen_size()
 		width = screen_size.x
 		height = screen_size.y
 	
-	# 直接调用 DisplayServer 应用分辨率
-	DisplayServer.window_set_size(Vector2i(width, height))
+	DisplaySettingsBoundary.set_resolution(width, height)
 	print("[SettingsPanel] Resolution changed to: %dx%d" % [width, height])
 	
 	_save_settings()
@@ -269,15 +282,7 @@ func _on_resolution_selected(index: int) -> void:
 
 func _on_window_mode_selected(index: int) -> void:
 	"""处理窗口模式选择"""
-	# 直接调用 DisplayServer API 应用窗口模式
-	# 0=Windowed, 1=Fullscreen, 2=Borderless(ExclusiveFullscreen)
-	match index:
-		0:  # Windowed
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		1:  # Fullscreen
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-		2:  # Borderless (ExclusiveFullscreen)
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+	DisplaySettingsBoundary.set_window_mode(index)
 	
 	print("[SettingsPanel] Window mode changed to: %s" % WINDOW_MODES[index])
 	
@@ -338,89 +343,77 @@ func _on_sensitivity_changed(_value: float) -> void:
 	_save_settings()
 
 
-func _on_crosshair_size_changed(_value: float) -> void:
-	_apply_crosshair_settings()
+func _on_crosshair_size_changed(value: float) -> void:
+	if CrosshairSettingsService:
+		CrosshairSettingsService.set_crosshair_size(value)
 	_save_settings()
 
 
-func _on_crosshair_alpha_changed(_value: float) -> void:
-	_apply_crosshair_settings()
+func _on_crosshair_alpha_changed(value: float) -> void:
+	if CrosshairSettingsService:
+		CrosshairSettingsService.set_crosshair_alpha(value / 100.0)
 	_save_settings()
 
 
-func _on_center_dot_toggled(_enabled: bool) -> void:
-	_apply_crosshair_settings()
+func _on_center_dot_toggled(enabled: bool) -> void:
+	if CrosshairSettingsService:
+		CrosshairSettingsService.set_show_center_dot(enabled)
 	_save_settings()
 
 
-func _on_center_dot_size_changed(_value: float) -> void:
-	_apply_crosshair_settings()
+func _on_center_dot_size_changed(value: float) -> void:
+	if CrosshairSettingsService:
+		CrosshairSettingsService.set_center_dot_size(value)
 	_save_settings()
 
 
-func _on_spread_increase_changed(_value: float) -> void:
-	_apply_crosshair_settings()
+func _on_spread_increase_changed(value: float) -> void:
+	if CrosshairSettingsService:
+		CrosshairSettingsService.set_spread_increase_per_shot(value)
 	_save_settings()
 
 
-func _on_crosshair_recovery_changed(_value: float) -> void:
-	_apply_crosshair_settings()
+func _on_crosshair_recovery_changed(value: float) -> void:
+	if CrosshairSettingsService:
+		CrosshairSettingsService.set_recovery_rate(value)
 	_save_settings()
 
 
-func _on_max_spread_multiplier_changed(_value: float) -> void:
-	_apply_crosshair_settings()
+func _on_max_spread_multiplier_changed(value: float) -> void:
+	if CrosshairSettingsService:
+		CrosshairSettingsService.set_max_spread_multiplier(value)
 	_save_settings()
 
 
-func _get_crosshair_node() -> Node:
-	if not GameManager:
-		return null
-	if not GameManager.hud:
-		return null
-
-	var hud_node: Node = GameManager.hud
-	if not is_instance_valid(hud_node):
-		return null
-
-	if not hud_node.has_node("MainContainer/BottomBar/CenterSection/CrosshairUI"):
-		return null
-
-	return hud_node.get_node("MainContainer/BottomBar/CenterSection/CrosshairUI")
-
-
-func _apply_crosshair_settings() -> void:
-	var crosshair_node := _get_crosshair_node()
-	if crosshair_node == null:
+func _sync_controls_with_service() -> void:
+	if not CrosshairSettingsService:
 		return
 
+	var settings := CrosshairSettingsService.get_settings()
+
 	if crosshair_size_slider:
-		crosshair_node.crosshair_size = clampf(crosshair_size_slider.value, 2.0, 60.0)
-
+		crosshair_size_slider.value = settings.crosshair_size
 	if crosshair_alpha_slider:
-		crosshair_node.crosshair_alpha = clampf(crosshair_alpha_slider.value / 100.0, 0.0, 1.0)
-
+		crosshair_alpha_slider.value = settings.crosshair_alpha * 100.0
 	if center_dot_check:
-		crosshair_node.show_center_dot = center_dot_check.button_pressed
-
+		center_dot_check.button_pressed = settings.show_center_dot
 	if center_dot_size_slider:
-		crosshair_node.center_dot_size = clampf(center_dot_size_slider.value, 1.0, 10.0)
-
+		center_dot_size_slider.value = settings.center_dot_size
 	if spread_increase_slider:
-		crosshair_node.spread_increase_per_shot = clampf(spread_increase_slider.value, 0.0, 20.0)
-
+		spread_increase_slider.value = settings.spread_increase_per_shot
 	if crosshair_recovery_slider:
-		crosshair_node.recovery_rate = clampf(crosshair_recovery_slider.value, 1.0, 120.0)
-
+		crosshair_recovery_slider.value = settings.recovery_rate
 	if max_spread_multiplier_slider:
-		crosshair_node.max_spread_multiplier = clampf(max_spread_multiplier_slider.value, 1.0, 6.0)
+		max_spread_multiplier_slider.value = settings.max_spread_multiplier
+
+
+func _on_crosshair_settings_changed(_settings: Resource) -> void:
+	_sync_controls_with_service()
 
 
 func _on_vsync_toggled(enabled: bool) -> void:
 	"""处理 VSync 切换"""
-	DisplayServer.window_set_vsync_mode(
-		DisplayServer.VSYNC_ENABLED if enabled else DisplayServer.VSYNC_DISABLED
-	)
+	DisplaySettingsBoundary.set_vsync(enabled)
 	
 	print("[SettingsPanel] VSync changed to: %s" % ("enabled" if enabled else "disabled"))
 	
@@ -434,9 +427,17 @@ func _on_developer_mode_toggled(enabled: bool) -> void:
 	_save_settings()
 
 
+func _on_lighting_effects_toggled(enabled: bool) -> void:
+	if LightBudgetManager:
+		LightBudgetManager.set_lighting_enabled(enabled)
+	print("[SettingsPanel] Lighting effects changed to: %s" % ("enabled" if enabled else "disabled"))
+	_save_settings()
+
+
 func _save_settings() -> void:
 	"""保存设置到 SaveManager"""
 	var current_settings := SaveManager.load_settings()
+	var window_size := DisplaySettingsBoundary.get_window_size()
 	var settings := {
 		"master_volume": volume_slider.value / 100.0 if volume_slider else 0.8,
 		"music_volume": music_slider.value / 100.0 if music_slider else 0.7,
@@ -455,8 +456,9 @@ func _save_settings() -> void:
 		"window_mode": window_mode_option.selected if window_mode_option else 0,
 		"locale": LocalizationManager.get_locale() if LocalizationManager else "zh_CN",
 		"developer_mode_enabled": developer_mode_check.button_pressed if developer_mode_check else false,
-		"resolution_width": DisplayServer.window_get_size().x,
-		"resolution_height": DisplayServer.window_get_size().y,
+		"lighting_enabled": lighting_effects_check.button_pressed if lighting_effects_check else true,
+		"resolution_width": window_size.x,
+		"resolution_height": window_size.y,
 	}
 	SaveManager.save_settings(settings)
 
@@ -548,6 +550,7 @@ func _setup_localized_bindings() -> void:
 	_localized_text_binder.bind_node("center_dot_text", center_dot_check, "ui.settings.show_center_dot")
 	_localized_text_binder.bind_node("vsync_text", vsync_check, "ui.settings.vsync")
 	_localized_text_binder.bind_node("developer_mode_text", developer_mode_check, "ui.settings.developer_mode")
+	_localized_text_binder.bind_node("lighting_effects_text", lighting_effects_check, "ui.settings.lighting_effects")
 	_localized_text_binder.bind_node("back_text", back_button, "ui.main_menu.button.back")
 
 	_localized_text_binder.start()

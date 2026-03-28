@@ -99,7 +99,6 @@ func _ready() -> void:
 	_update_wave_display()
 	update_enemy_count(live_enemy_count)
 	update_arena_score(kill_count, kill_target)
-	_apply_saved_crosshair_settings()
 	# 弹药显示会在武器切换时更新
 
 	# 隐藏需要动态显示的元素
@@ -112,27 +111,31 @@ func _ready() -> void:
 
 	_apply_localized_texts()
 
+	# 订阅准星设置服务
+	if CrosshairSettingsService:
+		CrosshairSettingsService.settings_changed.connect(_on_crosshair_settings_changed)
+		CrosshairSettingsService.settings_loaded.connect(_on_crosshair_settings_changed)
+		# 立即应用当前设置
+		_apply_crosshair_settings(CrosshairSettingsService.get_settings())
+
 	print("HUD initialized")
 
 
-func _apply_saved_crosshair_settings() -> void:
+func _apply_crosshair_settings(settings) -> void:
 	if not crosshair:
 		return
 
-	if not SaveManager:
-		return
+	crosshair.crosshair_size = settings.crosshair_size
+	crosshair.crosshair_alpha = settings.crosshair_alpha
+	crosshair.show_center_dot = settings.show_center_dot
+	crosshair.center_dot_size = settings.center_dot_size
+	crosshair.spread_increase_per_shot = settings.spread_increase_per_shot
+	crosshair.recovery_rate = settings.recovery_rate
+	crosshair.max_spread_multiplier = settings.max_spread_multiplier
 
-	var settings := SaveManager.load_settings()
-	if settings.is_empty():
-		return
 
-	crosshair.crosshair_size = settings.get("crosshair_size", 20.0)
-	crosshair.crosshair_alpha = settings.get("crosshair_alpha", 1.0)
-	crosshair.show_center_dot = settings.get("show_center_dot", true)
-	crosshair.center_dot_size = settings.get("center_dot_size", 2.0)
-	crosshair.spread_increase_per_shot = settings.get("spread_increase_per_shot", 5.0)
-	crosshair.recovery_rate = settings.get("crosshair_recovery_rate", 30.0)
-	crosshair.max_spread_multiplier = settings.get("max_spread_multiplier", 3.0)
+func _on_crosshair_settings_changed(settings) -> void:
+	_apply_crosshair_settings(settings)
 
 
 func _setup_localized_bindings() -> void:

@@ -24,7 +24,7 @@ position = Vector2(35, 0)
 [node name="EjectionPort" type="Marker2D" parent="."]
 position = Vector2(-10, -8)
 
-[node name="WeaponLighting" type="Node2D" parent="."]
-position = Vector2(28, 6)
+[node name="WeaponLighting" type="Node2D" parent="Muzzle"]
+position = Vector2(0, 0)
 script = ExtResource("3_weapon_lighting_script")
 config = ExtResource("4_hk416_flashlight")

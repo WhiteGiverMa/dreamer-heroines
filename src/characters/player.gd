@@ -31,6 +31,7 @@ signal dash_ended()
 @export var weapon_switch_action: GUIDEAction
 @export var weapon_primary_action: GUIDEAction
 @export var weapon_secondary_action: GUIDEAction
+@export var toggle_light_action: GUIDEAction
 
 # 移动参数
 @export_group("Movement")
@@ -129,6 +130,14 @@ func _ready():
 	_initialize_weapons()
 
 	print("Player initialized")
+
+
+func _input(event: InputEvent) -> void:
+	# Toggle light input handling
+	if toggle_light_action != null and current_weapon != null:
+		if EnhancedInput.instance.is_action_just_pressed(toggle_light_action):
+			if current_weapon.lighting != null:
+				current_weapon.lighting.toggle()
 
 
 func _initialize_weapons() -> void:
@@ -313,7 +322,7 @@ func _handle_movement(delta: float) -> void:
 		facing_direction = sign(input_direction)
 
 func _handle_aiming() -> void:
-	var aim_dir = EnhancedInput.instance.get_aim_direction()
+	var aim_dir := get_aim_direction()
 
 	# 更新武器朝向
 	if weapon_pivot:
@@ -665,7 +674,14 @@ func get_muzzle_position() -> Vector2:
 	return global_position
 
 func get_aim_direction() -> Vector2:
-	return EnhancedInput.instance.get_aim_direction()
+	var aim_origin := get_weapon_aim_origin()
+	var mouse_world_position := EnhancedInput.instance.get_mouse_world_position()
+	var aim_vector := mouse_world_position - aim_origin
+
+	if aim_vector.length_squared() <= 0.0001:
+		return Vector2.RIGHT
+
+	return aim_vector.normalized()
 
 
 func get_aim_point() -> Vector2:

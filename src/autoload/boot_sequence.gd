@@ -2,6 +2,8 @@
 # 注意：不使用 class_name 以避免与 autoload 单例名称冲突
 extends Node
 
+const DisplaySettingsBoundary = preload("res://src/autoload/display_settings_boundary.gd")
+
 ## 启动序列编排器
 ## 负责按正确顺序初始化所有游戏系统
 
@@ -288,19 +290,11 @@ func _apply_saved_settings() -> void:
 	
 	# 应用窗口模式
 	var window_mode = settings.get("window_mode", 0)
-	match window_mode:
-		0:  # Windowed
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		1:  # Fullscreen
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-		2:  # Borderless
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+	DisplaySettingsBoundary.set_window_mode(window_mode)
 	
 	# 应用 VSync
 	var vsync_enabled = settings.get("vsync", true)
-	DisplayServer.window_set_vsync_mode(
-		DisplayServer.VSYNC_ENABLED if vsync_enabled else DisplayServer.VSYNC_DISABLED
-	)
+	DisplaySettingsBoundary.set_vsync(vsync_enabled)
 	
 	# 应用鼠标灵敏度
 	var sensitivity = settings.get("mouse_sensitivity", 1.0)
