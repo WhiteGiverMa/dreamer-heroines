@@ -2,6 +2,7 @@ extends GutTest
 
 
 const RIFLE_SCENE_PATH := "res://scenes/weapons/rifle.tscn"
+const SHOTGUN_SCENE_PATH := "res://scenes/weapons/shotgun.tscn"
 
 
 func _spawn_weapon() -> Weapon:
@@ -12,6 +13,22 @@ func _spawn_weapon() -> Weapon:
 
 	var weapon := scene.instantiate() as Weapon
 	assert_not_null(weapon, "rifle should instantiate as Weapon")
+	if weapon == null:
+		return null
+
+	add_child_autofree(weapon)
+	await get_tree().process_frame
+	return weapon
+
+
+func _spawn_shotgun() -> ShotgunWeapon:
+	var scene: PackedScene = load(SHOTGUN_SCENE_PATH)
+	assert_not_null(scene, "shotgun.tscn should load")
+	if scene == null:
+		return null
+
+	var weapon := scene.instantiate() as ShotgunWeapon
+	assert_not_null(weapon, "shotgun should instantiate as ShotgunWeapon")
 	if weapon == null:
 		return null
 
@@ -134,3 +151,66 @@ func test_reload_state_keeps_weapon_unshootable_until_finished() -> void:
 
 	weapon._physics_process(0.2)
 	assert_true(weapon.can_shoot, "weapon should become shootable again after reload finishes and no cooldown is pending")
+
+
+func test_same_timestamp_allows_only_one_successful_shot() -> void:
+	var weapon := await _spawn_weapon()
+	if weapon == null:
+		return
+
+	var clock := _setup_weapon(weapon, 0.05)
+
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "first shot at a timestamp should fire")
+	clock.now_usec = 0
+	assert_false(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "second shot at the same timestamp must stay blocked")
+
+
+func test_deploy_state_blocks_and_then_reopens_on_schedule_boundary() -> void:
+	var weapon := await _spawn_weapon()
+	if weapon == null:
+		return
+
+	var clock := _setup_weapon(weapon, 0.05)
+	weapon.stats.deploy_time = 0.1
+
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "first shot should fire before deploy")
+	assert_true(weapon.start_deploy(), "weapon should enter deploy state")
+
+	clock.now_usec = 50_000
+	weapon._physics_process(0.05)
+	assert_false(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "deploy should block firing even when cooldown window reopens")
+	assert_false(weapon.can_shoot, "debug-ready flag should remain false while deploying")
+
+	clock.now_usec = 100_000
+	weapon._physics_process(0.05)
+	assert_true(weapon.can_shoot, "weapon should become shootable once deploy finishes and cooldown window is open")
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "weapon should fire immediately after deploy completes on an open window")
+
+
+func test_shotgun_runtime_ammo_toggle_matches_scheduler_behavior() -> void:
+	var weapon := await _spawn_shotgun()
+	if weapon == null:
+		return
+
+	var clock := {"now_usec": 0}
+	weapon.set_time_provider(func() -> int: return clock.now_usec)
+	weapon.stats.fire_rate = 0.8
+
+	weapon.set_use_ammo_system(false)
+	var enemy_before_mag := weapon.current_ammo_in_mag
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "shotgun should fire in infinite-ammo mode")
+	assert_eq(weapon.current_ammo_in_mag, enemy_before_mag, "infinite-ammo shotgun should not consume ammo")
+
+	clock.now_usec = 800_000
+	weapon._physics_process(0.8)
+	weapon.set_use_ammo_system(true)
+	weapon.current_ammo_in_mag = 2
+	weapon.current_reserve_ammo = 0
+	assert_true(weapon.can_shoot, "scheduler should reopen correctly before player-ammo verification")
+
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "shotgun should still fire after switching back to ammo mode")
+	assert_eq(weapon.current_ammo_in_mag, 1, "player-ammo shotgun should consume exactly one shell per shot")
+
+	clock.now_usec = 1_600_000
+	weapon._physics_process(0.8)
+	assert_true(weapon.can_shoot, "shotgun cooldown should reopen on the absolute scheduler boundary")
