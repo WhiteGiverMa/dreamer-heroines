@@ -1,10 +1,6 @@
 extends GutTest
 
 
-## TDD Tests for Fire Rate Accumulator
-## These tests define expected behavior for the fire rate accumulator feature.
-
-
 const RIFLE_SCENE_PATH := "res://scenes/weapons/rifle.tscn"
 
 
@@ -26,160 +22,115 @@ func _spawn_weapon() -> Weapon:
 
 func _create_fire_rate_stats(fire_rate: float) -> WeaponStats:
 	var stats := WeaponStats.new()
+	stats.weapon_name = "test_weapon"
 	stats.fire_rate = fire_rate
 	stats.is_automatic = true
-	stats.use_ammo_system = false  # Infinite ammo for testing
+	stats.use_ammo_system = false
+	stats.spread = 0.0
 	return stats
 
 
-func _setup_weapon(weapon: Weapon, fire_rate: float) -> void:
+func _setup_weapon(weapon: Weapon, fire_rate: float) -> Dictionary:
 	var stats := _create_fire_rate_stats(fire_rate)
 	weapon.stats = stats
 	weapon.set_use_ammo_system(false)
-	weapon._initialize_stats()  # Force re-initialization with new stats
-	# Set default aim parameters (required for accumulator mode)
-	weapon._aim_muzzle_pos = Vector2(100, 100)
-	weapon._aim_direction = Vector2.RIGHT
+	weapon._initialize_stats()
+
+	var clock := {"now_usec": 0}
+	weapon.set_time_provider(func() -> int: return clock.now_usec)
+	return clock
 
 
-func test_fire_rate_accuracy_10_shots_per_second() -> void:
+func test_scheduler_preserves_interval_after_small_late_frame() -> void:
 	var weapon := await _spawn_weapon()
 	if weapon == null:
 		return
 
-	_setup_weapon(weapon, 0.1)  # 10 shots/sec
+	var clock := _setup_weapon(weapon, 0.05)
 
-	var shot_count := {count = 0}  # Use dict for mutable capture in lambda
-	weapon.shot_fired.connect(func(_pos, _dir, _fac): shot_count.count += 1)
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "first shot should fire immediately")
 
-	# Simulate 1 second of continuous fire input
-	var delta := 0.016  # ~60fps
-	var total_time := 1.0
-	var frames := int(total_time / delta)
+	clock.now_usec = 66_000
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "late frame should still fire when overdue")
 
-	# Set input held ONCE at start, keep it held throughout
-	weapon.set_fire_input(true)
-	for i in frames:
-		weapon._physics_process(delta)
-	weapon.set_fire_input(false)
+	clock.now_usec = 99_000
+	assert_false(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "scheduler should not drift to now+interval after a small late frame")
 
-	# Due to floating point precision, expect 9-11 shots
-	assert_between(shot_count.count, 9, 11,
-		"Continuous 1 second fire at 0.1s fire_rate should produce ~10 shots (got %d)" % shot_count.count
-	)
+	clock.now_usec = 100_000
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "third shot should stay aligned to the original cadence grid")
 
 
-func test_max_3_shots_per_frame() -> void:
+func test_scheduler_resets_after_large_gap_instead_of_bursting() -> void:
 	var weapon := await _spawn_weapon()
 	if weapon == null:
 		return
 
-	_setup_weapon(weapon, 0.01)  # 100 shots/sec = 0.01s between shots
+	var clock := _setup_weapon(weapon, 0.05)
 
-	var max_shots_in_frame := 0
-	var current_frame_shots := 0
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "first shot should fire immediately")
 
-	weapon.shot_fired.connect(func(_pos, _dir, _fac):
-		current_frame_shots += 1
-		max_shots_in_frame = maxi(max_shots_in_frame, current_frame_shots)
-	)
+	clock.now_usec = 5_000_000
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "shot after a long pause should still fire")
 
-	# Simulate multiple frames of firing
-	var delta := 0.016  # ~60fps
-	for i in 10:
-		current_frame_shots = 0
-		weapon.set_fire_input(true)
-		weapon._physics_process(delta)
-		weapon.set_fire_input(false)
+	clock.now_usec = 5_010_000
+	assert_false(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "large lateness should reset cadence instead of allowing immediate catch-up burst")
 
-	assert_lt(max_shots_in_frame, 4,
-		"Should never fire more than 3 shots per single frame"
-	)
+	clock.now_usec = 5_050_000
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "after reset, next shot should be one full interval later")
 
 
-func test_pause_burst_protection() -> void:
+func test_can_shoot_tracks_absolute_cooldown_window() -> void:
 	var weapon := await _spawn_weapon()
 	if weapon == null:
 		return
 
-	_setup_weapon(weapon, 0.1)  # 10 shots/sec
+	var clock := _setup_weapon(weapon, 0.1)
 
-	var shot_count := {count = 0}  # Use dict for mutable capture in lambda
-	weapon.shot_fired.connect(func(_pos, _dir, _fac): shot_count.count += 1)
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "shot should fire immediately")
+	assert_false(weapon.can_shoot, "weapon should report cooldown immediately after firing")
 
-	# Simulate a large delta (e.g., 1 second pause)
-	var large_delta := 1.0
-	weapon.set_fire_input(true)
-	weapon._physics_process(large_delta)
-	weapon.set_fire_input(false)
+	clock.now_usec = 99_000
+	weapon._physics_process(0.099)
+	assert_false(weapon.can_shoot, "weapon should still be cooling down just before the fire window reopens")
 
-	# With 1 second delta and 0.1s fire_rate, should get ~10 shots but clamped
-	assert_lt(shot_count.count, 4,
-		"Large delta should not cause burst - max 3 shots regardless of delta size"
-	)
+	clock.now_usec = 100_000
+	weapon._physics_process(0.001)
+	assert_true(weapon.can_shoot, "weapon should become shootable exactly when the absolute cooldown expires")
 
 
-func test_accumulator_reset_on_deploy() -> void:
+func test_out_of_ammo_does_not_shift_fire_schedule() -> void:
 	var weapon := await _spawn_weapon()
 	if weapon == null:
 		return
 
-	_setup_weapon(weapon, 0.1)  # 10 shots/sec
-	weapon.stats.deploy_time = 0.2
+	var clock := _setup_weapon(weapon, 0.05)
+	weapon.set_use_ammo_system(true)
+	weapon.current_ammo_in_mag = 1
+	weapon.current_reserve_ammo = 0
 
-	var shot_count := {count = 0}  # Use dict for mutable capture in lambda
-	weapon.shot_fired.connect(func(_pos, _dir, _fac): shot_count.count += 1)
+	assert_true(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "last bullet should fire")
 
-	# Fire a shot - need to accumulate enough time first
-	weapon.set_fire_input(true)
-	weapon._physics_process(0.15)  # 0.15 > 0.1 fire_rate, should fire 1 shot
-	weapon.set_fire_input(false)
-
-	var shots_before_deploy: int = shot_count.count
-	assert_gt(shots_before_deploy, 0, "Should have fired at least one shot before deploy (got %d)" % shots_before_deploy)
-
-	# Start deploy (switching weapons)
-	weapon.start_deploy()
-	weapon._physics_process(0.1)  # Partway through deploy
-
-	# Resume firing after deploy
-	weapon._physics_process(0.05)  # Deploy finishes
-	weapon.set_fire_input(true)
-	weapon._physics_process(0.15)  # Fire for a bit
-	weapon.set_fire_input(false)
-
-	# Accumulator should have been reset, so first few shots may be spaced normally
-	# The key test: deploy interruption should not cause double-fire
-	var shots_after_deploy: int = shot_count.count - shots_before_deploy
-	assert_lt(shots_after_deploy, 6,
-		"Accumulator reset on deploy should prevent burst after deploy completes"
-	)
+	clock.now_usec = 50_000
+	assert_false(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "empty magazine should block firing when the window reopens")
+	assert_true(weapon.can_shoot, "empty magazine should not leave the debug-ready flag stuck false once the cooldown window is open")
 
 
-func test_input_release_stops_firing() -> void:
+func test_reload_state_keeps_weapon_unshootable_until_finished() -> void:
 	var weapon := await _spawn_weapon()
 	if weapon == null:
 		return
 
-	_setup_weapon(weapon, 0.1)  # 10 shots/sec
+	var clock := _setup_weapon(weapon, 0.05)
+	weapon.set_use_ammo_system(true)
+	weapon.current_ammo_in_mag = max(0, weapon.stats.magazine_size - 1)
+	weapon.current_reserve_ammo = 10
+	weapon.stats.reload_time = 0.2
+	weapon.reload()
 
-	var shot_count := {count = 0}  # Use dict for mutable capture in lambda
-	weapon.shot_fired.connect(func(_pos, _dir, _fac): shot_count.count += 1)
+	clock.now_usec = 1_000_000
+	weapon._physics_process(0.05)
+	assert_false(weapon.can_shoot, "reload should override an open fire window")
+	assert_false(weapon.try_shoot(Vector2.ZERO, Vector2.RIGHT), "weapon must not shoot while reloading")
 
-	# Press and hold
-	weapon.set_fire_input(true)
-	weapon._physics_process(0.1)
-
-	var shots_while_held: int = shot_count.count
-
-	# Release input
-	weapon.set_fire_input(false)
-
-	# Continue physics processing (accumulator still has time)
-	weapon._physics_process(0.5)  # This should NOT produce shots
-
-	assert_eq(
-		shot_count.count,
-		shots_while_held,
-		"After input release, no more shots should fire even with accumulated time"
-	)
+	weapon._physics_process(0.2)
+	assert_true(weapon.can_shoot, "weapon should become shootable again after reload finishes and no cooldown is pending")

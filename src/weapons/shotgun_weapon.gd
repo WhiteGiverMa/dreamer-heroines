@@ -19,18 +19,19 @@ func _set_weapon_owner(node: Node2D) -> void:
 
 
 ## 重写射击方法，实现多弹丸发射
-func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
+func _fire(muzzle_pos: Vector2, aim_dir: Vector2, fired_at_usec: int = -1) -> void:
 	if not stats:
 		return
 
 	# 消耗弹药（一次扣弹，不是每颗弹丸都扣）
-	if stats.use_ammo_system:
+	if _use_ammo_system_runtime:
 		current_ammo_in_mag -= 1
 		ammo_changed.emit(current_ammo_in_mag, stats.magazine_size)
 
 	# 设置冷却
 	can_shoot = false
-	_fire_cooldown_timer = stats.fire_rate
+	_schedule_next_fire_window(fired_at_usec)
+	_fire_cooldown_timer = _get_remaining_fire_cooldown_seconds(fired_at_usec)
 
 	# 获取弹丸数量（从 WeaponStats 读取）
 	var pellet_count := stats.pellet_count if stats.pellet_count > 0 else 1

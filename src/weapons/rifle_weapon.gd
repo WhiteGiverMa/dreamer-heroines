@@ -19,9 +19,9 @@ func set_owner_pivot(pivot: Node2D) -> void:
 
 
 ## 重写射击方法，添加后坐力动画
-func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
+func _fire(muzzle_pos: Vector2, aim_dir: Vector2, fired_at_usec: int = -1) -> void:
 	# 调用父类射击逻辑（处理弹药、冷却、发射信号）
-	super._fire(muzzle_pos, aim_dir)
+	super._fire(muzzle_pos, aim_dir, fired_at_usec)
 
 	# 步枪特有的后坐力动画
 	_play_recoil_animation()

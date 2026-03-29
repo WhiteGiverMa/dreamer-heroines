@@ -46,12 +46,10 @@ var current_visual_spread: float = 0.0
 
 # 计时器
 var _fire_cooldown_timer: float = 0.0
+var _next_fire_time_usec: int = 0
 
-# 时间累加器模式（用于自动武器射击速率控制）
-var _time_accumulator: float = 0.0
-var _fire_input_held: bool = false
-var _aim_muzzle_pos: Vector2 = Vector2.ZERO
-var _aim_direction: Vector2 = Vector2.RIGHT
+# 测试钩子：允许单测注入稳定时钟，运行时默认走 Godot 单调时钟
+var _time_provider: Callable = Callable()
 
 # 子节点引用
 @onready var muzzle: Marker2D = $Muzzle
@@ -74,37 +72,8 @@ func _process(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	_update_reload_state(delta)
 	_update_deploy_state(delta)
-
-	# 更新冷却计时器（用于 try_shoot 单发模式）
-	if _fire_cooldown_timer > 0:
-		_fire_cooldown_timer -= delta
-		if _fire_cooldown_timer <= 0:
-			_fire_cooldown_timer = 0.0
-			can_shoot = true
-
-	# 累加器模式：通过时间累积控制射速
-	var fire_input_this_frame := _fire_input_held
-
-	if fire_input_this_frame and not is_reloading and not is_deploying():
-		_time_accumulator += delta
-
-		var fire_interval := stats.fire_rate if stats else 0.1
-
-		# 暂停爆发保护：限制最大累加值
-		_time_accumulator = minf(_time_accumulator, fire_interval * 3.0)
-
-		if _time_accumulator >= fire_interval:
-			var shots := int(_time_accumulator / fire_interval)
-			_time_accumulator = fmod(_time_accumulator, fire_interval)
-
-			for i in mini(shots, 3):
-				# 累加器模式：只检查弹药，不检查 can_shoot（由累加器控制速率）
-				if _can_fire_accumulator():
-					_fire_single_shot(_aim_muzzle_pos, _aim_direction)
-	else:
-		# 输入释放时重置累加器
-		if not fire_input_this_frame:
-			_time_accumulator = 0.0
+	_update_fire_cooldown(delta)
+	_sync_fire_readiness()
 
 
 func _update_visual_spread(delta: float) -> void:
@@ -123,7 +92,7 @@ func _update_visual_spread(delta: float) -> void:
 func _initialize_stats() -> void:
 	if not stats:
 		return
-	
+
 	# 初始化弹药
 	if _use_ammo_system_runtime:
 		current_ammo_in_mag = stats.magazine_size
@@ -132,7 +101,7 @@ func _initialize_stats() -> void:
 		# 无限弹药模式（敌人）
 		current_ammo_in_mag = 999
 		current_reserve_ammo = 999
-	
+
 	# 初始化视觉扩散
 	current_visual_spread = stats.spread if stats.spread > 0 else 0.0
 
@@ -144,43 +113,38 @@ func _initialize_stats() -> void:
 ## @param aim_dir: 瞄准方向（归一化向量）
 ## @return: 是否成功射击
 func try_shoot(muzzle_pos: Vector2, aim_dir: Vector2) -> bool:
-	_aim_muzzle_pos = muzzle_pos
-	_aim_direction = aim_dir
-	set_fire_input(true)
+	if is_reloading or is_deploying():
+		can_shoot = false
+		return false
+
+	var now_usec := _get_now_usec()
+	if not _is_fire_window_open(now_usec):
+		can_shoot = false
+		return false
 
 	# 检查弹药（无限弹药模式跳过）
 	if stats and _use_ammo_system_runtime:
 		if current_ammo_in_mag <= 0:
 			out_of_ammo.emit()
 			AudioManager.play_sfx("empty_click")
+			_sync_fire_readiness()
 			return false
 
-	if is_reloading or is_deploying():
-		return false
-
-	if not can_shoot:
-		return false
-
-	# 立即发射一发
-	_fire_single_shot(muzzle_pos, aim_dir)
-	can_shoot = false
-	_fire_cooldown_timer = stats.fire_rate if stats else 0.1
-	# 重置累加器，避免立即再次射击
-	_time_accumulator = 0.0
+	_fire(muzzle_pos, aim_dir, now_usec)
 	return true
 
 
 ## 执行射击
-func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
-	_fire_single_shot(muzzle_pos, aim_dir)
-
-
-## 单次射击（用于累加器模式）
-func _fire_single_shot(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
+func _fire(muzzle_pos: Vector2, aim_dir: Vector2, fired_at_usec: int = -1) -> void:
 	# 消耗弹药
 	if stats and _use_ammo_system_runtime:
 		current_ammo_in_mag -= 1
 		_emit_ammo_changed()
+
+	# 设置冷却
+	can_shoot = false
+	_schedule_next_fire_window(fired_at_usec)
+	_fire_cooldown_timer = _get_remaining_fire_cooldown_seconds(fired_at_usec)
 
 	# 应用散布
 	var final_dir := aim_dir
@@ -207,34 +171,12 @@ func _fire_single_shot(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
 		AudioManager.play_sfx("shoot")
 
 
-## 检查是否可以射击（用于累加器模式）
-func _can_fire() -> bool:
-	if not can_shoot or is_reloading or is_deploying():
-		return false
-
-	# 检查弹药（无限弹药模式跳过）
-	if stats and _use_ammo_system_runtime:
-		if current_ammo_in_mag <= 0:
-			out_of_ammo.emit()
-			AudioManager.play_sfx("empty_click")
-			return false
-
-	return true
+func set_time_provider(provider: Callable) -> void:
+	_time_provider = provider
 
 
-## 检查是否可以射击（累加器模式专用 - 不检查 can_shoot）
-func _can_fire_accumulator() -> bool:
-	if is_reloading or is_deploying():
-		return false
-
-	# 检查弹药（无限弹药模式跳过）
-	if stats and _use_ammo_system_runtime:
-		if current_ammo_in_mag <= 0:
-			out_of_ammo.emit()
-			AudioManager.play_sfx("empty_click")
-			return false
-
-	return true
+func clear_time_provider() -> void:
+	_time_provider = Callable()
 
 
 ## 换弹
@@ -247,9 +189,6 @@ func reload() -> void:
 		return
 	if current_reserve_ammo <= 0:
 		return
-
-	_time_accumulator = 0.0
-	_fire_input_held = false
 
 	_reload_elapsed = _get_reload_start_elapsed()
 	if _reload_elapsed >= _get_reload_duration():
@@ -276,7 +215,6 @@ func _finish_reload() -> void:
 
 	_checkpoint_reached = false
 	_reload_elapsed = 0.0
-	_time_accumulator = 0.0
 	_set_weapon_state(WeaponState.IDLE)
 	_emit_ammo_changed()
 	reload_finished.emit()
@@ -311,8 +249,6 @@ func start_deploy() -> bool:
 
 	_set_weapon_state(WeaponState.DEPLOYING)
 	_deploy_elapsed = 0.0
-	_time_accumulator = 0.0
-	_fire_input_held = false
 	return true
 
 
@@ -416,10 +352,6 @@ func set_use_ammo_system(enabled: bool) -> void:
 	_emit_ammo_changed()
 
 
-func set_fire_input(held: bool) -> void:
-	_fire_input_held = held
-
-
 func is_using_ammo_system() -> bool:
 	return _use_ammo_system_runtime
 
@@ -502,6 +434,79 @@ func _emit_ammo_changed() -> void:
 	if not stats:
 		return
 	ammo_changed.emit(current_ammo_in_mag, stats.magazine_size)
+
+
+func _update_fire_cooldown(delta: float) -> void:
+	if _fire_cooldown_timer <= 0.0:
+		_fire_cooldown_timer = 0.0
+		return
+
+	_fire_cooldown_timer = maxf(_fire_cooldown_timer - delta, 0.0)
+
+
+func _sync_fire_readiness() -> void:
+	if is_reloading or is_deploying():
+		can_shoot = false
+		return
+
+	var now_usec := _get_now_usec()
+	can_shoot = _is_fire_window_open(now_usec)
+	_fire_cooldown_timer = _get_remaining_fire_cooldown_seconds(now_usec)
+
+
+func _is_fire_window_open(now_usec: int) -> bool:
+	return _next_fire_time_usec <= 0 or now_usec >= _next_fire_time_usec
+
+
+func _schedule_next_fire_window(fired_at_usec: int) -> void:
+	var now_usec := fired_at_usec
+	if now_usec < 0:
+		now_usec = _get_now_usec()
+
+	var fire_interval_usec := _get_fire_interval_usec()
+	if fire_interval_usec <= 0:
+		_next_fire_time_usec = now_usec
+		return
+
+	if _next_fire_time_usec <= 0:
+		_next_fire_time_usec = now_usec + fire_interval_usec
+		return
+
+	var lateness_usec := now_usec - _next_fire_time_usec
+	if lateness_usec > fire_interval_usec:
+		_next_fire_time_usec = now_usec + fire_interval_usec
+		return
+
+	_next_fire_time_usec += fire_interval_usec
+	if _next_fire_time_usec <= now_usec:
+		_next_fire_time_usec = now_usec + fire_interval_usec
+
+
+func _get_fire_interval_seconds() -> float:
+	if not stats:
+		return 0.1
+	return maxf(stats.fire_rate, 0.0)
+
+
+func _get_fire_interval_usec() -> int:
+	return int(roundi(_get_fire_interval_seconds() * 1000000.0))
+
+
+func _get_remaining_fire_cooldown_seconds(now_usec: int = -1) -> float:
+	if _next_fire_time_usec <= 0:
+		return 0.0
+
+	var current_usec := now_usec
+	if current_usec < 0:
+		current_usec = _get_now_usec()
+
+	return maxf(float(_next_fire_time_usec - current_usec) / 1000000.0, 0.0)
+
+
+func _get_now_usec() -> int:
+	if _time_provider.is_valid():
+		return int(_time_provider.call())
+	return Time.get_ticks_usec()
 
 
 func _update_reload_state(delta: float) -> void:
