@@ -460,7 +460,7 @@ func _equip_weapon(index: int) -> void:
 			(weapon_node as Node2D).visible = i == index
 
 	if current_weapon.has_method("set_owner_pivot"):
-		current_weapon.set_owner_pivot(weapon_pivot)
+		current_weapon.set_owner_pivot(weapon_mount)
 
 	# 连接武器信号
 	if current_weapon.has_signal("ammo_changed") and not current_weapon.ammo_changed.is_connected(_on_weapon_ammo_changed):

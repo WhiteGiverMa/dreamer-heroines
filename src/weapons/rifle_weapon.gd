@@ -5,17 +5,17 @@ extends Weapon
 # 基于 Weapon 类，使用 WeaponStats 资源配置
 # 支持后坐力动画效果
 
-# 持有者引用（用于后坐力动画）
-var _owner_pivot: Node2D = null
+# 后坐力视觉目标（只做局部视觉抖动，不参与主瞄准旋转）
+var _recoil_target: Node2D = null
 
 
 func _ready() -> void:
 	super._ready()
 
 
-## 设置持有者的武器挂载点（用于后坐力动画）
+## 设置后坐力视觉目标（由持有者提供，不应与主瞄准旋转控制同节点）
 func set_owner_pivot(pivot: Node2D) -> void:
-	_owner_pivot = pivot
+	_recoil_target = pivot
 
 
 ## 重写射击方法，添加后坐力动画
@@ -29,17 +29,17 @@ func _fire(muzzle_pos: Vector2, aim_dir: Vector2) -> void:
 
 ## 播放后坐力动画
 func _play_recoil_animation() -> void:
-	if not _owner_pivot:
+	if not _recoil_target:
 		return
 
-	var original_rotation := _owner_pivot.rotation
+	var original_rotation := _recoil_target.rotation
 
 	# 快速向上跳动
-	_owner_pivot.rotation -= deg_to_rad(2.0)
+	_recoil_target.rotation -= deg_to_rad(2.0)
 
 	# 缓慢恢复
 	var tween := create_tween()
-	tween.tween_property(_owner_pivot, "rotation", original_rotation, 0.1)
+	tween.tween_property(_recoil_target, "rotation", original_rotation, 0.1)
 ## 获取武器描述
 func get_weapon_description() -> String:
 	return stats.get_display_description() if stats else ""
