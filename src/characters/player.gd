@@ -70,6 +70,7 @@ signal dash_ended()
 
 # 组件引用
 @onready var weapon_pivot: Marker2D = $WeaponPivot
+@onready var weapon_mount: Node2D = $WeaponPivot/Weapon
 @onready var muzzle: Marker2D = $WeaponPivot/Weapon/Muzzle
 @onready var camera: Camera2D = $Camera2D
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
@@ -107,6 +108,11 @@ var weapons: Array = []
 var current_weapon_index: int = 0
 var current_slot_id: int = primary_slot_id
 var previous_slot_id: int = primary_slot_id
+
+# 当前物理帧战斗采样（避免同帧重复计算导致瞄准/射击反馈环）
+var _frame_aim_origin: Vector2 = Vector2.ZERO
+var _frame_aim_dir: Vector2 = Vector2.RIGHT
+var _frame_muzzle_pos: Vector2 = Vector2.ZERO
 
 func _ready():
 	add_to_group("player")
@@ -185,7 +191,9 @@ func _physics_process(delta: float):
 	_handle_jump()
 	_handle_movement(delta)
 	_update_dash(delta)
+	_sample_frame_aim()
 	_handle_aiming()
+	_sample_frame_muzzle_position()
 	_handle_shooting()
 	_handle_weapon_switch()
 
@@ -322,7 +330,7 @@ func _handle_movement(delta: float) -> void:
 		facing_direction = sign(input_direction)
 
 func _handle_aiming() -> void:
-	var aim_dir := get_aim_direction()
+	var aim_dir := _frame_aim_dir
 
 	# 更新武器朝向
 	if weapon_pivot:
@@ -346,9 +354,7 @@ func _handle_shooting() -> void:
 	if is_pressed:
 		# 使用 Weapon 组件：传递枪口位置和瞄准方向
 		if current_weapon:
-			var muzzle_pos := get_muzzle_position()
-			var aim_dir := get_aim_direction()
-			current_weapon.try_shoot(muzzle_pos, aim_dir)
+			current_weapon.try_shoot(_frame_muzzle_pos, _frame_aim_dir)
 
 
 	if EnhancedInput.instance.is_action_just_pressed(reload_action) and current_weapon:
@@ -664,17 +670,17 @@ func _on_jump_action_just_triggered() -> void:
 func _on_jump_action_completed() -> void:
 	_jump_release_requested = true
 
-func get_muzzle_position() -> Vector2:
-	# 优先使用当前武器的 get_muzzle_position() 方法（新 Weapon 组件）
-	if current_weapon and current_weapon is Weapon:
-		return current_weapon.get_muzzle_position()
-	# 回退到旧的 muzzle 节点引用
-	if muzzle:
-		return muzzle.global_position
-	return global_position
 
-func get_aim_direction() -> Vector2:
-	var aim_origin := get_weapon_aim_origin()
+func _sample_frame_aim() -> void:
+	_frame_aim_origin = get_weapon_aim_origin()
+	_frame_aim_dir = _compute_aim_direction_from_origin(_frame_aim_origin)
+
+
+func _sample_frame_muzzle_position() -> void:
+	_frame_muzzle_pos = _get_live_muzzle_position()
+
+
+func _compute_aim_direction_from_origin(aim_origin: Vector2) -> Vector2:
 	var mouse_world_position := EnhancedInput.instance.get_mouse_world_position()
 	var aim_vector := mouse_world_position - aim_origin
 
@@ -682,6 +688,20 @@ func get_aim_direction() -> Vector2:
 		return Vector2.RIGHT
 
 	return aim_vector.normalized()
+
+
+func _get_live_muzzle_position() -> Vector2:
+	if current_weapon and current_weapon is Weapon:
+		return current_weapon.get_muzzle_position()
+	if muzzle:
+		return muzzle.global_position
+	return global_position
+
+func get_muzzle_position() -> Vector2:
+	return _get_live_muzzle_position()
+
+func get_aim_direction() -> Vector2:
+	return _compute_aim_direction_from_origin(get_weapon_aim_origin())
 
 
 func get_aim_point() -> Vector2:
@@ -694,8 +714,8 @@ func get_aim_point() -> Vector2:
 
 
 func get_weapon_aim_origin() -> Vector2:
-	if current_weapon and current_weapon is Weapon:
-		return current_weapon.get_muzzle_position()
+	if weapon_mount:
+		return weapon_mount.global_position
 	if weapon_pivot:
 		return weapon_pivot.global_position
 	return global_position
