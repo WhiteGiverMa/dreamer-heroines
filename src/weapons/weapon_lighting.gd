@@ -1,3 +1,4 @@
+@tool
 class_name WeaponLighting
 extends Node2D
 
@@ -6,13 +7,20 @@ extends Node2D
 
 const TRANSITION_DURATION := 0.1
 const BUDGET_RETRY_INTERVAL := 0.15
-const DEFAULT_CONFIG: LightSettings = preload("res://resources/lighting_configs/hk416_flashlight.tres")
 const DEFAULT_CONE_TEXTURE_SIZE := Vector2i(512, 256)
 const DEFAULT_CONE_LENGTH_RATIO := 0.92
 const DEFAULT_CONE_HALF_WIDTH_RATIO := 0.28
 const DEFAULT_CONE_SOFTNESS_RATIO := 0.08
 
-@export var config: LightSettings = DEFAULT_CONFIG
+@export var config: LightSettings = null:
+	set(value):
+		config = value
+		_queue_refresh_light_setup()
+
+@export var preview_in_editor: bool = true:
+	set(value):
+		preview_in_editor = value
+		_queue_refresh_light_setup()
 
 var light_node: PointLight2D = null
 var is_on: bool = false
@@ -21,22 +29,20 @@ var _has_budget_slot: bool = false
 var _is_waiting_for_budget: bool = false
 var _budget_retry_cooldown: float = 0.0
 var _tween: Tween = null
+var _setup_refresh_queued: bool = false
+
+
+func _enter_tree() -> void:
+	_ensure_light_node()
+	_queue_refresh_light_setup()
 
 
 func _ready() -> void:
 	if config == null:
-		config = DEFAULT_CONFIG
+		config = null
 
-	light_node = PointLight2D.new()
-	light_node.name = "WeaponFlashlight"
-	light_node.position = Vector2.ZERO
-	add_child(light_node)
-
-	_apply_config_to_light()
-
-	# 初始关闭
-	light_node.enabled = false
-	light_node.energy = 0.0
+	_ensure_light_node()
+	_queue_refresh_light_setup()
 	set_process(false)
 
 
@@ -107,11 +113,63 @@ func set_config(new_config: LightSettings) -> void:
 		return
 
 	config = new_config
-	_apply_config_to_light()
+	_queue_refresh_light_setup()
 
 	# 已开启状态下，平滑过渡到新的目标亮度
 	if is_on and _has_budget_slot:
 		_animate_turn_on()
+
+
+func _refresh_light_setup() -> void:
+	_setup_refresh_queued = false
+
+	if not is_inside_tree():
+		return
+
+	if config == null:
+		config = null
+
+	_ensure_light_node()
+	_apply_config_to_light()
+	_apply_light_enabled_state()
+
+
+func _queue_refresh_light_setup() -> void:
+	if not is_inside_tree():
+		return
+
+	if _setup_refresh_queued:
+		return
+
+	_setup_refresh_queued = true
+	call_deferred("_refresh_light_setup")
+
+
+func _ensure_light_node() -> void:
+	if light_node and is_instance_valid(light_node):
+		return
+
+	light_node = get_node_or_null("WeaponFlashlight") as PointLight2D
+	if light_node:
+		return
+
+	light_node = PointLight2D.new()
+	light_node.name = "WeaponFlashlight"
+	light_node.position = Vector2.ZERO
+	add_child(light_node)
+
+
+func _apply_light_enabled_state() -> void:
+	if light_node == null:
+		return
+
+	if Engine.is_editor_hint():
+		light_node.enabled = preview_in_editor
+		light_node.energy = _get_target_energy() if preview_in_editor else 0.0
+		return
+
+	light_node.enabled = false
+	light_node.energy = 0.0
 
 
 func _apply_config_to_light() -> void:
@@ -119,21 +177,25 @@ func _apply_config_to_light() -> void:
 		return
 
 	var texture_to_use: Texture2D = null
+	var using_default_cone := false
 	if config and config.texture:
 		texture_to_use = config.texture
 	else:
 		texture_to_use = _create_default_cone_texture()
+		using_default_cone = true
 
 	light_node.texture = texture_to_use
 
 	if config:
 		light_node.color = config.color
-		light_node.texture_scale = maxf(config.range / float(DEFAULT_CONE_TEXTURE_SIZE.x), 0.01)
+		light_node.texture_scale = maxf(config.light_range / float(DEFAULT_CONE_TEXTURE_SIZE.x), 0.01)
 		light_node.shadow_enabled = config.shadows_enabled
 	else:
 		light_node.color = Color.WHITE
 		light_node.texture_scale = 1.0
 		light_node.shadow_enabled = false
+
+	light_node.position = _get_light_local_offset(using_default_cone)
 
 
 func _request_budget_slot() -> bool:
@@ -147,7 +209,10 @@ func _request_budget_slot() -> bool:
 
 	var priority := LightBudgetManager.Priority.HIGH
 	if config:
-		priority = clampi(config.priority, LightBudgetManager.Priority.HIGH, LightBudgetManager.Priority.LOW)
+		priority = (
+			clampi(config.priority, LightBudgetManager.Priority.HIGH, LightBudgetManager.Priority.LOW)
+			as LightBudgetManager.Priority
+		)
 
 	if manager.request_light(priority):
 		_has_budget_slot = true
@@ -208,6 +273,18 @@ func _get_target_energy() -> float:
 	return 1.0
 
 
+func _get_light_local_offset(using_default_cone: bool) -> Vector2:
+	var offset := Vector2.ZERO
+
+	if config:
+		offset += config.local_offset
+
+	if using_default_cone:
+		offset.x += (float(DEFAULT_CONE_TEXTURE_SIZE.x) * 0.5) * light_node.texture_scale
+
+	return offset
+
+
 func _get_budget_manager() -> Node:
 	return get_node_or_null("/root/LightBudgetManager")
 
@@ -219,7 +296,9 @@ func _stop_tween_if_needed() -> void:
 
 
 func _create_default_cone_texture() -> Texture2D:
-	var image := Image.create(DEFAULT_CONE_TEXTURE_SIZE.x, DEFAULT_CONE_TEXTURE_SIZE.y, false, Image.FORMAT_RGBA8)
+	var image := Image.create(
+		DEFAULT_CONE_TEXTURE_SIZE.x, DEFAULT_CONE_TEXTURE_SIZE.y, false, Image.FORMAT_RGBA8
+	)
 	image.fill(Color(1.0, 1.0, 1.0, 0.0))
 
 	var origin := Vector2(0.0, DEFAULT_CONE_TEXTURE_SIZE.y * 0.5)
@@ -238,7 +317,12 @@ func _create_default_cone_texture() -> Texture2D:
 			var distance_ratio := local.x / max_distance
 			var allowed_half_width := maxf(distance_ratio * half_width, 1.0)
 			var vertical_distance := absf(local.y)
-			var edge_alpha := 1.0 - smoothstep(allowed_half_width - edge_softness, allowed_half_width, vertical_distance)
+			var edge_alpha := (
+				1.0
+				- smoothstep(
+					allowed_half_width - edge_softness, allowed_half_width, vertical_distance
+				)
+			)
 			if edge_alpha <= 0.0:
 				continue
 

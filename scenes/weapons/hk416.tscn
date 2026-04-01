@@ -1,30 +1,29 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene format=3 uid="uid://bxs27ng8oei75"]
 
-[ext_resource type="Script" path="res://src/weapons/hk416_weapon.gd" id="1_hk416_script"]
+[ext_resource type="Script" uid="uid://4gx6roc2ofpr" path="res://src/weapons/hk416_weapon.gd" id="1_hk416_script"]
 [ext_resource type="Resource" path="res://resources/weapon_stats/hk416.tres" id="2_hk416_stats"]
-[ext_resource type="Script" path="res://src/weapons/weapon_lighting.gd" id="3_weapon_lighting_script"]
+[ext_resource type="Texture2D" path="res://assets/weapons/wpn_hk416.png" id="2_l5pu1"]
+[ext_resource type="Script" uid="uid://ba0jedwnrskpd" path="res://src/weapons/weapon_lighting.gd" id="3_weapon_lighting_script"]
 [ext_resource type="Resource" path="res://resources/lighting_configs/hk416_flashlight.tres" id="4_hk416_flashlight"]
 
-[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_hk416"]
-size = Vector2(64, 20)
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_hk416_muzzle"]
-size = Vector2(10, 10)
-
-[node name="HK416" type="Node2D"]
+[node name="HK416" type="Node2D" unique_id=807119878]
 script = ExtResource("1_hk416_script")
+weapon_texture = ExtResource("2_l5pu1")
+weapon_scale = Vector2(0.4, 0.4)
+muzzle_position = Vector2(61, -6)
 stats = ExtResource("2_hk416_stats")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-texture = SubResource("PlaceholderTexture2D_hk416")
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1689455377]
+scale = Vector2(0.4, 0.4)
+texture = ExtResource("2_l5pu1")
 
-[node name="Muzzle" type="Marker2D" parent="."]
-position = Vector2(35, 0)
+[node name="Muzzle" type="Marker2D" parent="." unique_id=233775897]
+position = Vector2(61, -6)
 
-[node name="EjectionPort" type="Marker2D" parent="."]
-position = Vector2(-10, -8)
-
-[node name="WeaponLighting" type="Node2D" parent="Muzzle"]
-position = Vector2(0, 0)
+[node name="WeaponLighting" type="Node2D" parent="Muzzle" unique_id=1974362723]
+position = Vector2(-20, 7)
 script = ExtResource("3_weapon_lighting_script")
 config = ExtResource("4_hk416_flashlight")
+
+[node name="EjectionPort" type="Marker2D" parent="." unique_id=1078845210]
+position = Vector2(-10, -8)
