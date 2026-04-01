@@ -48,3 +48,5 @@ conversations/
 nul
 test_*.gd
 !tests/
+!tests/**/*.gd
+!tests/**/*.gd.uid
