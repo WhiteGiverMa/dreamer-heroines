@@ -7,6 +7,7 @@ var _wave_spawner: Node
 var _mission_objective: Node
 var _hud: Node
 var _room_completion_handled: bool = false
+var _level_id: String = "arena_01"
 
 
 func _ready() -> void:
@@ -18,6 +19,7 @@ func _ready() -> void:
 
 func _prepare_runtime_state() -> void:
 	_room_completion_handled = false
+	_level_id = _resolve_level_id()
 	LevelManager.current_level = self
 	LevelManager.current_state = LevelManager.LevelState.PLAYING
 
@@ -121,11 +123,7 @@ func _wire_signals() -> void:
 		_hud.call("set_arena_mode", true)
 
 	if _wave_spawner:
-		var level_id := "arena_01"
-		if LevelManager and LevelManager.current_level_data:
-			level_id = LevelManager.current_level_data.level_id
-
-		_wave_spawner.wave_config_path = "res://config/waves/%s_waves.json" % level_id
+		_wave_spawner.wave_config_path = "res://config/waves/%s_waves.json" % _level_id
 		if _wave_spawner.has_method("_load_wave_config"):
 			_wave_spawner.call("_load_wave_config")
 
@@ -239,11 +237,8 @@ func _on_objective_complete() -> void:
 		if _wave_spawner.has_method("clear_all_enemies"):
 			_wave_spawner.clear_all_enemies()
 
-	if GameManager.roguelike_run_active:
-		var level_id := ""
-		if LevelManager.current_level_data:
-			level_id = LevelManager.current_level_data.level_id
-		GameManager.notify_roguelike_room_cleared(level_id)
+	if _is_roguelike_run_active():
+		_notify_roguelike_room_cleared()
 	else:
 		LevelManager.complete_level()
 
@@ -261,3 +256,35 @@ func _deferred_start_wave_spawner() -> void:
 
 	if _wave_spawner.has_method("start"):
 		_wave_spawner.call("start")
+
+
+func _notify_roguelike_room_cleared() -> void:
+	GameManager.notify_roguelike_room_cleared(_level_id)
+
+
+func _is_roguelike_run_active() -> bool:
+	return GameManager and GameManager.roguelike_run_active
+
+
+func _resolve_level_id() -> String:
+	var own_scene_path := String(scene_file_path)
+	if not own_scene_path.is_empty():
+		return own_scene_path.get_file().trim_suffix(".tscn")
+
+	if not name.is_empty():
+		var normalized_name := name.to_snake_case()
+		if normalized_name.begins_with("arena"):
+			return normalized_name.insert(5, "_") if normalized_name.length() == 7 else normalized_name
+
+	var current_scene := get_tree().current_scene
+	if current_scene:
+		var scene_path := String(current_scene.scene_file_path)
+		if not scene_path.is_empty():
+			return scene_path.get_file().trim_suffix(".tscn")
+
+	if LevelManager and LevelManager.current_level_data:
+		var manager_level_id := String(LevelManager.current_level_data.level_id)
+		if not manager_level_id.is_empty():
+			return manager_level_id
+
+	return "arena_01"
