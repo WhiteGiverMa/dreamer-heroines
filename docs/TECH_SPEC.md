@@ -218,6 +218,44 @@ extends Node2D
 var data: WeaponData
 var current_ammo: int
 var reserve_ammo: int
+
+### 2.3 武器场景结构约定
+
+武器 scene 统一遵循以下层级契约：
+
+```text
+WeaponRoot (Node2D)
+├── Sprite2D
+├── Muzzle (Marker2D)
+├── EjectionPort (Marker2D)
+└── Muzzle/WeaponLighting (optional, Node2D + weapon_lighting.gd)
+```
+
+约定说明：
+
+- `Sprite2D`：只负责武器视觉表现（贴图、缩放、偏移）
+- `Muzzle`：只负责枪口锚点与射击/火光发射位置
+- `EjectionPort`：只负责弹壳抛出口锚点
+- `WeaponLighting`：可选组件；只有带手电/武器灯的武器才挂载，固定作为 `Muzzle` 子节点
+
+职责边界：
+
+- **节点位置负责安装点**：`Muzzle.position`、`EjectionPort.position`、`Muzzle/WeaponLighting.position`
+- **资源负责视觉补偿**：`LightSettings.local_offset` 只用于修正光锥视觉起点，不用于表达安装位置
+- **组件脚本负责运行时行为**：`weapon_lighting.gd` 管理 `PointLight2D`、预算申请、开关与编辑器预览
+- **武器脚本不应特判手电安装点**：不要在具体武器脚本里再维护 `flashlight_offset` 一类与场景节点重复的导出字段
+
+对无手电武器：
+
+- 保留 `Sprite2D / Muzzle / EjectionPort`
+- 不挂 `WeaponLighting`
+- `Weapon._resolve_weapon_lighting()` 返回 `null`，其余系统无需特殊处理
+
+对有手电武器：
+
+- 在 `Muzzle` 下挂 `WeaponLighting`
+- 用场景节点位置表达手电安装点
+- 用 `LightSettings` 表达亮度、范围、阴影、视觉偏移等参数
 var is_reloading: bool
 var last_fire_time: float
 var current_recoil: float
