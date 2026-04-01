@@ -10,6 +10,7 @@ const INPUT_MODE_GAME_AND_UI := 2
 
 const PAUSE_MENU_SCENE := preload("res://scenes/ui/pause_menu.tscn")
 const GAME_OVER_SCENE := preload("res://scenes/ui/game_over.tscn")
+const ROGUELIKE_REWARD_SCENE := preload("res://scenes/ui/roguelike_reward_selection.tscn")
 
 signal state_changed(new_state: GameState)
 signal score_changed(new_score: int)
@@ -29,11 +30,24 @@ var current_level_instance: Node2D = null
 var hud: CanvasLayer = null
 var pause_menu: Control = null
 var game_over_screen: Control = null
+var roguelike_reward_modal: Control = null
 var runtime_ui_layer: CanvasLayer = null
 
 var is_game_paused: bool = false
 var _game_and_ui_request_count: int = 0
 var _pending_playtime_seconds: float = 0.0
+var roguelike_run_active: bool = false
+var roguelike_reward_active: bool = false
+var roguelike_transition_in_flight: bool = false
+var roguelike_level_sequence: Array[String] = ["arena_01", "arena_02"]
+var roguelike_level_index: int = 0
+var roguelike_selected_blessings: Array[String] = []
+
+const ROGUELIKE_BLESSINGS = {
+	"vitality_boost": {"title": "Vitality Boost", "description": "Max Health +20", "stat": "max_health", "value": 20},
+	"swift_step": {"title": "Swift Step", "description": "Move Speed +30", "stat": "max_speed", "value": 30.0},
+	"dash_tune": {"title": "Dash Tune", "description": "Dash CD -0.15s", "stat": "dash_cooldown", "value": -0.15}
+}
 
 # 测试注入点（默认使用 autoload 节点）
 # 仅用于单元测试注入替身，运行时代码不要设置这些字段。
@@ -65,6 +79,10 @@ func initialize() -> void:
 		print("[GameManager] 等待 LevelManager 初始化...")
 		await level_mgr.system_ready
 
+	if level_mgr and level_mgr.has_signal("level_loaded"):
+		if not level_mgr.level_loaded.is_connected(_on_roguelike_level_loaded):
+			level_mgr.level_loaded.connect(_on_roguelike_level_loaded)
+
 	if save_mgr and save_mgr.has_method("set_gameplay_save_state_provider"):
 		save_mgr.set_gameplay_save_state_provider(self)
 	
@@ -72,6 +90,9 @@ func initialize() -> void:
 	_mark_ready()
 
 func _input(event: InputEvent):
+	if roguelike_reward_active:
+		return
+
 	if not event.is_action_pressed("pause"):
 		return
 
@@ -183,12 +204,230 @@ func complete_level() -> void:
 	# 显示胜利画面或加载下一关
 	change_state(GameState.VICTORY)
 
+# Roguelike Run Contract
+func start_minimal_roguelike_run(start_level_id := "arena_01") -> void:
+	roguelike_run_active = true
+	roguelike_reward_active = false
+	roguelike_transition_in_flight = false
+	roguelike_level_sequence = ["arena_01", "arena_02"]
+	if start_level_id != "" and not roguelike_level_sequence.is_empty():
+		roguelike_level_sequence[0] = start_level_id
+	roguelike_level_index = 0
+	roguelike_selected_blessings.clear()
+
+
+func reset_minimal_roguelike_run() -> void:
+	roguelike_run_active = false
+	roguelike_reward_active = false
+	roguelike_transition_in_flight = false
+	roguelike_level_sequence.clear()
+	roguelike_level_index = 0
+	roguelike_selected_blessings.clear()
+
+
+func notify_roguelike_room_cleared(level_id: String) -> void:
+	if not roguelike_run_active:
+		return
+	if level_id == "":
+		return
+	if roguelike_reward_active or roguelike_transition_in_flight:
+		return
+
+	var level_manager_node := _get_level_manager_node()
+	if level_manager_node and is_instance_valid(level_manager_node) and "current_level_data" in level_manager_node:
+		var current_level_data = level_manager_node.current_level_data
+		if current_level_data and "level_id" in current_level_data:
+			var current_level_id := String(current_level_data.level_id)
+			if current_level_id != "" and current_level_id != level_id:
+				push_warning(
+					"[GameManager] Ignoring stale roguelike room clear for %s; current level is %s"
+					% [level_id, current_level_id]
+				)
+				return
+	roguelike_reward_active = true
+	_apply_runtime_state(true, INPUT_MODE_UI_ONLY)
+	_ensure_roguelike_reward_modal()
+	if roguelike_reward_modal:
+		var options: Array[Dictionary] = []
+		for blessing_id in ["vitality_boost", "swift_step", "dash_tune"]:
+			if ROGUELIKE_BLESSINGS.has(blessing_id):
+				var blessing_data: Dictionary = ROGUELIKE_BLESSINGS[blessing_id].duplicate(true)
+				blessing_data["id"] = blessing_id
+				options.append(blessing_data)
+		roguelike_reward_modal.show_rewards(options)
+
+
+func _ensure_roguelike_reward_modal() -> void:
+	if roguelike_reward_modal and is_instance_valid(roguelike_reward_modal):
+		return
+
+	var current_scene := get_tree().current_scene
+	if current_scene == null:
+		return
+
+	if runtime_ui_layer and is_instance_valid(runtime_ui_layer):
+		if not current_scene.is_ancestor_of(runtime_ui_layer):
+			runtime_ui_layer = null
+
+	if runtime_ui_layer == null or not is_instance_valid(runtime_ui_layer):
+		var existing_runtime_ui := current_scene.get_node_or_null("RuntimeUI")
+		if existing_runtime_ui is CanvasLayer:
+			runtime_ui_layer = existing_runtime_ui as CanvasLayer
+
+	if runtime_ui_layer == null or not is_instance_valid(runtime_ui_layer):
+		runtime_ui_layer = CanvasLayer.new()
+		runtime_ui_layer.name = "RuntimeUI"
+		runtime_ui_layer.layer = 100
+		runtime_ui_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+		current_scene.add_child(runtime_ui_layer)
+
+	var existing_modal := runtime_ui_layer.get_node_or_null("RoguelikeRewardSelection")
+	if existing_modal is Control:
+		roguelike_reward_modal = existing_modal as Control
+	else:
+		var reward_instance = ROGUELIKE_REWARD_SCENE.instantiate()
+		if reward_instance is Control:
+			reward_instance.name = "RoguelikeRewardSelection"
+			runtime_ui_layer.add_child(reward_instance)
+			roguelike_reward_modal = reward_instance as Control
+
+	if roguelike_reward_modal and roguelike_reward_modal.has_signal("option_selected"):
+		if not roguelike_reward_modal.option_selected.is_connected(_on_reward_option_selected):
+			roguelike_reward_modal.option_selected.connect(_on_reward_option_selected)
+
+
+func _on_reward_option_selected(blessing_id: String) -> void:
+	if roguelike_transition_in_flight:
+		return
+
+	roguelike_transition_in_flight = true
+	roguelike_reward_active = false
+	roguelike_selected_blessings.append(blessing_id)
+
+	if player_instance and is_instance_valid(player_instance):
+		_reapply_roguelike_blessings_to_player(player_instance)
+
+	if roguelike_reward_modal:
+		roguelike_reward_modal.visible = false
+
+	set_paused(false)
+
+	var next_level_id := _get_next_roguelike_level_id()
+	var level_manager_node := _get_level_manager_node()
+	if level_manager_node == null or not level_manager_node.has_method("load_level"):
+		push_warning("[GameManager] Roguelike transition failed: LevelManager unavailable")
+		_handle_roguelike_transition_load_failure()
+		return
+
+	var loaded = level_manager_node.call("load_level", next_level_id)
+	if not loaded:
+		push_warning("[GameManager] Roguelike transition failed: unable to load level %s" % next_level_id)
+		_handle_roguelike_transition_load_failure()
+
+
+func _handle_roguelike_transition_load_failure() -> void:
+	roguelike_transition_in_flight = false
+	roguelike_reward_active = true
+	_apply_runtime_state(true, INPUT_MODE_UI_ONLY)
+	if roguelike_reward_modal and is_instance_valid(roguelike_reward_modal):
+		roguelike_reward_modal.visible = true
+
+
+func _get_next_roguelike_level_id() -> String:
+	if roguelike_level_sequence.is_empty():
+		roguelike_level_index = 0
+		return "arena_01"
+
+	var next_index := roguelike_level_index + 1
+	if next_index >= roguelike_level_sequence.size():
+		# Loop back to beginning
+		roguelike_level_index = 0
+		return roguelike_level_sequence[0]
+
+	roguelike_level_index = next_index
+	return roguelike_level_sequence[roguelike_level_index]
+
+
+func _on_roguelike_level_loaded(level_data: LevelData) -> void:
+	roguelike_transition_in_flight = false
+	if level_data == null:
+		return
+	if not roguelike_run_active:
+		return
+
+	# 玩家由场景/LevelManager 注册，register_player() 会执行 blessing 重应用。
+
+
+func _reapply_roguelike_blessings_to_player(player: Node2D) -> void:
+	if player == null:
+		return
+
+	var missing_required_stats: Array[String] = []
+	for stat_name in ["max_health", "max_speed", "dash_cooldown"]:
+		if not (stat_name in player):
+			missing_required_stats.append(stat_name)
+
+	if not missing_required_stats.is_empty():
+		push_warning("[GameManager] 无法重应用 Roguelike 祝福：玩家缺少属性 %s" % [missing_required_stats])
+		return
+
+	var has_current_health := "current_health" in player
+	if not has_current_health:
+		push_warning("[GameManager] Roguelike blessing reapply skipped full heal: player missing current_health")
+
+	if not player.has_meta("roguelike_base_max_health"):
+		player.set_meta("roguelike_base_max_health", int(player.get("max_health")))
+	if not player.has_meta("roguelike_base_max_speed"):
+		player.set_meta("roguelike_base_max_speed", float(player.get("max_speed")))
+	if not player.has_meta("roguelike_base_dash_cooldown"):
+		player.set_meta("roguelike_base_dash_cooldown", float(player.get("dash_cooldown")))
+
+	var bonus_max_health := 0
+	var bonus_max_speed := 0.0
+	var bonus_dash_cooldown := 0.0
+
+	for blessing_id in roguelike_selected_blessings:
+		if not ROGUELIKE_BLESSINGS.has(blessing_id):
+			continue
+
+		var blessing = ROGUELIKE_BLESSINGS[blessing_id]
+		var blessing_stat: String = blessing.get("stat", "")
+		var blessing_value = blessing.get("value", 0)
+
+		match blessing_stat:
+			"max_health":
+				bonus_max_health += int(blessing_value)
+			"max_speed":
+				bonus_max_speed += float(blessing_value)
+			"dash_cooldown":
+				bonus_dash_cooldown += float(blessing_value)
+
+	player.set("max_health", int(player.get_meta("roguelike_base_max_health")) + bonus_max_health)
+	player.set("max_speed", float(player.get_meta("roguelike_base_max_speed")) + bonus_max_speed)
+	player.set(
+		"dash_cooldown",
+		maxf(0.3, float(player.get_meta("roguelike_base_dash_cooldown")) + bonus_dash_cooldown)
+	)
+
+	if has_current_health:
+		player.set("current_health", int(player.get("max_health")))
+
 func get_difficulty_multiplier() -> float:
 	# 根据关卡返回难度倍率
 	return 1.0 + (current_level - 1) * 0.1
 
 func register_player(player: Node2D) -> void:
+	if player == null:
+		return
+
+	if player_instance and player_instance != player and is_instance_valid(player_instance):
+		_disconnect_player_signals(player_instance)
+
 	player_instance = player
+
+	# Roguelike 模式下，新玩家实例注册时重应用祝福。
+	if roguelike_run_active:
+		_reapply_roguelike_blessings_to_player(player)
 	
 	# 连接玩家信号
 	if player.has_signal("health_changed"):
@@ -200,6 +439,21 @@ func register_player(player: Node2D) -> void:
 	if player.has_signal("died"):
 		if not player.died.is_connected(on_player_death):
 			player.died.connect(on_player_death)
+
+
+func _disconnect_player_signals(player: Node2D) -> void:
+	if player == null or not is_instance_valid(player):
+		return
+
+	if player.has_signal("health_changed"):
+		if player.health_changed.is_connected(_on_player_health_changed):
+			player.health_changed.disconnect(_on_player_health_changed)
+	if player.has_signal("ammo_changed"):
+		if player.ammo_changed.is_connected(_on_player_ammo_changed):
+			player.ammo_changed.disconnect(_on_player_ammo_changed)
+	if player.has_signal("died"):
+		if player.died.is_connected(on_player_death):
+			player.died.disconnect(on_player_death)
 
 func _on_player_health_changed(current: int, max_val: int) -> void:
 	if hud:
