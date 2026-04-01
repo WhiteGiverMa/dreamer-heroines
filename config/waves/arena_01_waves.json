@@ -1,5 +1,6 @@
 {
   "arena_id": "arena_01",
+  "target_kills": 25,
   "waves": [
     {"wave": 1, "enemies": ["melee_grunt", "melee_grunt", "melee_grunt"], "spawn_delay": 1.0},
     {"wave": 2, "enemies": ["melee_grunt", "melee_grunt", "ranged_grunt"], "spawn_delay": 0.8},
@@ -7,6 +8,7 @@
     {"wave": 4, "enemies": ["melee_fast", "ranged_grunt", "flying_drone"], "spawn_delay": 0.6},
     {"wave": 5, "enemies": ["melee_tank", "ranged_grunt", "ranged_grunt", "flying_drone"], "spawn_delay": 0.5}
   ],
+  "extension_wave_cycle": [4, 5],
   "wave_interval": 3.0,
   "max_concurrent_enemies": 10
 }
