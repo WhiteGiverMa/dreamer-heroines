@@ -120,6 +120,8 @@ func spawn_enemy_now(enemy_key: String, position: Vector2 = Vector2.ZERO) -> Nod
 		get_tree().current_scene if get_tree() and get_tree().current_scene else self
 	)
 	spawn_parent.add_child(enemy)
+	if _is_running and _current_wave_index >= 0:
+		_track_wave_enemy(enemy, _current_wave_index)
 	enemy_spawned.emit(enemy)
 	return enemy
 

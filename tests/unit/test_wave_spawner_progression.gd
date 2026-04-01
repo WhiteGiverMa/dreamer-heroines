@@ -70,3 +70,18 @@ func test_spawn_enemy_now_resolves_enemy_aliases() -> void:
 	assert_not_null(enemy, "spawn_enemy_now should accept developer-facing alias keys")
 	assert_true(is_instance_valid(enemy), "Resolved alias spawn should instantiate a live enemy node")
 	assert_eq(enemy.scene_file_path, "res://scenes/enemies/ranged_enemy.tscn", "Alias 'ranged' should resolve to the canonical ranged enemy scene")
+
+
+func test_spawn_enemy_now_tracks_enemy_during_active_wave() -> void:
+	var spawner := WaveSpawnerClass.new()
+	spawner.auto_start = false
+	add_child_autofree(spawner)
+
+	spawner._is_running = true
+	spawner._current_wave_index = 2
+
+	var enemy := spawner.spawn_enemy_now("melee")
+	assert_not_null(enemy, "Developer spawn should instantiate an enemy during active waves")
+
+	var enemy_id := enemy.get_instance_id()
+	assert_true(spawner._active_wave_enemy_ids.has(enemy_id), "Developer-spawned enemies should join active wave tracking during an active wave")
