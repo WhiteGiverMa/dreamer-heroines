@@ -8,9 +8,11 @@ extends Resource
 @export var color: Color = Color.WHITE
 @export_range(0.5, 2.0, 0.1) var energy: float = 1.0
 @export var texture: Texture2D = null
-@export var range: float = 200.0
+@export var light_range: float = 200.0
 @export var shadows_enabled: bool = false
 @export_range(1, 3, 1) var priority: int = 1
+@export var local_offset: Vector2 = Vector2.ZERO
+
 
 func _init() -> void:
 	resource_name = "LightSettings"
