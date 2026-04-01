@@ -58,3 +58,15 @@ func test_get_wave_data_for_index_cycles_extension_wave_sources() -> void:
 	assert_eq(first_extension.get("enemies"), ["ranged_grunt"], "First extension wave should use the first configured cycle source")
 	assert_eq(second_extension.get("wave"), 5, "Second extension wave should continue numbering")
 	assert_eq(second_extension.get("enemies"), ["flying_drone"], "Second extension wave should advance through the configured extension cycle")
+
+
+func test_spawn_enemy_now_resolves_enemy_aliases() -> void:
+	var spawner := WaveSpawnerClass.new()
+	spawner.auto_start = false
+	add_child_autofree(spawner)
+
+	var enemy := spawner.spawn_enemy_now("ranged")
+
+	assert_not_null(enemy, "spawn_enemy_now should accept developer-facing alias keys")
+	assert_true(is_instance_valid(enemy), "Resolved alias spawn should instantiate a live enemy node")
+	assert_eq(enemy.scene_file_path, "res://scenes/enemies/ranged_enemy.tscn", "Alias 'ranged' should resolve to the canonical ranged enemy scene")

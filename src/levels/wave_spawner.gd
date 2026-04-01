@@ -94,11 +94,12 @@ func stop() -> void:
 
 ## 立即生成指定敌人
 func spawn_enemy_now(enemy_key: String, position: Vector2 = Vector2.ZERO) -> Node:
-	if not ENEMY_SCENE_BY_KEY.has(enemy_key):
+	var resolved_key: String = _resolve_enemy_key(enemy_key)
+	if not ENEMY_SCENE_BY_KEY.has(resolved_key):
 		push_error("WaveSpawner: unknown enemy key: " + enemy_key)
 		return null
 
-	var scene_path: String = ENEMY_SCENE_BY_KEY[enemy_key]
+	var scene_path: String = ENEMY_SCENE_BY_KEY[resolved_key]
 	var enemy_scene: PackedScene = load(scene_path) as PackedScene
 	if enemy_scene == null:
 		push_error("WaveSpawner: failed to load enemy scene: %s" % scene_path)
