@@ -8,7 +8,7 @@
 ## 先看这里
 
 - 本文件里的入口路径、autoload 顺序、端口等属于**当前项目事实**；改启动/全局系统前，先回查 `project.godot` 的 `[autoload]` 与相关配置
-- 这是 **2D 横板射击** Godot 项目，主入口不是 `scenes/main.tscn`，而是 `project.godot` 中配置的 `res://scenes/ui/main_menu.tscn`
+- 这是 **2D 横板射击** Godot 项目，主入口是 `project.godot` 中配置的 `res://scenes/ui/main_menu.tscn`
 - 运行时初始化核心在 `src/autoload/boot_sequence.tscn` + `src/autoload/boot_sequence.gd`
 - 全局系统大量依赖 **autoload**；改启动、存档、输入、关卡流程时，先看 `project.godot` 的 `[autoload]`
 - 输入系统不是原生直连，项目通过 **G.U.I.D.E + `EnhancedInput` 包装层**工作
@@ -84,7 +84,7 @@
 
 改碰撞时同时核对：`project.godot`、`src/utils/layers.gd`、相关 scene/body mask。
 
-## 代码风格：只保留会踩坑的部分
+## 代码风格
 
 - GDScript **必须使用 Tab 缩进**，不是空格；C# 使用 4 空格
 - `.editorconfig` 是实际落地规则；`pyproject.toml` 约束 gdtoolkit
