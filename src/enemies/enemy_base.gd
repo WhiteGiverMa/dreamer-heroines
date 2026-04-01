@@ -1,4 +1,4 @@
-class_name EnemyBase
+﻿class_name EnemyBase
 extends CharacterBody2D
 
 # EnemyBase - 敌人基类
@@ -49,28 +49,37 @@ var current_weapon_index: int = 0
 @onready var ground_check: RayCast2D = get_node_or_null("GroundCheck") as RayCast2D
 @onready var wall_check: RayCast2D = get_node_or_null("WallCheck") as RayCast2D
 
+
+func _get_enemy_manager() -> Node:
+	return get_node_or_null("/root/EnemyManager")
+
 func _ready():
 	add_to_group("enemy")
 	current_health = max_health
 	patrol_start_position = global_position
-	
+
+	# 注册到全局敌人管理器
+	var enemy_manager := _get_enemy_manager()
+	if enemy_manager:
+		enemy_manager.register_enemy(self)
+
 	# 连接信号
 	if detection_area:
 		detection_area.body_entered.connect(_on_detection_body_entered)
 		detection_area.body_exited.connect(_on_detection_body_exited)
-	
+
 	if attack_timer:
 		attack_timer.wait_time = attack_cooldown
 		attack_timer.timeout.connect(_on_attack_cooldown_timeout)
-	
+
 	change_state(State.PATROL)
 
 func _physics_process(delta: float) -> void:
 	if current_state == State.DEAD:
 		return
-	
+
 	_apply_gravity(delta)
-	
+
 	match current_state:
 		State.IDLE:
 			_state_idle(delta)
@@ -82,7 +91,7 @@ func _physics_process(delta: float) -> void:
 			_state_attack(delta)
 		State.HURT:
 			_state_hurt(delta)
-	
+
 	move_and_slide()
 	_update_animation()
 
@@ -93,7 +102,7 @@ func _apply_gravity(delta: float) -> void:
 func change_state(new_state: State) -> void:
 	if current_state == new_state:
 		return
-	
+
 	_exit_state(current_state)
 	current_state = new_state
 	_enter_state(new_state)
@@ -115,24 +124,24 @@ func _enter_state(state: State) -> void:
 			died.emit()
 			_die()
 
-func _exit_state(state: State) -> void:
+func _exit_state(_state: State) -> void:
 	pass
 
-func _state_idle(delta: float) -> void:
+func _state_idle(_delta: float) -> void:
 	# 检查是否可以开始巡逻
 	await get_tree().create_timer(patrol_wait_time).timeout
 	if current_state == State.IDLE:
 		change_state(State.PATROL)
 
-func _state_patrol(delta: float) -> void:
+func _state_patrol(_delta: float) -> void:
 	# 检查是否发现玩家
 	if player:
 		change_state(State.CHASE)
 		return
-	
+
 	# 巡逻移动
 	velocity.x = patrol_direction * move_speed * 0.5
-	
+
 	# 检查是否需要转向
 	var patrol_distance_traveled = abs(global_position.x - patrol_start_position.x)
 	if patrol_distance_traveled >= patrol_distance or _should_turn():
@@ -140,46 +149,46 @@ func _state_patrol(delta: float) -> void:
 		sprite.flip_h = patrol_direction < 0
 		change_state(State.IDLE)
 
-func _state_chase(delta: float) -> void:
+func _state_chase(_delta: float) -> void:
 	if not player or player.current_health <= 0:
 		player = null
 		change_state(State.PATROL)
 		player_lost.emit()
 		return
-	
+
 	var distance_to_player = global_position.distance_to(player.global_position)
-	
+
 	# 检查是否在攻击范围内
 	if distance_to_player <= attack_range and can_attack:
 		change_state(State.ATTACK)
 		return
-	
+
 	# 朝玩家移动
 	var direction = sign(player.global_position.x - global_position.x)
 	velocity.x = direction * move_speed
 	sprite.flip_h = direction < 0
-	
+
 	# 尝试跳跃越过障碍
 	if can_jump and wall_check and wall_check.is_colliding() and is_on_floor():
 		velocity.y = jump_velocity
 
-func _state_attack(delta: float) -> void:
+func _state_attack(_delta: float) -> void:
 	if not player:
 		change_state(State.CHASE)
 		return
-	
+
 	var distance_to_player = global_position.distance_to(player.global_position)
-	
+
 	if distance_to_player > attack_range:
 		change_state(State.CHASE)
 		return
-	
+
 	if can_attack:
 		_perform_attack()
 		can_attack = false
 		attack_timer.start()
 
-func _state_hurt(delta: float) -> void:
+func _state_hurt(_delta: float) -> void:
 	# 受伤硬直
 	pass
 
@@ -197,10 +206,10 @@ func _shoot() -> void:
 func _melee_attack() -> void:
 	animation_player.play("attack")
 	AudioManager.play_sfx("enemy_melee")
-	
+
 	# 延迟造成伤害（配合动画）
 	await get_tree().create_timer(0.3).timeout
-	
+
 	if player and global_position.distance_to(player.global_position) <= attack_range:
 		var knockback = (player.global_position - global_position).normalized() * 200
 		player.take_damage(attack_damage, knockback)
@@ -208,17 +217,17 @@ func _melee_attack() -> void:
 func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 	if current_state == State.DEAD:
 		return
-	
+
 	current_health -= amount
 	health_changed.emit(current_health, max_health)
-	
+
 	# 击退
 	velocity += knockback
-	
+
 	# 受伤特效
 	_flash_sprite()
 	AudioManager.play_sfx("enemy_hurt")
-	
+
 	if current_health <= 0:
 		change_state(State.DEAD)
 	else:
@@ -234,15 +243,28 @@ func heal(amount: int) -> void:
 func _die() -> void:
 	AudioManager.play_sfx("enemy_death")
 	animation_player.play("death")
-	
+
 	# 掉落物品
 	_drop_loot()
-	
+
 	# 给予分数
 	GameManager.add_score(100)
-	
+
+	# 注销敌人管理（击杀统计由 died 信号驱动，这里只做即时移除）
+	var enemy_manager := _get_enemy_manager()
+	if enemy_manager:
+		enemy_manager.unregister_enemy(self)
+
 	await animation_player.animation_finished
 	queue_free()
+
+
+## Public method for external calls (e.g., developer commands)
+func die() -> void:
+	"""Public method for external calls (e.g., developer commands)."""
+	if current_state == State.DEAD:
+		return
+	change_state(State.DEAD)
 
 func _drop_loot() -> void:
 	# 掉落逻辑 - 子类实现
@@ -274,7 +296,7 @@ func _flash_sprite() -> void:
 func _update_animation() -> void:
 	if not animation_player:
 		return
-	
+
 	match current_state:
 		State.IDLE:
 			animation_player.play("idle")

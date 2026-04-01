@@ -582,7 +582,9 @@ func respawn(spawn_position: Vector2) -> void:
 	global_position = spawn_position
 	current_health = max_health
 	velocity = Vector2.ZERO
-	is_invulnerable = false
+	# 如果 god_mode 启用，保持无敌状态
+	if not DeveloperMode or not DeveloperMode.god_mode:
+		is_invulnerable = false
 	health_changed.emit(current_health, max_health)
 
 func _flash_sprite() -> void:
@@ -615,6 +617,9 @@ func _update_animation() -> void:
 			animation_player.play("idle")
 
 func _on_invulnerability_timeout() -> void:
+	# 如果 god_mode 启用，保持无敌状态
+	if DeveloperMode and DeveloperMode.god_mode:
+		return
 	is_invulnerable = false
 
 
@@ -633,6 +638,9 @@ func _start_dash() -> void:
 
 func _on_dash_iframe_timeout() -> void:
 	if dash_state != DashState.DASHING:
+		# 如果 god_mode 启用，保持无敌状态
+		if DeveloperMode and DeveloperMode.god_mode:
+			return
 		is_invulnerable = false
 
 
@@ -652,9 +660,10 @@ func _update_dash(delta: float) -> void:
 func _end_dash() -> void:
 	dash_state = DashState.COOLDOWN
 	_dash_cooldown_timer = dash_cooldown
-	# 如果无敌帧计时器已停止，取消无敌
+	# 如果无敌帧计时器已停止且 god_mode 未启用，取消无敌
 	if dash_iframe_timer.is_stopped():
-		is_invulnerable = false
+		if not DeveloperMode or not DeveloperMode.god_mode:
+			is_invulnerable = false
 	dash_ended.emit()
 
 
