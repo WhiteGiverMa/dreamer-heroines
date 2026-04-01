@@ -203,7 +203,12 @@ func test_hk416_texture_is_loaded_after_switch() -> void:
 
 	assert_not_null(sprite.texture, "HK416 Sprite2D should have a texture")
 	if sprite.texture:
-		assert_eq(sprite.texture.get_class(), "ImageTexture", "HK416 sprite texture should be loaded from image")
+		assert_true(sprite.texture is Texture2D, "HK416 sprite texture should be a Texture2D resource")
+		assert_eq(
+			sprite.texture.resource_path,
+			"res://assets/weapons/wpn_hk416.png",
+			"HK416 sprite texture should come from the imported project resource"
+		)
 		var size := sprite.texture.get_size()
 		assert_eq(size.x, 335.0, "HK416 texture width should match source image")
 		assert_eq(size.y, 121.0, "HK416 texture height should match source image")
@@ -348,7 +353,9 @@ func test_deploy_blocks_shooting_until_deploy_finishes() -> void:
 	var blocked_shot: bool = _player.current_weapon.try_shoot(_player.get_muzzle_position(), _player.get_aim_direction())
 	assert_false(blocked_shot, "Shooting should be blocked while deploy is active")
 
-	await get_tree().create_timer(0.45).timeout
+	var physics_fps := float(ProjectSettings.get_setting("physics/common/physics_ticks_per_second", 60.0))
+	var wait_frames_count := int(ceil((secondary_weapon.stats.deploy_time + 0.1) * physics_fps))
+	await wait_physics_frames(wait_frames_count)
 
 	assert_false(_player.current_weapon.is_deploying(), "Deploy should finish after deploy duration")
 	var allowed_shot: bool = _player.current_weapon.try_shoot(_player.get_muzzle_position(), _player.get_aim_direction())
