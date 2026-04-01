@@ -28,6 +28,7 @@ const TAB_CONSOLE: int = 4
 # Enemies Tab
 @onready var spawn_melee_button: Button = $PanelContainer/MarginContainer/VBoxContainer/TabContainer/Enemies/VBox/SpawnMeleeButton
 @onready var spawn_ranged_button: Button = $PanelContainer/MarginContainer/VBoxContainer/TabContainer/Enemies/VBox/SpawnRangedButton
+@onready var spawn_random_x10_button: Button = $PanelContainer/MarginContainer/VBoxContainer/TabContainer/Enemies/VBox/SpawnRandomX10Button
 @onready var kill_all_button: Button = $PanelContainer/MarginContainer/VBoxContainer/TabContainer/Enemies/VBox/KillAllButton
 @onready var tp_to_player_button: Button = $PanelContainer/MarginContainer/VBoxContainer/TabContainer/Enemies/VBox/TPToPlayerButton
 
@@ -89,6 +90,7 @@ func _connect_signals() -> void:
 	# Enemies Tab
 	spawn_melee_button.pressed.connect(_on_spawn_melee_pressed)
 	spawn_ranged_button.pressed.connect(_on_spawn_ranged_pressed)
+	spawn_random_x10_button.pressed.connect(_on_spawn_random_x10_pressed)
 	kill_all_button.pressed.connect(_on_kill_all_pressed)
 	tp_to_player_button.pressed.connect(_on_tp_to_player_pressed)
 	# Waves Tab
@@ -181,6 +183,11 @@ func _on_spawn_melee_pressed() -> void:
 func _on_spawn_ranged_pressed() -> void:
 	if DeveloperMode.is_active:
 		DeveloperMode.cmd_spawn_enemy("ranged")
+
+
+func _on_spawn_random_x10_pressed() -> void:
+	if DeveloperMode.is_active:
+		DeveloperMode.cmd_spawn_random_enemies(10)
 
 
 func _on_kill_all_pressed() -> void:

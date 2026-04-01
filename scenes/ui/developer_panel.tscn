@@ -121,6 +121,10 @@ text = "Spawn Melee Enemy"
 layout_mode = 2
 text = "Spawn Ranged Enemy"
 
+[node name="SpawnRandomX10Button" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/TabContainer/Enemies/VBox"]
+layout_mode = 2
+text = "Spawn Random Enemies x10"
+
 [node name="HSeparator" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer/TabContainer/Enemies/VBox"]
 layout_mode = 2
 
