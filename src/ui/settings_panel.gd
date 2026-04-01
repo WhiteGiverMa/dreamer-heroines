@@ -389,7 +389,7 @@ func _sync_controls_with_service() -> void:
 	if not CrosshairSettingsService:
 		return
 
-	var settings := CrosshairSettingsService.get_settings()
+	var settings: CrosshairSettings = CrosshairSettingsService.get_settings()
 
 	if crosshair_size_slider:
 		crosshair_size_slider.value = settings.crosshair_size

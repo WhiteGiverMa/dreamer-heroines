@@ -80,6 +80,10 @@ var current_slot: int = 0  # 0 = primary, 1 = secondary
 @onready var hit_marker_timer: Timer = $HitMarkerTimer
 
 
+func _get_enemy_manager() -> Node:
+	return get_node_or_null("/root/EnemyManager")
+
+
 func _ready() -> void:
 	# 注册到 GameManager
 	GameManager.register_hud(self)
@@ -93,11 +97,20 @@ func _ready() -> void:
 	GameManager.score_changed.connect(_on_score_changed)
 	GameManager.state_changed.connect(_on_game_state_changed)
 
+	# 连接敌人管理器信号（实时更新敌人计数）
+	var enemy_manager := _get_enemy_manager()
+	if enemy_manager and not enemy_manager.enemy_count_changed.is_connected(_on_enemy_count_changed):
+		enemy_manager.enemy_count_changed.connect(_on_enemy_count_changed)
+
 	# 初始化显示
 	_update_health_display()
 	_update_score_display()
 	_update_wave_display()
-	update_enemy_count(live_enemy_count)
+	# 从 EnemyManager 获取初始敌人计数
+	if enemy_manager:
+		update_enemy_count(enemy_manager.get_active_enemy_count())
+	else:
+		update_enemy_count(0)
 	update_arena_score(kill_count, kill_target)
 	# 弹药显示会在武器切换时更新
 
@@ -628,6 +641,11 @@ func connect_wave_spawner(spawner: Node) -> void:
 			spawner.all_waves_complete.connect(_on_all_waves_complete)
 
 
+## 敌人计数变化回调（由 EnemyManager 调用）
+func _on_enemy_count_changed(new_count: int) -> void:
+	update_enemy_count(new_count)
+
+
 ## 连接 MissionObjective 信号
 func connect_mission_objective(objective: Node) -> void:
 	if objective == null:
@@ -668,9 +686,9 @@ func _on_wave_complete(wave_number: int) -> void:
 
 
 func _on_enemy_spawned(_enemy: Node) -> void:
-	# 敌人生成时更新计数
-	var enemies: Array[Node] = get_tree().get_nodes_in_group("enemy")
-	update_enemy_count(enemies.size())
+	# 敌人由 EnemyManager 追踪，无需手动更新
+	# 计数更新通过 EnemyManager.enemy_count_changed 信号触发
+	pass
 
 
 func _on_all_waves_complete() -> void:

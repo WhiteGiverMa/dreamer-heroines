@@ -14,6 +14,11 @@ signal quit_requested
 
 const SaveSlotScene = preload("res://scenes/ui/save_slot.tscn")
 
+const LEVEL_SELECT_TITLE := "Start New Game"
+const LEVEL_SELECT_SUBTITLE := "Arena 01 starts the roguelike run.\nTest Level is a non-roguelike dev path."
+const ARENA_01_BUTTON_TEXT := "Start Roguelike Run\nArena 01"
+const TEST_LEVEL_BUTTON_TEXT := "Open Test Level\nNon-Roguelike / Dev Path"
+
 @export_group("Menu Buttons")
 @export var continue_button: Button
 @export var new_game_button: Button
@@ -224,11 +229,15 @@ func _on_start_game() -> void:
 
 func _on_arena_01_selected() -> void:
 	"""选择 Arena 01 并启动关卡"""
+	# Start fresh roguelike run before loading level
+	GameManager.start_minimal_roguelike_run("arena_01")
 	_start_selected_level("arena_01")
 
 
 func _on_test_level_selected() -> void:
 	"""选择 Test Level 并启动关卡"""
+	# Ensure roguelike mode is NOT active for test level
+	GameManager.reset_minimal_roguelike_run()
 	_start_selected_level("test_level")
 
 
@@ -574,12 +583,16 @@ func _apply_localized_texts() -> void:
 
 	var level_select_title: Label = get_node_or_null("LevelSelectPanel/Title")
 	if level_select_title:
-		level_select_title.text = "Select Level"
+		level_select_title.text = LEVEL_SELECT_TITLE
+
+	var level_select_subtitle: Label = get_node_or_null("LevelSelectPanel/Subtitle")
+	if level_select_subtitle:
+		level_select_subtitle.text = LEVEL_SELECT_SUBTITLE
 
 	if arena_01_button:
-		arena_01_button.text = "Arena 01"
+		arena_01_button.text = ARENA_01_BUTTON_TEXT
 	if test_level_button:
-		test_level_button.text = "Test Level"
+		test_level_button.text = TEST_LEVEL_BUTTON_TEXT
 
 	var level_select_back = get_node_or_null("LevelSelectPanel/VBoxContainer/BackButton")
 	if level_select_back:

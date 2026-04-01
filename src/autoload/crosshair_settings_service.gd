@@ -1,6 +1,6 @@
 extends Node
 
-const CrosshairSettings = preload("res://src/data/crosshair_settings.gd")
+const CrosshairSettingsResource = preload("res://src/data/crosshair_settings.gd")
 
 ## CrosshairSettingsService - 准星设置服务层
 ## 解耦表现层与数据层的直接依赖，提供准星配置的集中管理
@@ -191,7 +191,7 @@ func update_setting(property_name: StringName, value: Variant) -> void:
 ## 重置为默认值
 func reset_to_defaults() -> void:
 	var old_settings: CrosshairSettings = _settings.copy()
-	_settings = CrosshairSettings.new()
+	_settings = CrosshairSettingsResource.new()
 	_clamp_settings(_settings)
 
 	var has_changed := false
@@ -328,7 +328,7 @@ func get_max_spread_multiplier() -> float:
 # ============================================
 
 func _initialize_settings() -> void:
-	_settings = CrosshairSettings.new()
+	_settings = CrosshairSettingsResource.new()
 	var loaded_settings := _load_settings_from_disk()
 	if loaded_settings != null:
 		_settings = loaded_settings
@@ -398,7 +398,7 @@ func _load_settings_from_disk() -> CrosshairSettings:
 	if loaded_dict.is_empty():
 		return null
 
-	var settings := CrosshairSettings.new()
+	var settings := CrosshairSettingsResource.new()
 
 	if loaded_dict.has("crosshair_size"):
 		settings.crosshair_size = float(loaded_dict["crosshair_size"])
