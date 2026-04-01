@@ -6,6 +6,7 @@ const PLAYER_SCENE_PATH := "res://scenes/player.tscn"
 var _wave_spawner: Node
 var _mission_objective: Node
 var _hud: Node
+var _room_completion_handled: bool = false
 
 
 func _ready() -> void:
@@ -16,6 +17,7 @@ func _ready() -> void:
 
 
 func _prepare_runtime_state() -> void:
+	_room_completion_handled = false
 	LevelManager.current_level = self
 	LevelManager.current_state = LevelManager.LevelState.PLAYING
 
@@ -119,10 +121,26 @@ func _wire_signals() -> void:
 		_hud.call("set_arena_mode", true)
 
 	if _wave_spawner:
+		var level_id := "arena_01"
+		if LevelManager and LevelManager.current_level_data:
+			level_id = LevelManager.current_level_data.level_id
+
+		_wave_spawner.wave_config_path = "res://config/waves/%s_waves.json" % level_id
+		if _wave_spawner.has_method("_load_wave_config"):
+			_wave_spawner.call("_load_wave_config")
+
 		if not _wave_spawner.wave_started.is_connected(_on_wave_started):
 			_wave_spawner.wave_started.connect(_on_wave_started)
 		if not _wave_spawner.enemy_spawned.is_connected(_on_enemy_spawned):
 			_wave_spawner.enemy_spawned.connect(_on_enemy_spawned)
+		if not _wave_spawner.all_waves_complete.is_connected(_on_all_waves_complete):
+			_wave_spawner.all_waves_complete.connect(_on_all_waves_complete)
+
+	if _mission_objective and _wave_spawner:
+		if _wave_spawner.has_method("get_target_kills"):
+			_mission_objective.target_kills = _wave_spawner.get_target_kills()
+		elif _wave_spawner.has_method("get_total_enemy_count"):
+			_mission_objective.target_kills = _wave_spawner.get_total_enemy_count()
 
 	if _mission_objective:
 		if not _mission_objective.score_changed.is_connected(_on_score_changed):
@@ -131,8 +149,8 @@ func _wire_signals() -> void:
 			_mission_objective.objective_complete.connect(_on_objective_complete)
 
 		var complete_callable := Callable(LevelManager, "complete_level")
-		if not _mission_objective.objective_complete.is_connected(complete_callable):
-			_mission_objective.objective_complete.connect(complete_callable)
+		if _mission_objective.objective_complete.is_connected(complete_callable):
+			_mission_objective.objective_complete.disconnect(complete_callable)
 
 	if _hud:
 		if _hud.has_method("connect_wave_spawner"):
@@ -205,10 +223,33 @@ func _on_score_changed(current_kills: int, target_kills: int) -> void:
 
 
 func _on_objective_complete() -> void:
+	if _room_completion_handled:
+		return
+
+	_room_completion_handled = true
+
 	if _hud and _hud.has_method("update_arena_score"):
 		_hud.call(
 			"update_arena_score", _mission_objective.target_kills, _mission_objective.target_kills
 		)
+
+	if _wave_spawner:
+		if _wave_spawner.has_method("stop"):
+			_wave_spawner.stop()
+		if _wave_spawner.has_method("clear_all_enemies"):
+			_wave_spawner.clear_all_enemies()
+
+	if GameManager.roguelike_run_active:
+		var level_id := ""
+		if LevelManager.current_level_data:
+			level_id = LevelManager.current_level_data.level_id
+		GameManager.notify_roguelike_room_cleared(level_id)
+	else:
+		LevelManager.complete_level()
+
+
+func _on_all_waves_complete() -> void:
+	_refresh_hud_enemy_count()
 
 
 func _deferred_start_wave_spawner() -> void:
