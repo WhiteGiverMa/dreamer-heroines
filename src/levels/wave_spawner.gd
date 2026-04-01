@@ -126,6 +126,14 @@ func spawn_enemy_now(enemy_key: String, position: Vector2 = Vector2.ZERO) -> Nod
 	return enemy
 
 
+func get_spawnable_enemy_keys() -> Array[String]:
+	var enemy_keys: Array[String] = []
+	for enemy_key_variant in ENEMY_SCENE_BY_KEY.keys():
+		enemy_keys.append(String(enemy_key_variant))
+	enemy_keys.sort()
+	return enemy_keys
+
+
 ## 跳转到指定波次
 func skip_to_wave(wave_number: int) -> void:
 	var total: int = _waves.size()

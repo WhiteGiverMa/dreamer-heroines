@@ -385,7 +385,8 @@ func _show_help() -> void:
   ammo refill       - Refill ammo
   ammo set <cur> <res> - Set ammo
   Enemy commands:
-  spawn <key> [x] [y] - Spawn enemy
+	spawn <key> [x] [y] - Spawn enemy
+	spawn enemy x10     - Spawn 10 random enemies
   kill_all          - Kill all enemies
   enemies_to_player - TP enemies to player
   enemies_to <x> <y> - TP enemies to position

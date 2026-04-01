@@ -169,17 +169,35 @@ func _get_developer_mode():
 
 func _handle_spawn_command(args: Array) -> Dictionary:
 	if args.is_empty():
-		return {"success": false, "error": "Usage: spawn <enemy_key> [x] [y]"}
+		return {"success": false, "error": _get_spawn_usage_text()}
+
+	var random_spawn_count := _parse_spawn_batch_count(args)
+	if random_spawn_count > 0:
+		var random_position_result := _parse_spawn_position(args, 2)
+		if not bool(random_position_result.get("valid", false)):
+			return {"success": false, "error": _get_spawn_usage_text()}
+		var dev_mode_random = _get_developer_mode()
+		if not dev_mode_random:
+			return {"success": false, "error": "DeveloperMode not available"}
+		var spawned_enemies: Array[Node] = dev_mode_random.cmd_spawn_random_enemies(
+			random_spawn_count,
+			float(random_position_result.get("x", 0.0)),
+			float(random_position_result.get("y", 0.0))
+		)
+		if spawned_enemies.is_empty():
+			return {"success": false, "error": "Failed to spawn random enemies x%d" % random_spawn_count}
+		return {
+			"success": true,
+			"message": "Spawned %d random enemies" % spawned_enemies.size(),
+			"spawn_count": spawned_enemies.size()
+		}
+
 	var enemy_key = args[0]
-	var x = 0.0
-	var y = 0.0
-	if args.size() >= 3:
-		var x_text := str(args[1]).strip_edges()
-		var y_text := str(args[2]).strip_edges()
-		if not x_text.is_valid_float() or not y_text.is_valid_float():
-			return {"success": false, "error": "Usage: spawn <enemy_key> [x] [y]"}
-		x = float(x_text)
-		y = float(y_text)
+	var position_result := _parse_spawn_position(args, 1)
+	if not bool(position_result.get("valid", false)):
+		return {"success": false, "error": _get_spawn_usage_text()}
+	var x = float(position_result.get("x", 0.0))
+	var y = float(position_result.get("y", 0.0))
 	var dev_mode = _get_developer_mode()
 	if not dev_mode:
 		return {"success": false, "error": "DeveloperMode not available"}
@@ -196,6 +214,40 @@ func _handle_spawn_command(args: Array) -> Dictionary:
 		}
 	else:
 		return {"success": false, "error": "Failed to spawn enemy: " + enemy_key}
+
+
+func _get_spawn_usage_text() -> String:
+	return "Usage: spawn <enemy_key> [x] [y] | spawn enemy x<count> [x] [y]"
+
+
+func _parse_spawn_batch_count(args: Array) -> int:
+	if args.size() < 2:
+		return -1
+	if str(args[0]).to_lower() != "enemy":
+		return -1
+	var count_token := str(args[1]).strip_edges().to_lower()
+	if count_token.length() < 2 or not count_token.begins_with("x"):
+		return -1
+	var count_text := count_token.substr(1)
+	if not count_text.is_valid_int():
+		return -1
+	var count := int(count_text)
+	if count <= 0:
+		return -1
+	return count
+
+
+func _parse_spawn_position(args: Array, start_index: int) -> Dictionary:
+	var remaining_args := args.size() - start_index
+	if remaining_args <= 0:
+		return {"valid": true, "x": 0.0, "y": 0.0}
+	if remaining_args != 2:
+		return {"valid": false, "x": 0.0, "y": 0.0}
+	var x_text := str(args[start_index]).strip_edges()
+	var y_text := str(args[start_index + 1]).strip_edges()
+	if not x_text.is_valid_float() or not y_text.is_valid_float():
+		return {"valid": false, "x": 0.0, "y": 0.0}
+	return {"valid": true, "x": float(x_text), "y": float(y_text)}
 
 
 func _handle_kill_all_command() -> Dictionary:

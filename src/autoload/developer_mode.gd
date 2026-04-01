@@ -17,6 +17,7 @@ var _config_cache: Dictionary = {}
 var _hotkey_config: Dictionary = {}
 var _enabled_in_release: bool = false
 var _user_enabled_by_settings: bool = false
+var _spawn_rng := RandomNumberGenerator.new()
 
 # 面板引用
 var _panel: CanvasLayer = null
@@ -29,6 +30,7 @@ signal state_changed(key: String, value: Variant)
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_spawn_rng.randomize()
 	_load_dev_mode_config()
 	_mount_panel()
 	print("[DeveloperMode] 开发者模式已加载")
@@ -412,6 +414,49 @@ func cmd_spawn_enemy(enemy_key: String, x: float = 0, y: float = 0) -> Node:
 	else:
 		push_error("[DeveloperMode] Failed to spawn enemy: ", enemy_key)
 	return enemy
+
+
+func cmd_spawn_random_enemies(count: int, x: float = 0, y: float = 0) -> Array[Node]:
+	var spawner = _get_wave_spawner()
+	if not spawner:
+		push_error("[DeveloperMode] WaveSpawner not found")
+		return []
+	var pos := Vector2(x, y) if x != 0 or y != 0 else Vector2.ZERO
+	var enemies := _spawn_random_enemies_with_spawner(spawner, count, pos)
+	if enemies.is_empty():
+		push_error("[DeveloperMode] Failed to spawn random enemies x%d" % count)
+	else:
+		print("[DeveloperMode] Spawned %d random enemies at %s" % [enemies.size(), pos])
+	return enemies
+
+
+func _spawn_random_enemies_with_spawner(spawner: Node, count: int, position: Vector2 = Vector2.ZERO) -> Array[Node]:
+	if count <= 0:
+		return []
+	if spawner == null or not spawner.has_method("get_spawnable_enemy_keys") or not spawner.has_method("spawn_enemy_now"):
+		return []
+
+	var spawnable_enemy_keys_variant: Variant = spawner.call("get_spawnable_enemy_keys")
+	if not (spawnable_enemy_keys_variant is Array) or spawnable_enemy_keys_variant.is_empty():
+		return []
+
+	var spawnable_enemy_keys: Array = spawnable_enemy_keys_variant
+	var enemies: Array[Node] = []
+	for _i in count:
+		var enemy_key := _pick_random_spawn_enemy_key(spawnable_enemy_keys)
+		if enemy_key.is_empty():
+			continue
+		var enemy_variant: Variant = spawner.call("spawn_enemy_now", enemy_key, position)
+		if enemy_variant is Node:
+			enemies.append(enemy_variant as Node)
+	return enemies
+
+
+func _pick_random_spawn_enemy_key(spawnable_enemy_keys: Array) -> String:
+	if spawnable_enemy_keys.is_empty():
+		return ""
+	var index := _spawn_rng.randi_range(0, spawnable_enemy_keys.size() - 1)
+	return String(spawnable_enemy_keys[index])
 
 
 ## 杀死所有敌
