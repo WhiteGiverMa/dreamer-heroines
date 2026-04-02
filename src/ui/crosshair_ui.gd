@@ -21,6 +21,40 @@ signal spread_changed(new_spread: float)
 		normal_color = value
 		queue_redraw()
 
+## 准星形状
+@export var crosshair_shape: String = "cross":
+	set(value):
+		crosshair_shape = value
+		queue_redraw()
+
+## 颜色模式（preset/custom）
+@export var color_mode: String = "preset":
+	set(value):
+		color_mode = value
+		_sync_normal_color()
+
+## 颜色预设 key
+@export var color_preset: String = "green":
+	set(value):
+		color_preset = value
+		_sync_normal_color()
+
+## 自定义颜色通道
+@export var custom_color_r: float = 0.0:
+	set(value):
+		custom_color_r = clampf(value, 0.0, 1.0)
+		_sync_normal_color()
+
+@export var custom_color_g: float = 1.0:
+	set(value):
+		custom_color_g = clampf(value, 0.0, 1.0)
+		_sync_normal_color()
+
+@export var custom_color_b: float = 0.0:
+	set(value):
+		custom_color_b = clampf(value, 0.0, 1.0)
+		_sync_normal_color()
+
 ## 准星大小（像素）
 @export var crosshair_size: float = 20.0:
 	set(value):
@@ -45,6 +79,74 @@ signal spread_changed(new_spread: float)
 		center_dot_size = value
 		queue_redraw()
 
+## 中心点透明度
+@export var center_dot_alpha: float = 1.0:
+	set(value):
+		center_dot_alpha = clampf(value, 0.0, 1.0)
+		queue_redraw()
+
+## 线段长度
+@export var line_length: float = 20.0:
+	set(value):
+		line_length = maxf(value, 1.0)
+		queue_redraw()
+
+## 线段粗细
+@export var line_thickness: float = 2.0:
+	set(value):
+		line_thickness = maxf(value, 1.0)
+		queue_redraw()
+
+## 基础线段间距
+@export var line_gap: float = 0.0:
+	set(value):
+		line_gap = maxf(value, 0.0)
+		queue_redraw()
+
+## 是否使用 T 形准星
+@export var use_t_shape: bool = false:
+	set(value):
+		use_t_shape = value
+		queue_redraw()
+
+## 是否启用轮廓
+@export var outline_enabled: bool = false:
+	set(value):
+		outline_enabled = value
+		queue_redraw()
+
+## 轮廓粗细
+@export var outline_thickness: float = 1.0:
+	set(value):
+		outline_thickness = clampf(value, 0.0, 6.0)
+		queue_redraw()
+
+## 轮廓颜色红色通道
+@export var outline_color_r: float = 0.0:
+	set(value):
+		outline_color_r = clampf(value, 0.0, 1.0)
+		queue_redraw()
+
+## 轮廓颜色绿色通道
+@export var outline_color_g: float = 0.0:
+	set(value):
+		outline_color_g = clampf(value, 0.0, 1.0)
+		queue_redraw()
+
+## 轮廓颜色蓝色通道
+@export var outline_color_b: float = 0.0:
+	set(value):
+		outline_color_b = clampf(value, 0.0, 1.0)
+		queue_redraw()
+
+## 是否启用动态扩散表现
+@export var enable_dynamic_spread: bool = true:
+	set(value):
+		enable_dynamic_spread = value
+		if not enable_dynamic_spread and not is_equal_approx(current_spread, base_spread):
+			current_spread = base_spread
+		queue_redraw()
+
 ## 换弹状态颜色
 @export var reload_color: Color = Color.YELLOW:
 	set(value):
@@ -52,7 +154,7 @@ signal spread_changed(new_spread: float)
 		queue_redraw()
 
 ## 部署状态颜色
-@export var deploy_color: Color = Color.CYAN:
+@export var deploy_color: Color = Color(0.24, 0.52, 1.0, 1.0):
 	set(value):
 		deploy_color = value
 		queue_redraw()
@@ -104,6 +206,8 @@ var is_deploying: bool = false
 ## 弹匣是否为空
 var is_empty_mag: bool = false
 
+var _service_connected: bool = false
+
 
 # ============================================
 # 生命周期
@@ -111,6 +215,8 @@ var is_empty_mag: bool = false
 
 func _ready() -> void:
 	top_level = true
+	_initialize_from_settings_service()
+	_sync_normal_color()
 	queue_redraw()
 
 
@@ -122,54 +228,217 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	# 计算准星中心点
 	var center := size / 2.0
-	
-	# 确定渲染颜色（优先级：空弹匣 > 部署 > 换弹 > 正常）
-	var draw_color: Color
+	var draw_color := _get_state_aware_color()
+	var spread_offset := _get_visual_spread_offset()
+	var inner_offset := line_gap + spread_offset
+	var segment_length := _get_line_length()
+	var outer_offset := inner_offset + segment_length
+	var outline_color := _get_outline_color(draw_color)
+
+	match crosshair_shape:
+		"dot":
+			_draw_center_dot(center, draw_color)
+
+		"circle":
+			_draw_ring_outline(center, outline_color, inner_offset, segment_length)
+			_draw_ring(center, draw_color, inner_offset, segment_length)
+			if show_center_dot:
+				_draw_center_dot(center, draw_color)
+
+		"combined":
+			_draw_cross_segments_outline(center, outline_color, inner_offset, outer_offset)
+			_draw_cross_segments(center, draw_color, inner_offset, outer_offset)
+			_draw_ring_outline(center, outline_color, inner_offset, segment_length)
+			_draw_ring(center, draw_color, inner_offset, segment_length)
+			if show_center_dot:
+				_draw_center_dot(center, draw_color)
+
+		_:
+			_draw_cross_segments_outline(center, outline_color, inner_offset, outer_offset)
+			_draw_cross_segments(center, draw_color, inner_offset, outer_offset)
+			if show_center_dot:
+				_draw_center_dot(center, draw_color)
+
+
+func _initialize_from_settings_service() -> void:
+	if _service_connected or not CrosshairSettingsService:
+		return
+
+	if not CrosshairSettingsService.settings_changed.is_connected(_on_crosshair_settings_changed):
+		CrosshairSettingsService.settings_changed.connect(_on_crosshair_settings_changed)
+
+	if not CrosshairSettingsService.settings_loaded.is_connected(_on_crosshair_settings_changed):
+		CrosshairSettingsService.settings_loaded.connect(_on_crosshair_settings_changed)
+
+	_service_connected = true
+	CrosshairSettingsService.reload_settings()
+	_apply_settings(CrosshairSettingsService.get_settings())
+
+
+func _on_crosshair_settings_changed(settings) -> void:
+	_apply_settings(settings)
+
+
+func _apply_settings(settings) -> void:
+	if settings == null:
+		return
+
+	crosshair_size = settings.crosshair_size
+	crosshair_alpha = settings.crosshair_alpha
+	crosshair_shape = settings.crosshair_shape
+	color_mode = settings.color_mode
+	color_preset = settings.color_preset
+	custom_color_r = settings.custom_color_r
+	custom_color_g = settings.custom_color_g
+	custom_color_b = settings.custom_color_b
+	line_length = settings.line_length
+	line_thickness = settings.line_thickness
+	line_gap = settings.line_gap
+	use_t_shape = settings.use_t_shape
+	outline_enabled = settings.outline_enabled
+	outline_thickness = settings.outline_thickness
+	outline_color_r = settings.outline_color_r
+	outline_color_g = settings.outline_color_g
+	outline_color_b = settings.outline_color_b
+	show_center_dot = settings.show_center_dot
+	center_dot_size = settings.center_dot_size
+	center_dot_alpha = settings.center_dot_alpha
+	enable_dynamic_spread = settings.enable_dynamic_spread
+	spread_increase_per_shot = settings.spread_increase_per_shot
+	recovery_rate = settings.recovery_rate
+	max_spread_multiplier = settings.max_spread_multiplier
+
+	_sync_normal_color()
+
+
+func _sync_normal_color() -> void:
+	normal_color = _resolve_normal_color()
+
+
+func _resolve_normal_color() -> Color:
+	if color_mode == "custom":
+		return Color(custom_color_r, custom_color_g, custom_color_b, 1.0)
+
+	if CrosshairSettingsService and CrosshairSettingsService.COLOR_PRESETS.has(color_preset):
+		return CrosshairSettingsService.COLOR_PRESETS[color_preset]
+
+	return Color.WHITE
+
+
+func _get_state_aware_color() -> Color:
+	var draw_color := normal_color
 	if is_empty_mag:
 		draw_color = empty_color
 	elif is_deploying:
 		draw_color = deploy_color
 	elif is_reloading:
 		draw_color = reload_color
-	else:
-		draw_color = normal_color
-	
-	# 应用透明度
+
 	draw_color.a *= crosshair_alpha
-	
-	# 计算线段位置：current_spread 是线段起点离中心的距离
-	var inner_offset := current_spread
-	var outer_offset := current_spread + crosshair_size
-	
-	# 绘制四条准星线（上/下/左/右）
-	# 上
-	draw_line(
+	return draw_color
+
+
+func _get_visual_spread_offset() -> float:
+	if not enable_dynamic_spread:
+		return 0.0
+	return current_spread
+
+
+func _get_outline_color(base_color: Color) -> Color:
+	if not outline_enabled or outline_thickness <= 0.0:
+		return Color.TRANSPARENT
+
+	return Color(outline_color_r, outline_color_g, outline_color_b, base_color.a)
+
+
+func _get_line_length() -> float:
+	return maxf(line_length, 1.0)
+
+
+func _get_outline_width() -> float:
+	return line_thickness + (outline_thickness * 2.0)
+
+
+func _draw_cross_segments_outline(center: Vector2, outline_color: Color, inner_offset: float, outer_offset: float) -> void:
+	if outline_color.a <= 0.0:
+		return
+
+	_draw_segment(
 		Vector2(center.x, center.y - inner_offset),
 		Vector2(center.x, center.y - outer_offset),
-		draw_color
+		outline_color,
+		_get_outline_width()
 	)
-	# 下
-	draw_line(
+
+	if not use_t_shape:
+		_draw_segment(
+			Vector2(center.x, center.y + inner_offset),
+			Vector2(center.x, center.y + outer_offset),
+			outline_color,
+			_get_outline_width()
+		)
+
+	_draw_segment(
+		Vector2(center.x - inner_offset, center.y),
+		Vector2(center.x - outer_offset, center.y),
+		outline_color,
+		_get_outline_width()
+	)
+	_draw_segment(
+		Vector2(center.x + inner_offset, center.y),
+		Vector2(center.x + outer_offset, center.y),
+		outline_color,
+		_get_outline_width()
+	)
+
+
+func _draw_cross_segments(center: Vector2, draw_color: Color, inner_offset: float, outer_offset: float) -> void:
+	if not use_t_shape:
+		_draw_segment(
+			Vector2(center.x, center.y - inner_offset),
+			Vector2(center.x, center.y - outer_offset),
+			draw_color
+		)
+
+	_draw_segment(
 		Vector2(center.x, center.y + inner_offset),
 		Vector2(center.x, center.y + outer_offset),
 		draw_color
 	)
-	# 左
-	draw_line(
+
+	_draw_segment(
 		Vector2(center.x - inner_offset, center.y),
 		Vector2(center.x - outer_offset, center.y),
 		draw_color
 	)
-	# 右
-	draw_line(
+	_draw_segment(
 		Vector2(center.x + inner_offset, center.y),
 		Vector2(center.x + outer_offset, center.y),
 		draw_color
 	)
-	
-	# 绘制中心点（可选）
-	if show_center_dot:
-		draw_circle(center, center_dot_size, draw_color)
+
+
+func _draw_ring(center: Vector2, draw_color: Color, inner_offset: float, segment_length: float) -> void:
+	var radius := maxf(center_dot_size, inner_offset + (segment_length * 0.5))
+	draw_arc(center, radius, 0.0, TAU, 48, draw_color, line_thickness)
+
+
+func _draw_ring_outline(center: Vector2, outline_color: Color, inner_offset: float, segment_length: float) -> void:
+	if outline_color.a <= 0.0:
+		return
+
+	var radius := maxf(center_dot_size, inner_offset + (segment_length * 0.5))
+	draw_arc(center, radius, 0.0, TAU, 48, outline_color, _get_outline_width())
+
+
+func _draw_center_dot(center: Vector2, draw_color: Color) -> void:
+	var dot_color := draw_color
+	dot_color.a *= center_dot_alpha
+	draw_circle(center, center_dot_size, dot_color)
+
+
+func _draw_segment(from: Vector2, to: Vector2, draw_color: Color, width: float = -1.0) -> void:
+	draw_line(from, to, draw_color, width if width > 0.0 else line_thickness)
 
 
 # ============================================
@@ -179,6 +448,9 @@ func _draw() -> void:
 ## 射击时扩展准星
 func expand_on_shot() -> void:
 	# visual-only: 扩散增加，不影响实际弹道精度
+	if not enable_dynamic_spread:
+		return
+
 	var previous_spread := current_spread
 	current_spread += spread_increase_per_shot
 	current_spread = minf(current_spread, max_spread)
