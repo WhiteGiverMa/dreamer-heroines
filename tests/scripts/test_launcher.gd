@@ -127,6 +127,31 @@ func _get_test_cases() -> Array[Dictionary]:
 			"name": "test_audio_settings_persistence",
 			"description": "验证音量设置持久化",
 		},
+		# Crosshair settings integration tests (Task 11)
+		{
+			"name": "test_crosshair_settings_panel_open",
+			"description": "验证设置面板可打开且准星子面板挂载成功",
+		},
+		{
+			"name": "test_crosshair_tab_switching",
+			"description": "验证 Basic/Crosshair 标签切换",
+		},
+		{
+			"name": "test_crosshair_shape_updates_hud",
+			"description": "验证准星形状设置更新 HUD",
+		},
+		{
+			"name": "test_crosshair_color_updates_hud",
+			"description": "验证准星颜色设置更新 HUD",
+		},
+		{
+			"name": "test_crosshair_runtime_preview_updates",
+			"description": "验证运行时预览实时反映设置变更",
+		},
+		{
+			"name": "test_crosshair_settings_persistence",
+			"description": "验证准星设置可保存并重新加载",
+		},
 	]
 
 
@@ -269,6 +294,27 @@ func _run_test_sync(test: Dictionary) -> Dictionary:
 		"test_audio_settings_persistence":
 			result = _run_audio_settings_persistence_test()
 
+		# ----------------------------------------------------------------------------
+		# Crosshair Settings Integration Tests
+		# ----------------------------------------------------------------------------
+		"test_crosshair_settings_panel_open":
+			result = _run_crosshair_settings_panel_open_test()
+
+		"test_crosshair_tab_switching":
+			result = _run_crosshair_tab_switching_test()
+
+		"test_crosshair_shape_updates_hud":
+			result = _run_crosshair_shape_updates_hud_test()
+
+		"test_crosshair_color_updates_hud":
+			result = _run_crosshair_color_updates_hud_test()
+
+		"test_crosshair_runtime_preview_updates":
+			result = _run_crosshair_runtime_preview_updates_test()
+
+		"test_crosshair_settings_persistence":
+			result = _run_crosshair_settings_persistence_test()
+
 	return result
 
 
@@ -365,6 +411,10 @@ const _LEGACY_TO_CANONICAL: Dictionary = {
 	"empty_click": "sfx_empty_click",
 	"shoot": "sfx_gunshot_pistol",
 }
+
+const _SETTINGS_PANEL_SCENE := preload("res://scenes/ui/settings_panel.tscn")
+const _HUD_SCENE := preload("res://scenes/ui/hud.tscn")
+const _CROSSHAIR_SETTINGS_RESOURCE := preload("res://src/data/crosshair_settings.gd")
 
 
 func _run_audio_bus_topology_test() -> Dictionary:
@@ -568,3 +618,329 @@ func _run_audio_settings_persistence_test() -> Dictionary:
 
 	result.passed = true
 	return result
+
+
+# =============================================================================
+# Crosshair Settings Integration Tests
+# =============================================================================
+
+func _run_crosshair_settings_panel_open_test() -> Dictionary:
+	var result := {"name": "test_crosshair_settings_panel_open", "passed": false, "error": ""}
+	var snapshot := _snapshot_crosshair_persisted_settings()
+	var context := _create_crosshair_test_context()
+
+	if context.has("error"):
+		result.error = String(context.error)
+		_restore_crosshair_persisted_settings(snapshot)
+		return result
+
+	var settings_panel: SettingsPanel = context.settings_panel
+	var tab_container: TabContainer = context.tab_container
+	var crosshair_panel = context.crosshair_panel
+
+	settings_panel.show_panel()
+
+	if not settings_panel.visible:
+		result.error = "SettingsPanel 未显示"
+	elif tab_container.get_tab_count() < 2:
+		result.error = "Tab 数量不足: %d" % tab_container.get_tab_count()
+	elif crosshair_panel == null:
+		result.error = "CrosshairSettingsPanel 未挂载到 CrosshairPanelHost"
+	else:
+		result.passed = true
+
+	_cleanup_crosshair_test_context(context)
+	_restore_crosshair_persisted_settings(snapshot)
+	return result
+
+
+func _run_crosshair_tab_switching_test() -> Dictionary:
+	var result := {"name": "test_crosshair_tab_switching", "passed": false, "error": ""}
+	var snapshot := _snapshot_crosshair_persisted_settings()
+	var context := _create_crosshair_test_context()
+
+	if context.has("error"):
+		result.error = String(context.error)
+		_restore_crosshair_persisted_settings(snapshot)
+		return result
+
+	var tab_container: TabContainer = context.tab_container
+	if tab_container.get_tab_count() < 2:
+		result.error = "Tab 数量不足，无法切换"
+	else:
+		tab_container.current_tab = 0
+		var basic_selected := tab_container.current_tab == 0
+
+		tab_container.current_tab = 1
+		var crosshair_selected := tab_container.current_tab == 1
+
+		tab_container.current_tab = 0
+		var switched_back := tab_container.current_tab == 0
+
+		if not basic_selected or not crosshair_selected or not switched_back:
+			result.error = "Tab 切换失败: basic=%s, crosshair=%s, back=%s" % [basic_selected, crosshair_selected, switched_back]
+		else:
+			result.passed = true
+
+	_cleanup_crosshair_test_context(context)
+	_restore_crosshair_persisted_settings(snapshot)
+	return result
+
+
+func _run_crosshair_shape_updates_hud_test() -> Dictionary:
+	var result := {"name": "test_crosshair_shape_updates_hud", "passed": false, "error": ""}
+	var snapshot := _snapshot_crosshair_persisted_settings()
+	_set_crosshair_test_baseline()
+	var context := _create_crosshair_test_context()
+
+	if context.has("error"):
+		result.error = String(context.error)
+		_restore_crosshair_persisted_settings(snapshot)
+		return result
+
+	var crosshair_panel: CrosshairSettingsPanel = context.crosshair_panel
+	var crosshair_ui = context.crosshair_ui
+
+	# 切换形状为 dot
+	crosshair_panel.shape_option.item_selected.emit(1)
+
+	var service_shape := CrosshairSettingsService.get_crosshair_shape()
+	if service_shape != "dot":
+		result.error = "Service shape = %s, 期望 dot" % service_shape
+	elif crosshair_ui.crosshair_shape != "dot":
+		result.error = "HUD shape = %s, 期望 dot" % crosshair_ui.crosshair_shape
+	else:
+		result.passed = true
+
+	_cleanup_crosshair_test_context(context)
+	_restore_crosshair_persisted_settings(snapshot)
+	return result
+
+
+func _run_crosshair_color_updates_hud_test() -> Dictionary:
+	var result := {"name": "test_crosshair_color_updates_hud", "passed": false, "error": ""}
+	var snapshot := _snapshot_crosshair_persisted_settings()
+	_set_crosshair_test_baseline()
+	var context := _create_crosshair_test_context()
+
+	if context.has("error"):
+		result.error = String(context.error)
+		_restore_crosshair_persisted_settings(snapshot)
+		return result
+
+	var crosshair_panel: CrosshairSettingsPanel = context.crosshair_panel
+	var crosshair_ui = context.crosshair_ui
+
+	# 使用预设红色
+	crosshair_panel.color_mode_option.item_selected.emit(0)
+	crosshair_panel.color_preset_option.item_selected.emit(4)
+
+	var service_preset := CrosshairSettingsService.get_color_preset()
+	var expected_color: Color = CrosshairSettingsService.COLOR_PRESETS["red"]
+	var actual_color: Color = crosshair_ui.normal_color
+
+	if service_preset != "red":
+		result.error = "Service color_preset = %s, 期望 red" % service_preset
+	elif not _is_color_close(actual_color, expected_color):
+		result.error = "HUD color = %s, 期望 %s" % [actual_color, expected_color]
+	else:
+		result.passed = true
+
+	_cleanup_crosshair_test_context(context)
+	_restore_crosshair_persisted_settings(snapshot)
+	return result
+
+
+func _run_crosshair_runtime_preview_updates_test() -> Dictionary:
+	var result := {"name": "test_crosshair_runtime_preview_updates", "passed": false, "error": ""}
+	var snapshot := _snapshot_crosshair_persisted_settings()
+	_set_crosshair_test_baseline()
+	var context := _create_crosshair_test_context()
+
+	if context.has("error"):
+		result.error = String(context.error)
+		_restore_crosshair_persisted_settings(snapshot)
+		return result
+
+	var crosshair_panel: CrosshairSettingsPanel = context.crosshair_panel
+	var crosshair_ui = context.crosshair_ui
+
+	# 调整大小滑杆，验证 HUD 运行时预览即时更新
+	crosshair_panel.size_slider.value = 36.0
+	var service_size := CrosshairSettingsService.get_crosshair_size()
+	var hud_size: float = crosshair_ui.crosshair_size
+
+	if not is_equal_approx(service_size, 36.0):
+		result.error = "Service size = %.2f, 期望 36.0" % service_size
+	elif not is_equal_approx(hud_size, 36.0):
+		result.error = "HUD size = %.2f, 期望 36.0" % hud_size
+	else:
+		result.passed = true
+
+	_cleanup_crosshair_test_context(context)
+	_restore_crosshair_persisted_settings(snapshot)
+	return result
+
+
+func _run_crosshair_settings_persistence_test() -> Dictionary:
+	var result := {"name": "test_crosshair_settings_persistence", "passed": false, "error": ""}
+	var snapshot := _snapshot_crosshair_persisted_settings()
+	_set_crosshair_test_baseline()
+	var context := _create_crosshair_test_context()
+
+	if context.has("error"):
+		result.error = String(context.error)
+		_restore_crosshair_persisted_settings(snapshot)
+		return result
+
+	var crosshair_panel: CrosshairSettingsPanel = context.crosshair_panel
+	var crosshair_ui = context.crosshair_ui
+
+	# 通过设置面板写入目标值
+	crosshair_panel.shape_option.item_selected.emit(2)  # circle
+	crosshair_panel.color_mode_option.item_selected.emit(0)  # preset
+	crosshair_panel.color_preset_option.item_selected.emit(6)  # blue
+	_flush_crosshair_settings_to_disk()
+
+	# 改成本次测试以外的值，再 reload 验证持久化回放
+	CrosshairSettingsService.update_setting(&"crosshair_shape", "cross")
+	CrosshairSettingsService.update_setting(&"color_preset", "green")
+	CrosshairSettingsService.reload_settings()
+
+	var loaded_shape := CrosshairSettingsService.get_crosshair_shape()
+	var loaded_preset := CrosshairSettingsService.get_color_preset()
+	var expected_color: Color = CrosshairSettingsService.COLOR_PRESETS["blue"]
+	var runtime_color: Color = crosshair_ui.normal_color
+
+	if loaded_shape != "circle":
+		result.error = "Reload shape = %s, 期望 circle" % loaded_shape
+	elif loaded_preset != "blue":
+		result.error = "Reload preset = %s, 期望 blue" % loaded_preset
+	elif crosshair_ui.crosshair_shape != "circle":
+		result.error = "HUD shape = %s, 期望 circle" % crosshair_ui.crosshair_shape
+	elif not _is_color_close(runtime_color, expected_color):
+		result.error = "HUD color = %s, 期望 %s" % [runtime_color, expected_color]
+	else:
+		result.passed = true
+
+	_cleanup_crosshair_test_context(context)
+	_restore_crosshair_persisted_settings(snapshot)
+	return result
+
+
+func _create_crosshair_test_context() -> Dictionary:
+	if CrosshairSettingsService == null:
+		return {"error": "CrosshairSettingsService autoload 不存在"}
+
+	if _SETTINGS_PANEL_SCENE == null:
+		return {"error": "无法加载 settings_panel.tscn"}
+
+	if _HUD_SCENE == null:
+		return {"error": "无法加载 hud.tscn"}
+
+	var settings_panel = _SETTINGS_PANEL_SCENE.instantiate() as SettingsPanel
+	var hud = _HUD_SCENE.instantiate()
+
+	add_child(settings_panel)
+	add_child(hud)
+	settings_panel.show_panel()
+
+	var tab_container := settings_panel.get_node_or_null("TabContainer") as TabContainer
+	if tab_container == null:
+		settings_panel.queue_free()
+		hud.queue_free()
+		return {"error": "SettingsPanel/TabContainer 节点不存在"}
+
+	var crosshair_host := settings_panel.get_node_or_null("TabContainer/CrosshairTab/CrosshairPanelHost") as Control
+	if crosshair_host == null:
+		settings_panel.queue_free()
+		hud.queue_free()
+		return {"error": "CrosshairPanelHost 节点不存在"}
+
+	var crosshair_panel := crosshair_host.get_node_or_null("CrosshairSettingsPanel") as CrosshairSettingsPanel
+	if crosshair_panel == null:
+		settings_panel.queue_free()
+		hud.queue_free()
+		return {"error": "CrosshairSettingsPanel 子节点不存在"}
+
+	var crosshair_ui = hud.get_node_or_null("MainContainer/BottomBar/CenterSection/CrosshairUI")
+	if crosshair_ui == null:
+		settings_panel.queue_free()
+		hud.queue_free()
+		return {"error": "HUD CrosshairUI 节点不存在"}
+
+	return {
+		"settings_panel": settings_panel,
+		"hud": hud,
+		"tab_container": tab_container,
+		"crosshair_panel": crosshair_panel,
+		"crosshair_ui": crosshair_ui,
+	}
+
+
+func _cleanup_crosshair_test_context(context: Dictionary) -> void:
+	if context.has("hud") and is_instance_valid(context.hud):
+		context.hud.queue_free()
+
+	if context.has("settings_panel") and is_instance_valid(context.settings_panel):
+		context.settings_panel.queue_free()
+
+
+func _set_crosshair_test_baseline() -> void:
+	if CrosshairSettingsService == null:
+		return
+
+	CrosshairSettingsService.reset_to_defaults()
+	_flush_crosshair_settings_to_disk()
+	CrosshairSettingsService.reload_settings()
+
+
+func _flush_crosshair_settings_to_disk() -> void:
+	if CrosshairSettingsService == null:
+		return
+
+	if CrosshairSettingsService.has_method("_save_settings_to_disk"):
+		CrosshairSettingsService.call("_save_settings_to_disk")
+
+
+func _snapshot_crosshair_persisted_settings() -> Dictionary:
+	var save_manager = get_node_or_null("/root/SaveManager")
+	if save_manager == null:
+		return {}
+
+	var settings: Dictionary = save_manager.load_settings()
+	var persisted_key_map: Dictionary = _CROSSHAIR_SETTINGS_RESOURCE.get_persisted_key_map()
+	var snapshot: Dictionary = {}
+
+	for property_name in persisted_key_map.keys():
+		var persisted_key: String = persisted_key_map[property_name]
+		if settings.has(persisted_key):
+			snapshot[persisted_key] = settings[persisted_key]
+
+	return snapshot
+
+
+func _restore_crosshair_persisted_settings(snapshot: Dictionary) -> void:
+	var save_manager = get_node_or_null("/root/SaveManager")
+	if save_manager == null:
+		return
+
+	var defaults := (_CROSSHAIR_SETTINGS_RESOURCE.get_defaults() as CrosshairSettings).to_persisted_dictionary()
+	var restore_payload: Dictionary = {}
+
+	for persisted_key in defaults.keys():
+		if snapshot.has(persisted_key):
+			restore_payload[persisted_key] = snapshot[persisted_key]
+		else:
+			restore_payload[persisted_key] = defaults[persisted_key]
+
+	save_manager.save_settings(restore_payload)
+	if CrosshairSettingsService:
+		CrosshairSettingsService.reload_settings()
+
+
+func _is_color_close(actual: Color, expected: Color, tolerance: float = 0.01) -> bool:
+	return absf(actual.r - expected.r) <= tolerance and \
+		absf(actual.g - expected.g) <= tolerance and \
+		absf(actual.b - expected.b) <= tolerance and \
+		absf(actual.a - expected.a) <= tolerance
