@@ -415,11 +415,9 @@ func _handle_command(json_str: String) -> void:
 			_cmd_render_settings(params)
 		"resource":
 			_cmd_resource(params)
-		"dev_mode":
-			_cmd_dev_mode(params)
-		"dev_cmd":
-			_cmd_dev_cmd(params)
 		_:
+			if _try_project_command(command, params):
+				return
 			_send_response({"error": "Unknown command: %s" % command})
 
 
@@ -4504,22 +4502,20 @@ func _cmd_resource(params: Dictionary) -> void:
 			_send_response({"error": "Unknown resource action: %s" % action})
 
 
-# --- Dev Mode ---
-func _cmd_dev_mode(params: Dictionary) -> void:
-	if not DeveloperCommands:
-		_send_response({"success": false, "error": "DeveloperCommands autoload not available"})
-		return
-	var result = DeveloperCommands.handle_dev_mode(params)
-	_send_response(result)
-
-
-# --- Dev Cmd ---
-func _cmd_dev_cmd(params: Dictionary) -> void:
-	if not DeveloperCommands:
-		_send_response({"success": false, "error": "DeveloperCommands autoload not available"})
-		return
-	var result = DeveloperCommands.handle_dev_cmd(params)
-	_send_response(result)
+func _try_project_command(command: String, params: Dictionary) -> bool:
+	var project_commands: Node = get_tree().root.get_node_or_null("ProjectMcpCommands")
+	if project_commands == null:
+		return false
+	if not project_commands.has_method("can_handle_command") or not project_commands.has_method("handle_command"):
+		return false
+	if not bool(project_commands.call("can_handle_command", command)):
+		return false
+	var result: Variant = project_commands.call("handle_command", command, params)
+	if result is Dictionary:
+		_send_response(result)
+	else:
+		_send_response({"success": false, "error": "Project command returned invalid response: %s" % command})
+	return true
 
 
 func _exit_tree() -> void:

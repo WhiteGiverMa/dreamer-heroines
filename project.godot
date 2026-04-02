@@ -43,6 +43,7 @@ EnhancedInput="*res://src/autoload/enhanced_input.gd"
 GUIDE="*res://addons/guide/guide.gd"
 DeveloperMode="*res://src/autoload/developer_mode.gd"
 DeveloperCommands="*res://addons/developer_commands/command_handler.gd"
+ProjectMcpCommands="*res://src/autoload/project_mcp_commands.gd"
 
 [debug]
 

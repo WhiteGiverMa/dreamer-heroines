@@ -12,7 +12,10 @@ func _ready() -> void:
 
 
 func handle_dev_mode(params: Dictionary) -> Dictionary:
-	var enabled := bool(params.get("enabled", false))
+	var enabled_result := _parse_enabled_param(params)
+	if not bool(enabled_result.get("success", false)):
+		return enabled_result
+	var enabled := bool(enabled_result.get("value", false))
 	if not DeveloperMode:
 		return {"success": false, "error": "DeveloperMode autoload not available"}
 
@@ -26,6 +29,22 @@ func handle_dev_mode(params: Dictionary) -> Dictionary:
 	_dev_mode_enabled = DeveloperMode.is_active
 	print("DeveloperCommands: Dev mode %s" % ("enabled" if _dev_mode_enabled else "disabled"))
 	return {"success": true, "dev_mode": _dev_mode_enabled}
+
+
+func _parse_enabled_param(params: Dictionary) -> Dictionary:
+	var raw_value: Variant = params.get("enabled", false)
+	if raw_value is bool:
+		return {"success": true, "value": raw_value}
+	if raw_value is int:
+		return {"success": true, "value": raw_value != 0}
+	if raw_value is float:
+		return {"success": true, "value": not is_zero_approx(float(raw_value))}
+	var normalized := str(raw_value).strip_edges().to_lower()
+	if normalized in ["true", "1", "yes", "on"]:
+		return {"success": true, "value": true}
+	if normalized in ["false", "0", "no", "off"]:
+		return {"success": true, "value": false}
+	return {"success": false, "error": "Invalid enabled parameter: %s" % str(raw_value)}
 
 
 func handle_dev_cmd(params: Dictionary) -> Dictionary:
@@ -84,7 +103,9 @@ func _handle_wave_command(args: Array) -> Dictionary:
 	if args.is_empty():
 		return {"success": false, "error": "wave subcommand required (next/jump/pause/resume/info)"}
 	var subcmd = args[0]
-	var dev_mode = DeveloperMode
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
 	match subcmd:
 		"next":
 			dev_mode.cmd_next_wave()
@@ -114,7 +135,9 @@ func _handle_wave_command(args: Array) -> Dictionary:
 func _handle_ammo_command(args: Array) -> Dictionary:
 	if args.is_empty():
 		return {"success": false, "error": "ammo subcommand required (infinite/refill/set)"}
-	var dev_mode = DeveloperMode
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
 	var subcmd = args[0]
 	match subcmd:
 		"infinite":
@@ -147,7 +170,9 @@ func _handle_ammo_command(args: Array) -> Dictionary:
 
 
 func _handle_reload_command(args: Array) -> Dictionary:
-	var dev_mode = DeveloperMode
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
 	var config_name = "all" if args.is_empty() else args[0]
 	var result = dev_mode.cmd_reload_config(config_name)
 	return result
@@ -158,7 +183,9 @@ func _handle_config_command(args: Array) -> Dictionary:
 		return {"success": false, "error": "Usage: config get <config_name>"}
 	if args.size() < 2:
 		return {"success": false, "error": "Usage: config get <config_name>"}
-	var dev_mode = DeveloperMode
+	var dev_mode = _get_developer_mode()
+	if not dev_mode:
+		return {"success": false, "error": "DeveloperMode not available"}
 	return dev_mode.cmd_get_config(args[1])
 
 

@@ -235,7 +235,7 @@ func _update_health_display() -> void:
 
 
 func _show_damage_feedback(damage_amount: int) -> void:
-	if animation_player:
+	if animation_player and animation_player.has_animation("damage_flash"):
 		animation_player.play("damage_flash")
 
 	if damage_overlay:
@@ -580,7 +580,7 @@ func show_kill_streak(count: int) -> void:
 
 	show_message(streak_text, 1.5)
 
-	if animation_player:
+	if animation_player and animation_player.has_animation("kill_streak"):
 		animation_player.play("kill_streak")
 
 
