@@ -10,7 +10,7 @@ class TooltipHostSpy:
 	extends RefCounted
 
 	var show_calls: Array[Dictionary] = []
-	var hide_calls: Array[Dictionary] = []
+	var hide_call_count: int = 0
 
 	func show_tooltip(trigger: Node, target: Control, body_text: String) -> void:
 		show_calls.append({
@@ -19,11 +19,8 @@ class TooltipHostSpy:
 			"body_text": body_text,
 		})
 
-	func hide_tooltip(trigger: Node, target: Control) -> void:
-		hide_calls.append({
-			"trigger": trigger,
-			"target": target,
-		})
+	func hide_tooltip() -> void:
+		hide_call_count += 1
 
 
 class LocalizationManagerStub:
@@ -118,14 +115,12 @@ func test_immediate_hide_on_exit() -> void:
 	trigger.call("_on_mouse_entered")
 	trigger.call("_on_mouse_exited")
 
-	assert_eq(host_spy.hide_calls.size(), 1, "Mouse exit should hide the tooltip immediately without delay")
-	assert_same(host_spy.hide_calls[0]["target"], target, "Mouse-exit hide should clear the tooltip for the same control")
+	assert_eq(host_spy.hide_call_count, 1, "Mouse exit should hide the tooltip immediately without delay")
 
 	trigger.call("_on_focus_entered")
 	trigger.call("_on_focus_exited")
 
-	assert_eq(host_spy.hide_calls.size(), 2, "Focus loss should also hide the tooltip immediately")
-	assert_same(host_spy.hide_calls[1]["target"], target, "Focus-loss hide should clear the tooltip for the focused control")
+	assert_eq(host_spy.hide_call_count, 2, "Focus loss should also hide the tooltip immediately")
 
 
 func test_disabled_config_suppresses_display() -> void:
@@ -185,29 +180,34 @@ func test_viewport_anchored_placement() -> void:
 	if host == null:
 		return
 
-	assert_true(host.has_method("_compute_tooltip_position"), "TooltipHost should compute viewport-safe anchored placement")
+	var tooltip_view_script = _require_script(TOOLTIP_VIEW_SCRIPT_PATH, "TooltipView script")
+	if tooltip_view_script == null:
+		return
+
+	var tooltip_view: Control = autofree(tooltip_view_script.new())
+	assert_true(tooltip_view.has_method("_compute_position"), "TooltipView should compute viewport-safe anchored placement")
 
 	var viewport_rect := Rect2(Vector2.ZERO, Vector2(320, 180))
 	var tooltip_size := Vector2(120, 40)
 
-	var top_center_position: Vector2 = host.call(
-		"_compute_tooltip_position",
+	var top_center_position: Vector2 = tooltip_view.call(
+		"_compute_position",
 		Rect2(Vector2(100, 50), Vector2(80, 20)),
 		tooltip_size,
 		viewport_rect
 	)
 	assert_eq(top_center_position, Vector2(80, 10), "Tooltip should prefer top-center placement when there is sufficient room above the target")
 
-	var bottom_fallback_position: Vector2 = host.call(
-		"_compute_tooltip_position",
+	var bottom_fallback_position: Vector2 = tooltip_view.call(
+		"_compute_position",
 		Rect2(Vector2(100, 5), Vector2(80, 20)),
 		tooltip_size,
 		viewport_rect
 	)
 	assert_eq(bottom_fallback_position, Vector2(80, 25), "Tooltip should flip to bottom-center when top placement would leave the viewport")
 
-	var clamped_position: Vector2 = host.call(
-		"_compute_tooltip_position",
+	var clamped_position: Vector2 = tooltip_view.call(
+		"_compute_position",
 		Rect2(Vector2(300, 60), Vector2(40, 20)),
 		tooltip_size,
 		viewport_rect

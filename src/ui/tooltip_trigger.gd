@@ -1,7 +1,7 @@
 class_name TooltipTrigger
 extends Node
 
-const TOOLTIP_HOST_SCRIPT := preload("res://src/ui/tooltip_host.gd")
+const TooltipHostClass = preload("res://src/ui/tooltip_host.gd")
 
 @export var tooltip_enabled: bool = true
 @export var tooltip_translation_key: String = ""
@@ -67,7 +67,7 @@ func _show_tooltip() -> void:
 		return
 
 	_tooltip_visible = true
-	host.call("show_tooltip", self, _target_control, body_text)
+	host.show_tooltip(self, _target_control, body_text)
 
 
 func _hide_tooltip() -> void:
@@ -80,14 +80,10 @@ func _hide_tooltip() -> void:
 		return
 
 	var host = _resolve_tooltip_host(false)
-	if host == null or not host.has_method("hide_tooltip"):
+	if host == null:
 		return
 
-	if _is_runtime_tooltip_host(host):
-		host.hide_tooltip()
-		return
-
-	host.hide_tooltip(self, _target_control)
+	host.hide_tooltip()
 
 
 func _can_show_tooltip() -> bool:
@@ -120,24 +116,27 @@ func _resolve_tooltip_body_text() -> String:
 
 func _resolve_tooltip_host(create_if_missing: bool = true):
 	if tooltip_host != null:
+		if not (tooltip_host is Node) or is_instance_valid(tooltip_host):
+			return tooltip_host
+		tooltip_host = null
+
+	if tooltip_host != null and is_instance_valid(tooltip_host):
 		return tooltip_host
 
-	# First, check if scene already has a TooltipLayer
 	var tree := get_tree()
 	if tree != null and tree.current_scene != null:
-		var existing_host = tree.current_scene.get_node_or_null(TOOLTIP_HOST_SCRIPT.TOOLTIP_LAYER_NAME)
-		if existing_host != null:
-			tooltip_host = existing_host
+		var existing_host := tree.current_scene.get_node_or_null(TooltipHost.TOOLTIP_LAYER_NAME)
+		if existing_host is TooltipHost:
+			tooltip_host = existing_host as TooltipHost
 			return tooltip_host
 
 	if not create_if_missing:
 		return null
 
-	tooltip_host = TOOLTIP_HOST_SCRIPT.new()
+	tooltip_host = TooltipHostClass.new()
 
-	# Add host to scene tree as TooltipLayer
 	if tree != null and tree.current_scene != null:
-		tooltip_host.name = TOOLTIP_HOST_SCRIPT.TOOLTIP_LAYER_NAME
+		tooltip_host.name = TooltipHost.TOOLTIP_LAYER_NAME
 		tree.current_scene.add_child(tooltip_host)
 
 	return tooltip_host
@@ -154,18 +153,3 @@ func _resolve_localization_manager() -> Node:
 	localization_manager = get_node_or_null("/root/LocalizationManager")
 
 	return localization_manager
-
-
-func _is_runtime_tooltip_host(host: Object) -> bool:
-	return host.get_script() == TOOLTIP_HOST_SCRIPT and _get_method_argument_count(host, "hide_tooltip") == 0
-
-
-func _get_method_argument_count(object: Object, method_name: String) -> int:
-	for method_data in object.get_method_list():
-		if String(method_data.get("name", "")) != method_name:
-			continue
-
-		var args: Array = method_data.get("args", [])
-		return args.size()
-
-	return -1

@@ -28,3 +28,4 @@
 | loading_screen.gd | 加载界面 | 进度条、状态文本、淡出动画 |
 | crosshair_ui.gd | 动态准星 | 扩散可视化、换弹/空弹匣状态颜色变化 |
 | input_debug_widget.gd | 输入调试控件 | 实时显示跳跃/冲刺/移动/射击输入状态，仅调试用 |
+| tooltip_trigger.gd / tooltip_host.gd / tooltip_view.gd | 轻量 Tooltip 组件 | 复用说明见 `docs/TOOLTIP_ARCHITECTURE.md` |

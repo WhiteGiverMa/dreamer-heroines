@@ -2,7 +2,7 @@ class_name TooltipView
 extends PanelContainer
 
 ## Reusable tooltip view component with body-text-only content.
-## Handles its own positioning via show_at() and update_position().
+## Handles its own positioning via update_position().
 ## Mouse-filter ignore prevents stealing hover from target controls.
 
 @onready var _body_label: Label = %BodyLabel
@@ -37,11 +37,6 @@ func get_body_text() -> String:
 	return _body_text_content
 
 
-func show_at(screen_position: Vector2) -> void:
-	global_position = screen_position
-	show()
-
-
 func hide_tooltip() -> void:
 	hide()
 
@@ -50,42 +45,47 @@ func update_position(target: Control) -> void:
 	if not target:
 		return
 
-	var viewport_size := target.get_viewport_rect().size
+	var viewport_rect := target.get_viewport_rect()
 	var target_rect := target.get_global_rect()
 	var tooltip_size := get_combined_minimum_size()
 
-	var computed_pos: Vector2 = _compute_position(target_rect, tooltip_size, viewport_size)
+	var computed_pos: Vector2 = _compute_position(target_rect, tooltip_size, viewport_rect)
 	global_position = computed_pos
 
 
-func _compute_position(target_rect: Rect2, tooltip_size: Vector2, viewport_size: Vector2) -> Vector2:
-	# Try top-center placement first (above target, horizontally centered)
+func _compute_position(target_rect: Rect2, tooltip_size: Vector2, viewport_rect: Rect2) -> Vector2:
+	var viewport_left := viewport_rect.position.x
+	var viewport_top := viewport_rect.position.y
+	var viewport_right := viewport_rect.position.x + viewport_rect.size.x
+	var viewport_bottom := viewport_rect.position.y + viewport_rect.size.y
+	var max_x: float = max(viewport_left, viewport_right - tooltip_size.x)
+	var max_y: float = max(viewport_top, viewport_bottom - tooltip_size.y)
+
 	var top_position := Vector2(
 		target_rect.position.x + (target_rect.size.x - tooltip_size.x) / 2.0,
 		target_rect.position.y - tooltip_size.y
 	)
 
-	# Check if top placement stays within viewport
-	if top_position.y >= 0:
-		return top_position
+	if top_position.y >= viewport_top:
+		return Vector2(
+			clamp(top_position.x, viewport_left, max_x),
+			top_position.y
+		)
 
-	# Fallback to bottom-center placement (below target, horizontally centered)
 	var bottom_position := Vector2(
 		target_rect.position.x + (target_rect.size.x - tooltip_size.x) / 2.0,
 		target_rect.end.y
 	)
 
-	# Check if bottom placement stays within viewport
-	if bottom_position.y + tooltip_size.y <= viewport_size.y:
-		return bottom_position
+	if bottom_position.y + tooltip_size.y <= viewport_bottom:
+		return Vector2(
+			clamp(bottom_position.x, viewport_left, max_x),
+			bottom_position.y
+		)
 
-	# Viewport clamp: ensure tooltip stays within horizontal bounds
-	var clamped_x: float = clamp(top_position.x, 0, viewport_size.x - tooltip_size.x)
+	var clamped_x: float = clamp(top_position.x, viewport_left, max_x)
 
-	# Use whichever vertical position (top or bottom) is closer to viewport
-	var use_top: bool = top_position.y >= 0 or (bottom_position.y + tooltip_size.y > viewport_size.y)
+	if top_position.y >= viewport_top:
+		return Vector2(clamped_x, clamp(top_position.y, viewport_top, max_y))
 
-	if use_top:
-		return Vector2(clamped_x, max(0, top_position.y))
-	else:
-		return Vector2(clamped_x, bottom_position.y)
+	return Vector2(clamped_x, clamp(bottom_position.y, viewport_top, max_y))
