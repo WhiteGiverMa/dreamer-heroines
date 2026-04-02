@@ -125,31 +125,7 @@ func _ready() -> void:
 
 	_apply_localized_texts()
 
-	# 订阅准星设置服务
-	if CrosshairSettingsService:
-		CrosshairSettingsService.settings_changed.connect(_on_crosshair_settings_changed)
-		CrosshairSettingsService.settings_loaded.connect(_on_crosshair_settings_changed)
-		# 立即应用当前设置
-		_apply_crosshair_settings(CrosshairSettingsService.get_settings())
-
 	print("HUD initialized")
-
-
-func _apply_crosshair_settings(settings) -> void:
-	if not crosshair:
-		return
-
-	crosshair.crosshair_size = settings.crosshair_size
-	crosshair.crosshair_alpha = settings.crosshair_alpha
-	crosshair.show_center_dot = settings.show_center_dot
-	crosshair.center_dot_size = settings.center_dot_size
-	crosshair.spread_increase_per_shot = settings.spread_increase_per_shot
-	crosshair.recovery_rate = settings.recovery_rate
-	crosshair.max_spread_multiplier = settings.max_spread_multiplier
-
-
-func _on_crosshair_settings_changed(settings) -> void:
-	_apply_crosshair_settings(settings)
 
 
 func _setup_localized_bindings() -> void:
@@ -507,6 +483,12 @@ func show_hit_marker(is_kill: bool = false) -> void:
 		hit_marker.modulate = Color(1, 1, 1, 1)  # 普通命中为白色
 
 	hit_marker_timer.start(0.2)
+
+
+func on_crosshair_confirmed_hit(is_kill: bool = false) -> void:
+	show_hit_marker(is_kill)
+	if crosshair and crosshair.has_method("show_hit_feedback"):
+		crosshair.show_hit_feedback()
 
 
 func _on_hit_marker_timer_timeout() -> void:

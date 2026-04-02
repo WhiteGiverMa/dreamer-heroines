@@ -171,6 +171,57 @@ signal spread_changed(new_spread: float)
 		hit_color = value
 		queue_redraw()
 
+## 命中反馈开关
+@export var hit_feedback_enabled: bool = true:
+	set(value):
+		hit_feedback_enabled = value
+		if not hit_feedback_enabled:
+			_active_hit_feedback_stacks.clear()
+		queue_redraw()
+
+## 命中反馈持续时间（秒）
+@export var hit_feedback_duration: float = 0.08:
+	set(value):
+		hit_feedback_duration = maxf(value, 0.01)
+		queue_redraw()
+
+## 命中反馈缩放
+@export var hit_feedback_scale: float = 1.0:
+	set(value):
+		hit_feedback_scale = maxf(value, 0.1)
+		queue_redraw()
+
+## 命中反馈强度
+@export var hit_feedback_intensity: float = 1.0:
+	set(value):
+		hit_feedback_intensity = clampf(value, 0.0, 2.0)
+		queue_redraw()
+
+## 命中反馈扩张比率
+@export var hit_feedback_expand_ratio: float = 0.15:
+	set(value):
+		hit_feedback_expand_ratio = clampf(value, 0.0, 1.0)
+		queue_redraw()
+
+## 命中反馈脉冲速度
+@export var hit_feedback_pulse_speed: float = 8.0:
+	set(value):
+		hit_feedback_pulse_speed = maxf(value, 1.0)
+		queue_redraw()
+
+## 命中反馈最大并发层数
+@export var hit_feedback_max_stacks: int = 3:
+	set(value):
+		hit_feedback_max_stacks = maxi(value, 1)
+		_trim_hit_feedback_stacks()
+		queue_redraw()
+
+## 命中反馈并发模式（replace / stack / ignore_new）
+@export var hit_feedback_stacking_mode: String = "replace":
+	set(value):
+		hit_feedback_stacking_mode = _normalize_hit_feedback_stacking_mode(value)
+		queue_redraw()
+
 # ============================================
 # 导出配置 - 扩散行为
 # ============================================
@@ -207,6 +258,7 @@ var is_deploying: bool = false
 var is_empty_mag: bool = false
 
 var _service_connected: bool = false
+var _active_hit_feedback_stacks: Array[float] = []
 
 
 # ============================================
@@ -222,6 +274,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	global_position = get_viewport().get_mouse_position()
+	_update_hit_feedback(delta)
 	recover(delta)
 
 
@@ -258,6 +311,8 @@ func _draw() -> void:
 			_draw_cross_segments(center, draw_color, inner_offset, outer_offset)
 			if show_center_dot:
 				_draw_center_dot(center, draw_color)
+
+	_draw_hit_feedback_overlay(center, inner_offset, segment_length)
 
 
 func _initialize_from_settings_service() -> void:
@@ -307,6 +362,15 @@ func _apply_settings(settings) -> void:
 	spread_increase_per_shot = settings.spread_increase_per_shot
 	recovery_rate = settings.recovery_rate
 	max_spread_multiplier = settings.max_spread_multiplier
+	hit_feedback_enabled = settings.hit_feedback_enabled
+	hit_feedback_duration = settings.hit_feedback_duration
+	hit_feedback_scale = settings.hit_feedback_scale
+	hit_feedback_intensity = settings.hit_feedback_intensity
+	hit_feedback_expand_ratio = settings.hit_feedback_expand_ratio
+	hit_feedback_pulse_speed = settings.hit_feedback_pulse_speed
+	hit_feedback_max_stacks = settings.hit_feedback_max_stacks
+	hit_feedback_stacking_mode = settings.hit_feedback_stacking_mode
+	hit_color = Color(settings.hit_feedback_color_r, settings.hit_feedback_color_g, settings.hit_feedback_color_b, 1.0)
 
 	_sync_normal_color()
 
@@ -441,6 +505,79 @@ func _draw_segment(from: Vector2, to: Vector2, draw_color: Color, width: float =
 	draw_line(from, to, draw_color, width if width > 0.0 else line_thickness)
 
 
+func _draw_hit_feedback_overlay(center: Vector2, inner_offset: float, segment_length: float) -> void:
+	if _active_hit_feedback_stacks.is_empty():
+		return
+
+	var stack_count := _active_hit_feedback_stacks.size()
+	if stack_count <= 0:
+		return
+
+	var base_extent := maxf(center_dot_size + 2.0, (inner_offset + segment_length) * hit_feedback_scale)
+	var alpha_scale := clampf(crosshair_alpha * hit_feedback_intensity, 0.0, 1.0)
+	var line_width := line_thickness + hit_feedback_intensity
+
+	for i in range(stack_count):
+		var elapsed := _active_hit_feedback_stacks[i]
+		var progress := clampf(elapsed / maxf(hit_feedback_duration, 0.01), 0.0, 1.0)
+		var fade := 1.0 - progress
+		if fade <= 0.0:
+			continue
+
+		var pulse := sin(progress * PI * hit_feedback_pulse_speed) * hit_feedback_expand_ratio
+		var stack_extent := base_extent * (1.0 + (hit_feedback_expand_ratio * progress) + pulse)
+		stack_extent += float(i) * (line_thickness + 1.0)
+
+		var feedback_color := hit_color
+		feedback_color.a = clampf(alpha_scale * fade, 0.0, 1.0)
+		if feedback_color.a <= 0.0:
+			continue
+
+		draw_line(
+			center + Vector2(-stack_extent, -stack_extent),
+			center + Vector2(stack_extent, stack_extent),
+			feedback_color,
+			line_width
+		)
+		draw_line(
+			center + Vector2(-stack_extent, stack_extent),
+			center + Vector2(stack_extent, -stack_extent),
+			feedback_color,
+			line_width
+		)
+
+
+func _update_hit_feedback(delta: float) -> void:
+	if _active_hit_feedback_stacks.is_empty():
+		return
+
+	var has_active_stack := false
+	for i in range(_active_hit_feedback_stacks.size() - 1, -1, -1):
+		_active_hit_feedback_stacks[i] += delta
+		if _active_hit_feedback_stacks[i] >= hit_feedback_duration:
+			_active_hit_feedback_stacks.remove_at(i)
+		else:
+			has_active_stack = true
+
+	if has_active_stack or _active_hit_feedback_stacks.is_empty():
+		queue_redraw()
+
+
+func _trim_hit_feedback_stacks() -> void:
+	if hit_feedback_max_stacks <= 0:
+		_active_hit_feedback_stacks.clear()
+		return
+
+	while _active_hit_feedback_stacks.size() > hit_feedback_max_stacks:
+		_active_hit_feedback_stacks.remove_at(0)
+
+
+func _normalize_hit_feedback_stacking_mode(value: String) -> String:
+	if value == "stack" or value == "ignore_new":
+		return value
+	return "replace"
+
+
 # ============================================
 # 公开方法 - 扩散控制
 # ============================================
@@ -563,6 +700,20 @@ func _on_ammo_changed(current: int, maximum: int) -> void:
 
 ## 显示命中反馈
 func show_hit_feedback() -> void:
-	# 行为逻辑在 Task 7 实现
-	# Task 4: 仅触发重绘以响应反馈状态
+	if not hit_feedback_enabled:
+		return
+
+	if hit_feedback_stacking_mode == "ignore_new" and not _active_hit_feedback_stacks.is_empty():
+		return
+
+	if hit_feedback_stacking_mode == "replace":
+		_active_hit_feedback_stacks.clear()
+
+	if _active_hit_feedback_stacks.size() >= hit_feedback_max_stacks:
+		if hit_feedback_stacking_mode == "stack":
+			_active_hit_feedback_stacks.remove_at(0)
+		else:
+			return
+
+	_active_hit_feedback_stacks.append(0.0)
 	queue_redraw()

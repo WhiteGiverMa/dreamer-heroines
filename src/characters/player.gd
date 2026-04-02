@@ -113,6 +113,8 @@ var previous_slot_id: int = primary_slot_id
 var _frame_aim_origin: Vector2 = Vector2.ZERO
 var _frame_aim_dir: Vector2 = Vector2.RIGHT
 var _frame_muzzle_pos: Vector2 = Vector2.ZERO
+const HIT_FEEDBACK_CONNECTED_META := "_player_hit_feedback_connected"
+const HIT_FEEDBACK_TARGETS_META := "_player_hit_feedback_targets"
 
 func _ready():
 	add_to_group("player")
@@ -502,6 +504,7 @@ func _setup_weapon_signals(weapon: Weapon) -> void:
 	"""设置新 Weapon 组件的信号连接"""
 	if weapon.has_signal("shot_fired") and not weapon.shot_fired.is_connected(_on_weapon_shot_fired):
 		weapon.shot_fired.connect(_on_weapon_shot_fired)
+	_setup_hit_feedback_source(weapon)
 
 
 func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction: String) -> void:
@@ -509,11 +512,150 @@ func _on_weapon_shot_fired(pos: Vector2, dir: Vector2, faction: String) -> void:
 	# 生成玩家投射物
 	if ProjectileSpawner and current_weapon and current_weapon.stats:
 		var faction_type: int = Faction.Type.ENEMY if faction == "enemy" else Faction.Type.PLAYER
-		ProjectileSpawner.spawn_projectile(pos, dir, current_weapon.stats, faction_type, self)
+		var projectile := ProjectileSpawner.spawn_projectile(pos, dir, current_weapon.stats, faction_type, self)
+		_setup_hit_feedback_source(projectile)
 
 	# 应用相机震动（玩家特有）
 	if camera and current_weapon and current_weapon.stats:
 		camera.apply_shake(current_weapon.stats.screen_shake_amount)
+
+
+func _setup_hit_feedback_source(source: Node) -> void:
+	if source == null:
+		return
+
+	source.set_meta(HIT_FEEDBACK_TARGETS_META, {})
+
+	if source.has_meta(HIT_FEEDBACK_CONNECTED_META):
+		return
+
+	source.set_meta(HIT_FEEDBACK_CONNECTED_META, true)
+
+	if source is Area2D:
+		var source_area := source as Area2D
+		source_area.body_entered.connect(_on_hit_feedback_source_body_entered.bind(source))
+		source_area.area_entered.connect(_on_hit_feedback_source_area_entered.bind(source))
+
+	_connect_hitbox_feedback_signals(source, source)
+
+
+func _connect_hitbox_feedback_signals(node: Node, source: Node) -> void:
+	if node == null:
+		return
+
+	if node.has_signal("hit_hurtbox"):
+		var hit_feedback_callable := Callable(self, "_on_hit_feedback_source_hit_hurtbox").bind(source)
+		if not node.is_connected("hit_hurtbox", hit_feedback_callable):
+			node.connect("hit_hurtbox", hit_feedback_callable)
+
+	for child in node.get_children():
+		_connect_hitbox_feedback_signals(child, source)
+
+
+func _on_hit_feedback_source_body_entered(body: Node2D, source: Node) -> void:
+	var target_node := _resolve_hit_feedback_target(body, source)
+	if target_node == null:
+		return
+
+	_emit_crosshair_confirmed_hit(source, target_node)
+
+
+func _on_hit_feedback_source_area_entered(area: Area2D, source: Node) -> void:
+	var target_node := _resolve_hit_feedback_target(area, source)
+	if target_node == null:
+		return
+
+	_emit_crosshair_confirmed_hit(source, target_node)
+
+
+@warning_ignore("unused_parameter")
+func _on_hit_feedback_source_hit_hurtbox(hurtbox, _damage: int, source: Node) -> void:
+	if hurtbox == null:
+		return
+
+	var target_node := _resolve_hit_feedback_target(hurtbox, source)
+	if target_node == null and hurtbox is Node:
+		target_node = _resolve_hit_feedback_target((hurtbox as Node).get_parent(), source)
+	if target_node == null:
+		return
+
+	_emit_crosshair_confirmed_hit(source, target_node)
+
+
+func _resolve_hit_feedback_target(candidate: Node, source: Node) -> Node:
+	if candidate == null:
+		return null
+
+	var source_owner := _get_hit_feedback_source_owner(source)
+	if source_owner != null and candidate == source_owner:
+		return null
+	if candidate == self:
+		return null
+
+	var target_group := _resolve_hit_feedback_target_group(source)
+	return _find_group_target(candidate, target_group)
+
+
+func _get_hit_feedback_source_owner(source: Node) -> Node:
+	if source == null:
+		return null
+	if "owner_node" in source:
+		return source.owner_node
+	return null
+
+
+func _resolve_hit_feedback_target_group(source: Node) -> String:
+	var source_faction := Faction.Type.PLAYER
+	if source != null:
+		if "faction_type" in source:
+			source_faction = int(source.faction_type)
+		elif "faction" in source:
+			source_faction = Faction.string_to_type(String(source.faction))
+
+	var target_faction := Faction.get_target_type(source_faction)
+	if target_faction == Faction.Type.PLAYER:
+		return "player"
+	return "enemy"
+
+
+func _find_group_target(candidate: Node, group_name: String) -> Node:
+	var current: Node = candidate
+	var depth := 0
+	while current != null and depth < 5:
+		if current.is_in_group(group_name):
+			return current
+
+		if current.owner != null and current.owner.is_in_group(group_name):
+			return current.owner
+
+		current = current.get_parent()
+		depth += 1
+
+	return null
+
+
+func _emit_crosshair_confirmed_hit(source: Node, target: Node) -> void:
+	if source == null or target == null:
+		return
+
+	var hit_targets = source.get_meta(HIT_FEEDBACK_TARGETS_META, {})
+	if typeof(hit_targets) != TYPE_DICTIONARY:
+		hit_targets = {}
+
+	var target_id := target.get_instance_id()
+	if hit_targets.has(target_id):
+		return
+
+	hit_targets[target_id] = true
+	source.set_meta(HIT_FEEDBACK_TARGETS_META, hit_targets)
+
+	if not GameManager.hud:
+		return
+
+	if GameManager.hud.has_method("on_crosshair_confirmed_hit"):
+		GameManager.hud.on_crosshair_confirmed_hit(false)
+	elif GameManager.hud.has_method("show_hit_marker"):
+		GameManager.hud.show_hit_marker(false)
 
 
 func _on_weapon_ammo_changed(current: int, max: int) -> void:
