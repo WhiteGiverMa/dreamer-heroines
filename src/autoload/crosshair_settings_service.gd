@@ -27,31 +27,95 @@ signal settings_saved(success: bool)
 
 const SIZE_MIN := 2.0
 const SIZE_MAX := 60.0
-const SIZE_DEFAULT := 20.0
-
 const ALPHA_MIN := 0.0
 const ALPHA_MAX := 1.0
-const ALPHA_DEFAULT := 1.0
+const LINE_LENGTH_MIN := 1.0
+const LINE_LENGTH_MAX := 40.0
+const LINE_THICKNESS_MIN := 1.0
+const LINE_THICKNESS_MAX := 10.0
+const LINE_GAP_MIN := 0.0
+const LINE_GAP_MAX := 30.0
+const COLOR_CHANNEL_MIN := 0.0
+const COLOR_CHANNEL_MAX := 1.0
+const OUTLINE_THICKNESS_MIN := 0.0
+const OUTLINE_THICKNESS_MAX := 6.0
 
 const DOT_SIZE_MIN := 1.0
 const DOT_SIZE_MAX := 10.0
-const DOT_SIZE_DEFAULT := 2.0
+const DOT_ALPHA_MIN := 0.0
+const DOT_ALPHA_MAX := 1.0
 
 const SPREAD_INCREASE_MIN := 0.0
 const SPREAD_INCREASE_MAX := 20.0
-const SPREAD_INCREASE_DEFAULT := 5.0
 
 const RECOVERY_RATE_MIN := 1.0
 const RECOVERY_RATE_MAX := 120.0
-const RECOVERY_RATE_DEFAULT := 30.0
 
 const MAX_SPREAD_MULTIPLIER_MIN := 1.0
 const MAX_SPREAD_MULTIPLIER_MAX := 6.0
-const MAX_SPREAD_MULTIPLIER_DEFAULT := 3.0
-
-const SHOW_CENTER_DOT_DEFAULT := true
+const HIT_FEEDBACK_DURATION_MIN := 0.01
+const HIT_FEEDBACK_DURATION_MAX := 1.0
+const HIT_FEEDBACK_SCALE_MIN := 0.1
+const HIT_FEEDBACK_SCALE_MAX := 3.0
+const HIT_FEEDBACK_INTENSITY_MIN := 0.0
+const HIT_FEEDBACK_INTENSITY_MAX := 2.0
+const HIT_FEEDBACK_EXPAND_RATIO_MIN := 0.0
+const HIT_FEEDBACK_EXPAND_RATIO_MAX := 1.0
+const HIT_FEEDBACK_PULSE_SPEED_MIN := 1.0
+const HIT_FEEDBACK_PULSE_SPEED_MAX := 30.0
+const HIT_FEEDBACK_MAX_STACKS_MIN := 1
+const HIT_FEEDBACK_MAX_STACKS_MAX := 10
 
 const SETTINGS_FILE_KEY := "crosshair"
+
+const COLOR_PRESETS := {
+	"white": Color(1.0, 1.0, 1.0, 1.0),
+	"green": Color(0.0, 1.0, 0.0, 1.0),
+	"yellow": Color(1.0, 1.0, 0.0, 1.0),
+	"cyan": Color(0.0, 1.0, 1.0, 1.0),
+	"red": Color(1.0, 0.0, 0.0, 1.0),
+	"magenta": Color(1.0, 0.0, 1.0, 1.0),
+	"blue": Color(0.24, 0.52, 1.0, 1.0),
+	"orange": Color(1.0, 0.56, 0.0, 1.0),
+}
+
+const CROSSHAIR_PROPERTIES: Array[StringName] = [
+	&"crosshair_size",
+	&"crosshair_alpha",
+	&"crosshair_shape",
+	&"color_mode",
+	&"color_preset",
+	&"custom_color_r",
+	&"custom_color_g",
+	&"custom_color_b",
+	&"line_length",
+	&"line_thickness",
+	&"line_gap",
+	&"use_t_shape",
+	&"outline_enabled",
+	&"outline_color_r",
+	&"outline_color_g",
+	&"outline_color_b",
+	&"outline_thickness",
+	&"show_center_dot",
+	&"center_dot_size",
+	&"center_dot_alpha",
+	&"enable_dynamic_spread",
+	&"spread_increase_per_shot",
+	&"recovery_rate",
+	&"max_spread_multiplier",
+	&"hit_feedback_enabled",
+	&"hit_feedback_duration",
+	&"hit_feedback_scale",
+	&"hit_feedback_intensity",
+	&"hit_feedback_expand_ratio",
+	&"hit_feedback_pulse_speed",
+	&"hit_feedback_max_stacks",
+	&"hit_feedback_stacking_mode",
+	&"hit_feedback_color_r",
+	&"hit_feedback_color_g",
+	&"hit_feedback_color_b",
+]
 
 # ============================================
 # 内部状态
@@ -59,6 +123,7 @@ const SETTINGS_FILE_KEY := "crosshair"
 
 var _settings: CrosshairSettings
 var _is_initialized: bool = false
+var _pending_persistence_migration: bool = false
 
 # ============================================
 # 生命周期
@@ -87,144 +152,143 @@ func update_settings(new_settings: CrosshairSettings) -> void:
 	# 应用范围限制
 	_clamp_settings(new_settings)
 
-	var has_changed := false
-
-	# 检查每个属性是否有变化
-	if not is_equal_approx(_settings.crosshair_size, new_settings.crosshair_size):
-		_settings.crosshair_size = new_settings.crosshair_size
-		has_changed = true
-		setting_changed.emit(&"crosshair_size", _settings.crosshair_size)
-
-	if not is_equal_approx(_settings.crosshair_alpha, new_settings.crosshair_alpha):
-		_settings.crosshair_alpha = new_settings.crosshair_alpha
-		has_changed = true
-		setting_changed.emit(&"crosshair_alpha", _settings.crosshair_alpha)
-
-	if _settings.show_center_dot != new_settings.show_center_dot:
-		_settings.show_center_dot = new_settings.show_center_dot
-		has_changed = true
-		setting_changed.emit(&"show_center_dot", _settings.show_center_dot)
-
-	if not is_equal_approx(_settings.center_dot_size, new_settings.center_dot_size):
-		_settings.center_dot_size = new_settings.center_dot_size
-		has_changed = true
-		setting_changed.emit(&"center_dot_size", _settings.center_dot_size)
-
-	if not is_equal_approx(_settings.spread_increase_per_shot, new_settings.spread_increase_per_shot):
-		_settings.spread_increase_per_shot = new_settings.spread_increase_per_shot
-		has_changed = true
-		setting_changed.emit(&"spread_increase_per_shot", _settings.spread_increase_per_shot)
-
-	if not is_equal_approx(_settings.recovery_rate, new_settings.recovery_rate):
-		_settings.recovery_rate = new_settings.recovery_rate
-		has_changed = true
-		setting_changed.emit(&"recovery_rate", _settings.recovery_rate)
-
-	if not is_equal_approx(_settings.max_spread_multiplier, new_settings.max_spread_multiplier):
-		_settings.max_spread_multiplier = new_settings.max_spread_multiplier
-		has_changed = true
-		setting_changed.emit(&"max_spread_multiplier", _settings.max_spread_multiplier)
-
-	if has_changed:
+	if _apply_settings_values(new_settings):
 		settings_changed.emit(_settings.copy())
 		_save_settings_deferred()
 
 
 ## 更新单个属性
 func update_setting(property_name: StringName, value: Variant) -> void:
-	var has_changed := false
-	var clamped_value: Variant
+	var new_settings: CrosshairSettings = _settings.copy()
+	var normalized_value: Variant
 
 	match property_name:
 		&"crosshair_size":
-			clamped_value = clampf(float(value), SIZE_MIN, SIZE_MAX)
-			if not is_equal_approx(_settings.crosshair_size, clamped_value):
-				_settings.crosshair_size = clamped_value
-				has_changed = true
+			normalized_value = clampf(float(value), SIZE_MIN, SIZE_MAX)
 
 		&"crosshair_alpha":
-			clamped_value = clampf(float(value), ALPHA_MIN, ALPHA_MAX)
-			if not is_equal_approx(_settings.crosshair_alpha, clamped_value):
-				_settings.crosshair_alpha = clamped_value
-				has_changed = true
+			normalized_value = clampf(float(value), ALPHA_MIN, ALPHA_MAX)
+
+		&"crosshair_shape":
+			normalized_value = _validate_enum(String(value).to_lower(), CrosshairSettingsResource.VALID_SHAPES, _settings.crosshair_shape)
+
+		&"color_mode":
+			normalized_value = _validate_enum(String(value).to_lower(), CrosshairSettingsResource.VALID_COLOR_MODES, _settings.color_mode)
+
+		&"color_preset":
+			normalized_value = _validate_enum(String(value).to_lower(), CrosshairSettingsResource.VALID_COLOR_PRESETS, _settings.color_preset)
+
+		&"custom_color_r":
+			normalized_value = clampf(float(value), COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+
+		&"custom_color_g":
+			normalized_value = clampf(float(value), COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+
+		&"custom_color_b":
+			normalized_value = clampf(float(value), COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+
+		&"line_length":
+			normalized_value = clampf(float(value), LINE_LENGTH_MIN, LINE_LENGTH_MAX)
+
+		&"line_thickness":
+			normalized_value = clampf(float(value), LINE_THICKNESS_MIN, LINE_THICKNESS_MAX)
+
+		&"line_gap":
+			normalized_value = clampf(float(value), LINE_GAP_MIN, LINE_GAP_MAX)
+
+		&"use_t_shape":
+			normalized_value = _validate_bool(value, _settings.use_t_shape)
+
+		&"outline_enabled":
+			normalized_value = _validate_bool(value, _settings.outline_enabled)
+
+		&"outline_color_r":
+			normalized_value = clampf(float(value), COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+
+		&"outline_color_g":
+			normalized_value = clampf(float(value), COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+
+		&"outline_color_b":
+			normalized_value = clampf(float(value), COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+
+		&"outline_thickness":
+			normalized_value = clampf(float(value), OUTLINE_THICKNESS_MIN, OUTLINE_THICKNESS_MAX)
 
 		&"show_center_dot":
-			clamped_value = bool(value)
-			if _settings.show_center_dot != clamped_value:
-				_settings.show_center_dot = clamped_value
-				has_changed = true
+			normalized_value = _validate_bool(value, _settings.show_center_dot)
 
 		&"center_dot_size":
-			clamped_value = clampf(float(value), DOT_SIZE_MIN, DOT_SIZE_MAX)
-			if not is_equal_approx(_settings.center_dot_size, clamped_value):
-				_settings.center_dot_size = clamped_value
-				has_changed = true
+			normalized_value = clampf(float(value), DOT_SIZE_MIN, DOT_SIZE_MAX)
+
+		&"center_dot_alpha":
+			normalized_value = clampf(float(value), DOT_ALPHA_MIN, DOT_ALPHA_MAX)
+
+		&"enable_dynamic_spread":
+			normalized_value = _validate_bool(value, _settings.enable_dynamic_spread)
 
 		&"spread_increase_per_shot":
-			clamped_value = clampf(float(value), SPREAD_INCREASE_MIN, SPREAD_INCREASE_MAX)
-			if not is_equal_approx(_settings.spread_increase_per_shot, clamped_value):
-				_settings.spread_increase_per_shot = clamped_value
-				has_changed = true
+			normalized_value = clampf(float(value), SPREAD_INCREASE_MIN, SPREAD_INCREASE_MAX)
 
 		&"recovery_rate":
-			clamped_value = clampf(float(value), RECOVERY_RATE_MIN, RECOVERY_RATE_MAX)
-			if not is_equal_approx(_settings.recovery_rate, clamped_value):
-				_settings.recovery_rate = clamped_value
-				has_changed = true
+			normalized_value = clampf(float(value), RECOVERY_RATE_MIN, RECOVERY_RATE_MAX)
 
 		&"max_spread_multiplier":
-			clamped_value = clampf(float(value), MAX_SPREAD_MULTIPLIER_MIN, MAX_SPREAD_MULTIPLIER_MAX)
-			if not is_equal_approx(_settings.max_spread_multiplier, clamped_value):
-				_settings.max_spread_multiplier = clamped_value
-				has_changed = true
+			normalized_value = clampf(float(value), MAX_SPREAD_MULTIPLIER_MIN, MAX_SPREAD_MULTIPLIER_MAX)
+
+		&"hit_feedback_enabled":
+			normalized_value = _validate_bool(value, _settings.hit_feedback_enabled)
+
+		&"hit_feedback_duration":
+			normalized_value = clampf(float(value), HIT_FEEDBACK_DURATION_MIN, HIT_FEEDBACK_DURATION_MAX)
+
+		&"hit_feedback_scale":
+			normalized_value = clampf(float(value), HIT_FEEDBACK_SCALE_MIN, HIT_FEEDBACK_SCALE_MAX)
+
+		&"hit_feedback_intensity":
+			normalized_value = clampf(float(value), HIT_FEEDBACK_INTENSITY_MIN, HIT_FEEDBACK_INTENSITY_MAX)
+
+		&"hit_feedback_expand_ratio":
+			normalized_value = clampf(float(value), HIT_FEEDBACK_EXPAND_RATIO_MIN, HIT_FEEDBACK_EXPAND_RATIO_MAX)
+
+		&"hit_feedback_pulse_speed":
+			normalized_value = clampf(float(value), HIT_FEEDBACK_PULSE_SPEED_MIN, HIT_FEEDBACK_PULSE_SPEED_MAX)
+
+		&"hit_feedback_max_stacks":
+			normalized_value = clampi(int(value), HIT_FEEDBACK_MAX_STACKS_MIN, HIT_FEEDBACK_MAX_STACKS_MAX)
+
+		&"hit_feedback_stacking_mode":
+			normalized_value = _validate_enum(
+				String(value).to_lower(),
+				CrosshairSettingsResource.VALID_HIT_FEEDBACK_STACKING_MODES,
+				_settings.hit_feedback_stacking_mode
+			)
+
+		&"hit_feedback_color_r":
+			normalized_value = clampf(float(value), COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+
+		&"hit_feedback_color_g":
+			normalized_value = clampf(float(value), COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+
+		&"hit_feedback_color_b":
+			normalized_value = clampf(float(value), COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
 
 		_:
 			push_warning("[CrosshairSettingsService] Unknown property: %s" % property_name)
 			return
 
-	if has_changed:
-		setting_changed.emit(property_name, _settings.get(property_name))
+	new_settings.set(property_name, normalized_value)
+
+	if _apply_settings_values(new_settings):
 		settings_changed.emit(_settings.copy())
 		_save_settings_deferred()
 
 
 ## 重置为默认值
 func reset_to_defaults() -> void:
-	var old_settings: CrosshairSettings = _settings.copy()
-	_settings = CrosshairSettingsResource.new()
-	_clamp_settings(_settings)
+	var default_settings := CrosshairSettingsResource.get_defaults() as CrosshairSettings
+	_clamp_settings(default_settings)
 
-	var has_changed := false
-
-	if not is_equal_approx(old_settings.crosshair_size, _settings.crosshair_size):
-		setting_changed.emit(&"crosshair_size", _settings.crosshair_size)
-		has_changed = true
-
-	if not is_equal_approx(old_settings.crosshair_alpha, _settings.crosshair_alpha):
-		setting_changed.emit(&"crosshair_alpha", _settings.crosshair_alpha)
-		has_changed = true
-
-	if old_settings.show_center_dot != _settings.show_center_dot:
-		setting_changed.emit(&"show_center_dot", _settings.show_center_dot)
-		has_changed = true
-
-	if not is_equal_approx(old_settings.center_dot_size, _settings.center_dot_size):
-		setting_changed.emit(&"center_dot_size", _settings.center_dot_size)
-		has_changed = true
-
-	if not is_equal_approx(old_settings.spread_increase_per_shot, _settings.spread_increase_per_shot):
-		setting_changed.emit(&"spread_increase_per_shot", _settings.spread_increase_per_shot)
-		has_changed = true
-
-	if not is_equal_approx(old_settings.recovery_rate, _settings.recovery_rate):
-		setting_changed.emit(&"recovery_rate", _settings.recovery_rate)
-		has_changed = true
-
-	if not is_equal_approx(old_settings.max_spread_multiplier, _settings.max_spread_multiplier):
-		setting_changed.emit(&"max_spread_multiplier", _settings.max_spread_multiplier)
-		has_changed = true
-
-	if has_changed:
+	if _apply_settings_values(default_settings):
 		settings_changed.emit(_settings.copy())
 		_save_settings_deferred()
 
@@ -233,34 +297,16 @@ func reset_to_defaults() -> void:
 func reload_settings() -> void:
 	var loaded_settings: CrosshairSettings = _load_settings_from_disk()
 	if loaded_settings != null:
-		var old_settings: CrosshairSettings = _settings.copy()
-		_settings = loaded_settings
-		_clamp_settings(_settings)
+		_clamp_settings(loaded_settings)
 
-		# 检查哪些属性发生了变化
-		if not is_equal_approx(old_settings.crosshair_size, _settings.crosshair_size):
-			setting_changed.emit(&"crosshair_size", _settings.crosshair_size)
-
-		if not is_equal_approx(old_settings.crosshair_alpha, _settings.crosshair_alpha):
-			setting_changed.emit(&"crosshair_alpha", _settings.crosshair_alpha)
-
-		if old_settings.show_center_dot != _settings.show_center_dot:
-			setting_changed.emit(&"show_center_dot", _settings.show_center_dot)
-
-		if not is_equal_approx(old_settings.center_dot_size, _settings.center_dot_size):
-			setting_changed.emit(&"center_dot_size", _settings.center_dot_size)
-
-		if not is_equal_approx(old_settings.spread_increase_per_shot, _settings.spread_increase_per_shot):
-			setting_changed.emit(&"spread_increase_per_shot", _settings.spread_increase_per_shot)
-
-		if not is_equal_approx(old_settings.recovery_rate, _settings.recovery_rate):
-			setting_changed.emit(&"recovery_rate", _settings.recovery_rate)
-
-		if not is_equal_approx(old_settings.max_spread_multiplier, _settings.max_spread_multiplier):
-			setting_changed.emit(&"max_spread_multiplier", _settings.max_spread_multiplier)
-
-		settings_changed.emit(_settings.copy())
+		if _apply_settings_values(loaded_settings):
+			settings_changed.emit(_settings.copy())
+		else:
+			settings_changed.emit(_settings.copy())
 		settings_loaded.emit(_settings.copy())
+		if _pending_persistence_migration:
+			_pending_persistence_migration = false
+			_save_settings_deferred()
 
 
 # ============================================
@@ -283,6 +329,126 @@ func get_crosshair_alpha() -> float:
 	return _settings.crosshair_alpha
 
 
+func set_crosshair_shape(value: String) -> void:
+	update_setting(&"crosshair_shape", value)
+
+
+func get_crosshair_shape() -> String:
+	return _settings.crosshair_shape
+
+
+func set_color_mode(value: String) -> void:
+	update_setting(&"color_mode", value)
+
+
+func get_color_mode() -> String:
+	return _settings.color_mode
+
+
+func set_color_preset(value: String) -> void:
+	update_setting(&"color_preset", value)
+
+
+func get_color_preset() -> String:
+	return _settings.color_preset
+
+
+func set_custom_color_r(value: float) -> void:
+	update_setting(&"custom_color_r", value)
+
+
+func get_custom_color_r() -> float:
+	return _settings.custom_color_r
+
+
+func set_custom_color_g(value: float) -> void:
+	update_setting(&"custom_color_g", value)
+
+
+func get_custom_color_g() -> float:
+	return _settings.custom_color_g
+
+
+func set_custom_color_b(value: float) -> void:
+	update_setting(&"custom_color_b", value)
+
+
+func get_custom_color_b() -> float:
+	return _settings.custom_color_b
+
+
+func set_line_length(value: float) -> void:
+	update_setting(&"line_length", value)
+
+
+func get_line_length() -> float:
+	return _settings.line_length
+
+
+func set_line_thickness(value: float) -> void:
+	update_setting(&"line_thickness", value)
+
+
+func get_line_thickness() -> float:
+	return _settings.line_thickness
+
+
+func set_line_gap(value: float) -> void:
+	update_setting(&"line_gap", value)
+
+
+func get_line_gap() -> float:
+	return _settings.line_gap
+
+
+func set_use_t_shape(value: bool) -> void:
+	update_setting(&"use_t_shape", value)
+
+
+func get_use_t_shape() -> bool:
+	return _settings.use_t_shape
+
+
+func set_outline_enabled(value: bool) -> void:
+	update_setting(&"outline_enabled", value)
+
+
+func get_outline_enabled() -> bool:
+	return _settings.outline_enabled
+
+
+func set_outline_color_r(value: float) -> void:
+	update_setting(&"outline_color_r", value)
+
+
+func get_outline_color_r() -> float:
+	return _settings.outline_color_r
+
+
+func set_outline_color_g(value: float) -> void:
+	update_setting(&"outline_color_g", value)
+
+
+func get_outline_color_g() -> float:
+	return _settings.outline_color_g
+
+
+func set_outline_color_b(value: float) -> void:
+	update_setting(&"outline_color_b", value)
+
+
+func get_outline_color_b() -> float:
+	return _settings.outline_color_b
+
+
+func set_outline_thickness(value: float) -> void:
+	update_setting(&"outline_thickness", value)
+
+
+func get_outline_thickness() -> float:
+	return _settings.outline_thickness
+
+
 func set_show_center_dot(value: bool) -> void:
 	update_setting(&"show_center_dot", value)
 
@@ -297,6 +463,22 @@ func set_center_dot_size(value: float) -> void:
 
 func get_center_dot_size() -> float:
 	return _settings.center_dot_size
+
+
+func set_center_dot_alpha(value: float) -> void:
+	update_setting(&"center_dot_alpha", value)
+
+
+func get_center_dot_alpha() -> float:
+	return _settings.center_dot_alpha
+
+
+func set_enable_dynamic_spread(value: bool) -> void:
+	update_setting(&"enable_dynamic_spread", value)
+
+
+func get_enable_dynamic_spread() -> bool:
+	return _settings.enable_dynamic_spread
 
 
 func set_spread_increase_per_shot(value: float) -> void:
@@ -323,26 +505,144 @@ func get_max_spread_multiplier() -> float:
 	return _settings.max_spread_multiplier
 
 
+func set_hit_feedback_enabled(value: bool) -> void:
+	update_setting(&"hit_feedback_enabled", value)
+
+
+func get_hit_feedback_enabled() -> bool:
+	return _settings.hit_feedback_enabled
+
+
+func set_hit_feedback_duration(value: float) -> void:
+	update_setting(&"hit_feedback_duration", value)
+
+
+func get_hit_feedback_duration() -> float:
+	return _settings.hit_feedback_duration
+
+
+func set_hit_feedback_scale(value: float) -> void:
+	update_setting(&"hit_feedback_scale", value)
+
+
+func get_hit_feedback_scale() -> float:
+	return _settings.hit_feedback_scale
+
+
+func set_hit_feedback_intensity(value: float) -> void:
+	update_setting(&"hit_feedback_intensity", value)
+
+
+func get_hit_feedback_intensity() -> float:
+	return _settings.hit_feedback_intensity
+
+
+func set_hit_feedback_expand_ratio(value: float) -> void:
+	update_setting(&"hit_feedback_expand_ratio", value)
+
+
+func get_hit_feedback_expand_ratio() -> float:
+	return _settings.hit_feedback_expand_ratio
+
+
+func set_hit_feedback_pulse_speed(value: float) -> void:
+	update_setting(&"hit_feedback_pulse_speed", value)
+
+
+func get_hit_feedback_pulse_speed() -> float:
+	return _settings.hit_feedback_pulse_speed
+
+
+func set_hit_feedback_max_stacks(value: int) -> void:
+	update_setting(&"hit_feedback_max_stacks", value)
+
+
+func get_hit_feedback_max_stacks() -> int:
+	return _settings.hit_feedback_max_stacks
+
+
+func set_hit_feedback_stacking_mode(value: String) -> void:
+	update_setting(&"hit_feedback_stacking_mode", value)
+
+
+func get_hit_feedback_stacking_mode() -> String:
+	return _settings.hit_feedback_stacking_mode
+
+
+func set_hit_feedback_color_r(value: float) -> void:
+	update_setting(&"hit_feedback_color_r", value)
+
+
+func get_hit_feedback_color_r() -> float:
+	return _settings.hit_feedback_color_r
+
+
+func set_hit_feedback_color_g(value: float) -> void:
+	update_setting(&"hit_feedback_color_g", value)
+
+
+func get_hit_feedback_color_g() -> float:
+	return _settings.hit_feedback_color_g
+
+
+func set_hit_feedback_color_b(value: float) -> void:
+	update_setting(&"hit_feedback_color_b", value)
+
+
+func get_hit_feedback_color_b() -> float:
+	return _settings.hit_feedback_color_b
+
+
 # ============================================
 # 私有方法
 # ============================================
 
 func _initialize_settings() -> void:
-	_settings = CrosshairSettingsResource.new()
+	_pending_persistence_migration = false
+	_settings = CrosshairSettingsResource.get_defaults() as CrosshairSettings
 	var loaded_settings := _load_settings_from_disk()
 	if loaded_settings != null:
 		_settings = loaded_settings
 	_clamp_settings(_settings)
 	_is_initialized = true
 	settings_loaded.emit(_settings.copy())
+	if _pending_persistence_migration:
+		_pending_persistence_migration = false
+		_save_settings_deferred()
 
 
 func _clamp_settings(settings: CrosshairSettings) -> void:
+	settings.crosshair_shape = _validate_enum(
+		settings.crosshair_shape,
+		CrosshairSettingsResource.VALID_SHAPES,
+		CrosshairSettingsResource.DEFAULT_VALUES["crosshair_shape"]
+	)
+	settings.color_mode = _validate_enum(
+		settings.color_mode,
+		CrosshairSettingsResource.VALID_COLOR_MODES,
+		CrosshairSettingsResource.DEFAULT_VALUES["color_mode"]
+	)
+	settings.color_preset = _validate_enum(
+		settings.color_preset,
+		CrosshairSettingsResource.VALID_COLOR_PRESETS,
+		CrosshairSettingsResource.DEFAULT_VALUES["color_preset"]
+	)
 	settings.crosshair_size = clampf(settings.crosshair_size, SIZE_MIN, SIZE_MAX)
 	settings.crosshair_alpha = clampf(settings.crosshair_alpha, ALPHA_MIN, ALPHA_MAX)
+	settings.custom_color_r = clampf(settings.custom_color_r, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+	settings.custom_color_g = clampf(settings.custom_color_g, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+	settings.custom_color_b = clampf(settings.custom_color_b, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+	settings.line_length = clampf(settings.line_length, LINE_LENGTH_MIN, LINE_LENGTH_MAX)
+	settings.line_thickness = clampf(settings.line_thickness, LINE_THICKNESS_MIN, LINE_THICKNESS_MAX)
+	settings.line_gap = clampf(settings.line_gap, LINE_GAP_MIN, LINE_GAP_MAX)
+	settings.outline_color_r = clampf(settings.outline_color_r, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+	settings.outline_color_g = clampf(settings.outline_color_g, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+	settings.outline_color_b = clampf(settings.outline_color_b, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+	settings.outline_thickness = clampf(settings.outline_thickness, OUTLINE_THICKNESS_MIN, OUTLINE_THICKNESS_MAX)
 	settings.center_dot_size = clampf(
 		settings.center_dot_size, DOT_SIZE_MIN, DOT_SIZE_MAX
 	)
+	settings.center_dot_alpha = clampf(settings.center_dot_alpha, DOT_ALPHA_MIN, DOT_ALPHA_MAX)
 	settings.spread_increase_per_shot = clampf(
 		settings.spread_increase_per_shot, SPREAD_INCREASE_MIN, SPREAD_INCREASE_MAX
 	)
@@ -352,6 +652,32 @@ func _clamp_settings(settings: CrosshairSettings) -> void:
 	settings.max_spread_multiplier = clampf(
 		settings.max_spread_multiplier, MAX_SPREAD_MULTIPLIER_MIN, MAX_SPREAD_MULTIPLIER_MAX
 	)
+	settings.hit_feedback_duration = clampf(
+		settings.hit_feedback_duration, HIT_FEEDBACK_DURATION_MIN, HIT_FEEDBACK_DURATION_MAX
+	)
+	settings.hit_feedback_scale = clampf(
+		settings.hit_feedback_scale, HIT_FEEDBACK_SCALE_MIN, HIT_FEEDBACK_SCALE_MAX
+	)
+	settings.hit_feedback_intensity = clampf(
+		settings.hit_feedback_intensity, HIT_FEEDBACK_INTENSITY_MIN, HIT_FEEDBACK_INTENSITY_MAX
+	)
+	settings.hit_feedback_expand_ratio = clampf(
+		settings.hit_feedback_expand_ratio, HIT_FEEDBACK_EXPAND_RATIO_MIN, HIT_FEEDBACK_EXPAND_RATIO_MAX
+	)
+	settings.hit_feedback_pulse_speed = clampf(
+		settings.hit_feedback_pulse_speed, HIT_FEEDBACK_PULSE_SPEED_MIN, HIT_FEEDBACK_PULSE_SPEED_MAX
+	)
+	settings.hit_feedback_max_stacks = clampi(
+		settings.hit_feedback_max_stacks, HIT_FEEDBACK_MAX_STACKS_MIN, HIT_FEEDBACK_MAX_STACKS_MAX
+	)
+	settings.hit_feedback_stacking_mode = _validate_enum(
+		settings.hit_feedback_stacking_mode,
+		CrosshairSettingsResource.VALID_HIT_FEEDBACK_STACKING_MODES,
+		CrosshairSettingsResource.DEFAULT_VALUES["hit_feedback_stacking_mode"]
+	)
+	settings.hit_feedback_color_r = clampf(settings.hit_feedback_color_r, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+	settings.hit_feedback_color_g = clampf(settings.hit_feedback_color_g, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+	settings.hit_feedback_color_b = clampf(settings.hit_feedback_color_b, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
 
 
 func _save_settings_deferred() -> void:
@@ -365,15 +691,7 @@ func _save_settings_to_disk() -> void:
 		settings_saved.emit(false)
 		return
 
-	var settings_dict := {
-		"crosshair_size": _settings.crosshair_size,
-		"crosshair_alpha": _settings.crosshair_alpha,
-		"show_center_dot": _settings.show_center_dot,
-		"center_dot_size": _settings.center_dot_size,
-		"spread_increase_per_shot": _settings.spread_increase_per_shot,
-		"crosshair_recovery_rate": _settings.recovery_rate,
-		"max_spread_multiplier": _settings.max_spread_multiplier
-	}
+	var settings_dict := _settings.to_persisted_dictionary()
 
 	# 使用 SaveManager 保存设置
 	if save_manager.has_method("save_settings"):
@@ -398,23 +716,69 @@ func _load_settings_from_disk() -> CrosshairSettings:
 	if loaded_dict.is_empty():
 		return null
 
-	var settings := CrosshairSettingsResource.new()
-
-	if loaded_dict.has("crosshair_size"):
-		settings.crosshair_size = float(loaded_dict["crosshair_size"])
-	if loaded_dict.has("crosshair_alpha"):
-		settings.crosshair_alpha = float(loaded_dict["crosshair_alpha"])
-	if loaded_dict.has("show_center_dot"):
-		settings.show_center_dot = bool(loaded_dict["show_center_dot"])
-	if loaded_dict.has("center_dot_size"):
-		settings.center_dot_size = float(loaded_dict["center_dot_size"])
-	if loaded_dict.has("spread_increase_per_shot"):
-		settings.spread_increase_per_shot = float(loaded_dict["spread_increase_per_shot"])
-	if loaded_dict.has("crosshair_recovery_rate"):
-		settings.recovery_rate = float(loaded_dict["crosshair_recovery_rate"])
-	elif loaded_dict.has("recovery_rate"):
-		settings.recovery_rate = float(loaded_dict["recovery_rate"])
-	if loaded_dict.has("max_spread_multiplier"):
-		settings.max_spread_multiplier = float(loaded_dict["max_spread_multiplier"])
+	var settings := CrosshairSettingsResource.get_defaults() as CrosshairSettings
+	settings.from_dictionary(loaded_dict)
+	var normalized_persisted := settings.to_persisted_dictionary()
+	if _requires_persisted_migration(loaded_dict, normalized_persisted):
+		_pending_persistence_migration = true
 
 	return settings
+
+
+func _requires_persisted_migration(raw_settings: Dictionary, normalized_persisted: Dictionary) -> bool:
+	for persisted_key in normalized_persisted.keys():
+		if not raw_settings.has(persisted_key):
+			return true
+
+	var persisted_key_map: Dictionary = CrosshairSettingsResource.get_persisted_key_map()
+	var property_aliases: Dictionary = CrosshairSettingsResource.get_property_key_aliases()
+
+	for property_name in persisted_key_map.keys():
+		var persisted_key := String(persisted_key_map[property_name])
+		var aliases: Array = property_aliases.get(property_name, [])
+		for alias in aliases:
+			var alias_key := String(alias)
+			if alias_key == String(property_name) or alias_key == persisted_key:
+				continue
+			if raw_settings.has(alias_key):
+				return true
+
+	return false
+
+
+func _apply_settings_values(source_settings: CrosshairSettings) -> bool:
+	var has_changed := false
+
+	for property_name in CROSSHAIR_PROPERTIES:
+		var current_value: Variant = _settings.get(property_name)
+		var incoming_value: Variant = source_settings.get(property_name)
+		if _values_match(current_value, incoming_value):
+			continue
+
+		_settings.set(property_name, incoming_value)
+		setting_changed.emit(property_name, _settings.get(property_name))
+		has_changed = true
+
+	return has_changed
+
+
+func _values_match(current_value: Variant, incoming_value: Variant) -> bool:
+	match typeof(current_value):
+		TYPE_FLOAT:
+			return is_equal_approx(float(current_value), float(incoming_value))
+		TYPE_INT:
+			return int(current_value) == int(incoming_value)
+		_:
+			return current_value == incoming_value
+
+
+func _validate_enum(value: String, valid_values: Array, fallback: String) -> String:
+	return value if valid_values.has(value) else fallback
+
+
+func _validate_bool(value: Variant, fallback: bool) -> bool:
+	if typeof(value) == TYPE_BOOL:
+		return value
+	if typeof(value) == TYPE_INT and (value == 0 or value == 1):
+		return bool(value)
+	return fallback

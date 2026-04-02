@@ -1,5 +1,23 @@
 extends "res://src/base/game_system.gd"
 
+const CrosshairSettingsResource = preload("res://src/data/crosshair_settings.gd")
+
+const SETTINGS_KEY_ALIASES := {
+	"master_volume": ["masterVolume", "MasterVolume"],
+	"music_volume": ["musicVolume", "MusicVolume"],
+	"sfx_volume": ["sfxVolume", "SFXVolume"],
+	"ui_volume": ["uiVolume", "UiVolume", "UIVolume"],
+	"mouse_sensitivity": ["mouseSensitivity", "MouseSensitivity"],
+	"fullscreen": ["Fullscreen"],
+	"vsync": ["vSync", "VSync"],
+	"window_mode": ["windowMode", "WindowMode"],
+	"locale": ["language", "Language"],
+	"developer_mode_enabled": ["developerModeEnabled", "DeveloperModeEnabled"],
+	"lighting_enabled": ["lightingEnabled", "LightingEnabled"],
+	"resolution_width": ["resolutionWidth", "ResolutionWidth"],
+	"resolution_height": ["resolutionHeight", "ResolutionHeight"],
+}
+
 # SaveManager - GDScript 存档管理器包装器
 # 提供GDScript接口调用C# SaveManager
 
@@ -158,29 +176,16 @@ func update_player_data(player_data) -> void:
 
 # 设置
 func save_settings(settings: Dictionary) -> void:
-	if _csharp_save_manager and _csharp_save_manager.has_method("SaveSettings"):
-		_csharp_save_manager.SaveSettings(settings)
-		return
-
-	_save_settings_to_file(settings)
+	var merged_settings := _load_settings_from_file()
+	for key in settings.keys():
+		merged_settings[key] = settings[key]
+	_save_settings_to_file(merged_settings)
 
 func load_settings() -> Dictionary:
-	if _csharp_save_manager:
-		if _csharp_save_manager.has_method("LoadSettingsDictionary"):
-			var loaded_settings = _csharp_save_manager.LoadSettingsDictionary()
-			if loaded_settings is Dictionary:
-				return loaded_settings
-		if _csharp_save_manager.has_method("LoadSettings"):
-			var csharp_settings = _csharp_save_manager.LoadSettings()
-			if csharp_settings:
-				return _convert_csharp_settings_to_dict(csharp_settings)
-
 	return _load_settings_from_file()
 
 func _save_settings_to_file(settings: Dictionary) -> void:
-	var merged_settings: Dictionary = _get_default_settings()
-	for key in settings.keys():
-		merged_settings[key] = settings[key]
+	var merged_settings := _normalize_settings_payload(settings)
 
 	var file := FileAccess.open("user://settings.json", FileAccess.WRITE)
 	if file:
@@ -209,10 +214,7 @@ func _load_settings_from_file() -> Dictionary:
 
 	var parsed = JSON.parse_string(text)
 	if parsed is Dictionary:
-		var merged_settings: Dictionary = _get_default_settings()
-		for key in parsed.keys():
-			merged_settings[key] = parsed[key]
-		return merged_settings
+		return _normalize_settings_payload(parsed)
 
 	push_warning("[SaveManager] 设置文件格式无效，使用默认设置")
 	return _get_default_settings()
@@ -395,19 +397,12 @@ func _migrate_legacy_save_data() -> void:
 		marker_file.close()
 
 func _get_default_settings() -> Dictionary:
-	return {
+	var defaults := {
 		"master_volume": 0.8,
 		"music_volume": 0.7,
 		"sfx_volume": 1.0,
 		"ui_volume": 0.7,
 		"mouse_sensitivity": 1.0,
-		"crosshair_size": 20.0,
-		"crosshair_alpha": 1.0,
-		"show_center_dot": true,
-		"center_dot_size": 2.0,
-		"spread_increase_per_shot": 5.0,
-		"crosshair_recovery_rate": 30.0,
-		"max_spread_multiplier": 3.0,
 		"fullscreen": false,
 		"vsync": true,
 		"window_mode": 0,  # 0=Windowed, 1=Fullscreen, 2=Borderless
@@ -415,6 +410,50 @@ func _get_default_settings() -> Dictionary:
 		"developer_mode_enabled": false,
 		"lighting_enabled": true
 	}
+
+	var crosshair_defaults := (CrosshairSettingsResource.get_defaults() as CrosshairSettings).to_persisted_dictionary()
+	for key in crosshair_defaults.keys():
+		defaults[key] = crosshair_defaults[key]
+
+	return defaults
+
+
+func _apply_crosshair_settings_compatibility(target_settings: Dictionary, source_settings: Dictionary = {}) -> void:
+	var source := source_settings if not source_settings.is_empty() else target_settings
+	var normalized_crosshair := CrosshairSettingsResource.normalize_persisted_dictionary(source)
+
+	for key in normalized_crosshair.keys():
+		target_settings[key] = normalized_crosshair[key]
+
+	if target_settings.has("recovery_rate"):
+		target_settings.erase("recovery_rate")
+
+
+func _normalize_settings_payload(source_settings: Dictionary) -> Dictionary:
+	var normalized_settings: Dictionary = _get_default_settings()
+
+	for key in source_settings.keys():
+		normalized_settings[key] = source_settings[key]
+
+	_apply_general_settings_aliases(normalized_settings, source_settings)
+	_apply_crosshair_settings_compatibility(normalized_settings, source_settings)
+
+	for canonical_key in SETTINGS_KEY_ALIASES.keys():
+		for alias_key in SETTINGS_KEY_ALIASES[canonical_key]:
+			if normalized_settings.has(alias_key):
+				normalized_settings.erase(alias_key)
+
+	return normalized_settings
+
+
+func _apply_general_settings_aliases(target_settings: Dictionary, source_settings: Dictionary) -> void:
+	for canonical_key in SETTINGS_KEY_ALIASES.keys():
+		if source_settings.has(canonical_key):
+			continue
+		for alias_key in SETTINGS_KEY_ALIASES[canonical_key]:
+			if source_settings.has(alias_key):
+				target_settings[canonical_key] = source_settings[alias_key]
+				break
 
 func _convert_csharp_settings_to_dict(csharp_settings) -> Dictionary:
 	if csharp_settings is Dictionary:
