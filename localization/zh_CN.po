@@ -61,6 +61,18 @@ msgstr "加载游戏"
 msgid "ui.main_menu.panel.credits.title"
 msgstr "制作人员"
 
+msgid "ui.main_menu.level_select.title"
+msgstr "开始新游戏"
+
+msgid "ui.main_menu.level_select.subtitle"
+msgstr "竞技场 01 会开始 Roguelike 轮次。\n测试关卡是非 Roguelike 的开发路径。"
+
+msgid "ui.main_menu.level_select.button.arena_01"
+msgstr "开始 Roguelike 轮次\n竞技场 01"
+
+msgid "ui.main_menu.level_select.button.test_level"
+msgstr "打开测试关卡\n非 Roguelike / 开发路径"
+
 msgid "ui.main_menu.window_mode.0"
 msgstr "窗口模式"
 
@@ -141,6 +153,39 @@ msgstr "垂直同步"
 
 msgid "ui.settings.developer_mode"
 msgstr "开发者模式 (F12)"
+
+msgid "ui.roguelike_reward_selection.title"
+msgstr "选择你的祝福"
+
+msgid "ui.roguelike_reward_selection.subtitle"
+msgstr "选择一项祝福来强化本轮冒险"
+
+msgid "ui.roguelike_reward_selection.placeholder_option"
+msgstr "祝福\n描述"
+
+msgid "ui.roguelike_reward_selection.unknown_blessing"
+msgstr "未知祝福"
+
+msgid "ui.roguelike_reward_selection.unknown_description"
+msgstr "描述暂缺"
+
+msgid "blessing.vitality_boost.title"
+msgstr "生命强化"
+
+msgid "blessing.vitality_boost.description"
+msgstr "最大生命值 +20"
+
+msgid "blessing.swift_step.title"
+msgstr "迅捷步伐"
+
+msgid "blessing.swift_step.description"
+msgstr "移动速度 +30"
+
+msgid "blessing.dash_tune.title"
+msgstr "冲刺调谐"
+
+msgid "blessing.dash_tune.description"
+msgstr "冲刺冷却 -0.15 秒"
 
 msgid "ui.pause_menu.title"
 msgstr "已暂停"

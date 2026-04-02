@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://jvkvb1r3fyay"]
+
+[ext_resource type="Script" path="res://src/ui/tooltip_view.gd" id="1_tooltip_view"]
+
+[node name="TooltipView" type="PanelContainer"]
+script = ExtResource("1_tooltip_view")
+
+[node name="BodyLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1

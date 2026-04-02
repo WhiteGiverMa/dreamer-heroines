@@ -135,10 +135,7 @@ func _wire_signals() -> void:
 			_wave_spawner.all_waves_complete.connect(_on_all_waves_complete)
 
 	if _mission_objective and _wave_spawner:
-		if _wave_spawner.has_method("get_target_kills"):
-			_mission_objective.target_kills = _wave_spawner.get_target_kills()
-		elif _wave_spawner.has_method("get_total_enemy_count"):
-			_mission_objective.target_kills = _wave_spawner.get_total_enemy_count()
+		_mission_objective.target_kills = _resolve_target_kills()
 
 	if _mission_objective:
 		if not _mission_objective.score_changed.is_connected(_on_score_changed):
@@ -288,3 +285,34 @@ func _resolve_level_id() -> String:
 			return manager_level_id
 
 	return "arena_01"
+
+
+func _resolve_target_kills() -> int:
+	var config_target_kills := _read_target_kills_from_wave_config()
+	if config_target_kills > 0:
+		return config_target_kills
+
+	if _wave_spawner and _wave_spawner.has_method("get_target_kills"):
+		return int(_wave_spawner.call("get_target_kills"))
+
+	if _wave_spawner and _wave_spawner.has_method("get_total_enemy_count"):
+		return int(_wave_spawner.call("get_total_enemy_count"))
+
+	return 25
+
+
+func _read_target_kills_from_wave_config() -> int:
+	var config_path := "res://config/waves/%s_waves.json" % _level_id
+	if not FileAccess.file_exists(config_path):
+		return -1
+
+	var file := FileAccess.open(config_path, FileAccess.READ)
+	if file == null:
+		return -1
+
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not (parsed is Dictionary):
+		return -1
+
+	return int(parsed.get("target_kills", -1))

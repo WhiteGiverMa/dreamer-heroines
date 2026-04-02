@@ -14,11 +14,6 @@ signal quit_requested
 
 const SaveSlotScene = preload("res://scenes/ui/save_slot.tscn")
 
-const LEVEL_SELECT_TITLE := "Start New Game"
-const LEVEL_SELECT_SUBTITLE := "Arena 01 starts the roguelike run.\nTest Level is a non-roguelike dev path."
-const ARENA_01_BUTTON_TEXT := "Start Roguelike Run\nArena 01"
-const TEST_LEVEL_BUTTON_TEXT := "Open Test Level\nNon-Roguelike / Dev Path"
-
 @export_group("Menu Buttons")
 @export var continue_button: Button
 @export var new_game_button: Button
@@ -583,16 +578,16 @@ func _apply_localized_texts() -> void:
 
 	var level_select_title: Label = get_node_or_null("LevelSelectPanel/Title")
 	if level_select_title:
-		level_select_title.text = LEVEL_SELECT_TITLE
+		level_select_title.text = LocalizationManager.tr("ui.main_menu.level_select.title")
 
 	var level_select_subtitle: Label = get_node_or_null("LevelSelectPanel/Subtitle")
 	if level_select_subtitle:
-		level_select_subtitle.text = LEVEL_SELECT_SUBTITLE
+		level_select_subtitle.text = LocalizationManager.tr("ui.main_menu.level_select.subtitle")
 
 	if arena_01_button:
-		arena_01_button.text = ARENA_01_BUTTON_TEXT
+		arena_01_button.text = LocalizationManager.tr("ui.main_menu.level_select.button.arena_01")
 	if test_level_button:
-		test_level_button.text = TEST_LEVEL_BUTTON_TEXT
+		test_level_button.text = LocalizationManager.tr("ui.main_menu.level_select.button.test_level")
 
 	var level_select_back = get_node_or_null("LevelSelectPanel/VBoxContainer/BackButton")
 	if level_select_back:

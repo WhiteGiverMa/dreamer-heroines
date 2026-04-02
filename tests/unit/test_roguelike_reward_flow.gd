@@ -2,6 +2,7 @@ extends GutTest
 
 
 const GameManagerClass = preload("res://src/autoload/game_manager.gd")
+const LevelDataClass = preload("res://src/levels/level_data.gd")
 
 
 # Test doubles/stubs
@@ -45,6 +46,9 @@ class TestableGameManager:
 
 	func _get_level_manager_node() -> Node:
 		return _level_manager_override
+
+	func expose_reset_stale_roguelike_ui_refs(current_scene: Node = null) -> void:
+		_reset_stale_roguelike_ui_refs(current_scene)
 
 	func _ensure_roguelike_reward_modal() -> void:
 		# Override to use stub instead of instantiating real scene
@@ -214,3 +218,69 @@ func test_notify_roguelike_room_cleared_ignores_reentry_during_transition() -> v
 
 	assert_false(_manager.roguelike_reward_active, "Room-clear event should be ignored while transition is in flight")
 	assert_null(_manager.roguelike_reward_modal, "Reward modal should not be created during transition")
+
+
+func test_level_loaded_clears_dirty_reward_gate_state() -> void:
+	_manager.start_minimal_roguelike_run("arena_01")
+	_manager.notify_roguelike_room_cleared("arena_01")
+	assert_not_null(_manager.roguelike_reward_modal, "Reward modal should exist after room clear")
+	_manager.roguelike_transition_in_flight = true
+	_manager.roguelike_reward_active = true
+	_manager.roguelike_reward_modal.visible = true
+
+	var level_data := LevelDataClass.new()
+	level_data.level_id = "arena_02"
+	_manager._on_roguelike_level_loaded(level_data)
+
+	assert_false(_manager.roguelike_transition_in_flight, "Level load should clear in-flight transition state")
+	assert_false(_manager.roguelike_reward_active, "Level load should clear stale reward-active state")
+	if _manager.roguelike_reward_modal:
+		assert_false(_manager.roguelike_reward_modal.visible, "Level load should hide any stale reward modal")
+	else:
+		pass_test("Level load may fully discard stale reward modal references after scene transition")
+
+
+func test_reset_stale_ui_refs_drops_reward_modal_from_previous_scene() -> void:
+	var old_scene := Node2D.new()
+	old_scene.name = "OldArena"
+	add_child_autofree(old_scene)
+
+	var stale_runtime_ui := CanvasLayer.new()
+	stale_runtime_ui.name = "RuntimeUI"
+	old_scene.add_child(stale_runtime_ui)
+
+	var stale_modal := RoguelikeRewardModalStub.new()
+	stale_modal.name = "RoguelikeRewardSelection"
+	stale_runtime_ui.add_child(stale_modal)
+
+	_manager.runtime_ui_layer = stale_runtime_ui
+	_manager.roguelike_reward_modal = stale_modal
+
+	var new_scene := Node2D.new()
+	new_scene.name = "NewArena"
+	add_child_autofree(new_scene)
+
+	_manager.expose_reset_stale_roguelike_ui_refs(new_scene)
+
+	assert_null(_manager.runtime_ui_layer, "Runtime UI reference should be cleared when it belongs to an old scene")
+	assert_null(_manager.roguelike_reward_modal, "Reward modal reference should be cleared when it belongs to an old scene")
+
+
+func test_register_player_clears_stuck_transition_gate_for_arrived_scene() -> void:
+	_manager.start_minimal_roguelike_run("arena_01")
+	_manager.roguelike_transition_in_flight = true
+	_manager.roguelike_reward_active = true
+
+	var stale_modal := RoguelikeRewardModalStub.new()
+	stale_modal.visible = true
+	add_child_autofree(stale_modal)
+	_manager.roguelike_reward_modal = stale_modal
+
+	var mock_player := MockPlayer.new()
+	add_child_autofree(mock_player)
+
+	_manager.register_player(mock_player)
+
+	assert_false(_manager.roguelike_transition_in_flight, "Registering the new player should clear a stale transition gate once the new scene has arrived")
+	assert_false(_manager.roguelike_reward_active, "Registering the new player should clear stale reward-active state")
+	assert_false(stale_modal.visible, "Registering the new player should hide any stale reward modal")

@@ -21,6 +21,7 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	_set_tree_tracking_enabled(false)
+	_set_enemy_manager_tracking_enabled(false)
 
 
 func start(reset_progress: bool = true) -> void:
@@ -29,12 +30,14 @@ func start(reset_progress: bool = true) -> void:
 
 	_is_active = true
 	_set_tree_tracking_enabled(true)
+	_set_enemy_manager_tracking_enabled(true)
 	_track_existing_enemies()
 
 
 func stop() -> void:
 	_is_active = false
 	_set_tree_tracking_enabled(false)
+	_set_enemy_manager_tracking_enabled(false)
 
 
 func reset() -> void:
@@ -57,6 +60,7 @@ func add_kill(amount: int = 1) -> void:
 		_is_completed = true
 		_is_active = false
 		_set_tree_tracking_enabled(false)
+		_set_enemy_manager_tracking_enabled(false)
 		objective_complete.emit()
 
 
@@ -67,6 +71,7 @@ func fail(reason: String) -> void:
 	if not _is_completed:
 		_is_active = false
 		_set_tree_tracking_enabled(false)
+		_set_enemy_manager_tracking_enabled(false)
 		objective_failed.emit(reason)
 
 
@@ -82,6 +87,9 @@ func register_enemy(enemy: Node) -> bool:
 		return false
 
 	_tracked_enemy_ids[enemy_id] = true
+	if _uses_enemy_manager_kill_feed():
+		return true
+
 	var on_died: Callable = _on_enemy_died.bind(enemy_id)
 	if not enemy.is_connected("died", on_died):
 		enemy.connect("died", on_died, CONNECT_ONE_SHOT)
@@ -145,6 +153,28 @@ func _set_tree_tracking_enabled(enabled: bool) -> void:
 		tree_ref.node_added.disconnect(callable_ref)
 
 
+func _set_enemy_manager_tracking_enabled(enabled: bool) -> void:
+	var enemy_manager := _get_enemy_manager()
+	if enemy_manager == null or not enemy_manager.has_signal("enemy_died"):
+		return
+
+	var callable_ref := Callable(self, "_on_enemy_manager_enemy_died")
+	var is_connected_now: bool = enemy_manager.enemy_died.is_connected(callable_ref)
+	if enabled and not is_connected_now:
+		enemy_manager.enemy_died.connect(callable_ref)
+	elif not enabled and is_connected_now:
+		enemy_manager.enemy_died.disconnect(callable_ref)
+
+
+func _uses_enemy_manager_kill_feed() -> bool:
+	var enemy_manager := _get_enemy_manager()
+	return enemy_manager != null and enemy_manager.has_signal("enemy_died")
+
+
+func _get_enemy_manager() -> Node:
+	return get_node_or_null("/root/EnemyManager")
+
+
 func _on_tree_node_added(node: Node) -> void:
 	if not _is_active or _is_completed:
 		return
@@ -168,6 +198,18 @@ func _on_enemy_died(enemy_id: int) -> void:
 		return
 
 	_tracked_enemy_ids.erase(enemy_id)
+	add_kill(1)
+
+
+func _on_enemy_manager_enemy_died(enemy: Node, _enemy_type: String) -> void:
+	if not _is_active or _is_completed:
+		return
+	if enemy == null:
+		return
+
+	var enemy_id := enemy.get_instance_id()
+	if _tracked_enemy_ids.has(enemy_id):
+		_tracked_enemy_ids.erase(enemy_id)
 	add_kill(1)
 
 

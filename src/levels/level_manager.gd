@@ -315,6 +315,21 @@ func _check_objectives() -> void:
 	
 	match current_level_data.primary_objective:
 		LevelData.ObjectiveType.ELIMINATE_ALL:
+			var mission_objective := _get_scene_mission_objective()
+			if mission_objective:
+				var current_kills := 0
+				var target_kills := 0
+				if mission_objective.has_method("get_current_kills"):
+					current_kills = int(mission_objective.call("get_current_kills"))
+				if "target_kills" in mission_objective:
+					target_kills = int(mission_objective.target_kills)
+
+				var progress := 0.0
+				if target_kills > 0:
+					progress = clampf(float(current_kills) / float(target_kills), 0.0, 1.0)
+				objective_updated.emit(LevelData.ObjectiveType.ELIMINATE_ALL, progress)
+				return
+
 			var remaining = get_tree().get_nodes_in_group("enemy").size()
 			if remaining == 0 and total_enemies > 0:
 				complete_level()
@@ -335,6 +350,20 @@ func _check_time_limit() -> void:
 		if elapsed_time >= current_level_data.time_limit:
 			if current_level_data.primary_objective != LevelData.ObjectiveType.SURVIVE_TIME:
 				fail_level("时间耗尽")
+
+
+func _get_scene_mission_objective() -> Node:
+	if current_level == null or not is_instance_valid(current_level):
+		return null
+
+	var mission_objective := current_level.get_node_or_null("MissionObjective")
+	if mission_objective == null or not is_instance_valid(mission_objective):
+		return null
+
+	if not mission_objective.has_signal("objective_complete"):
+		return null
+
+	return mission_objective
 
 # 敌人管理
 func on_enemy_killed(_enemy: Node) -> void:

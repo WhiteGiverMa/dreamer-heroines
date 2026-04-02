@@ -44,9 +44,9 @@ var roguelike_level_index: int = 0
 var roguelike_selected_blessings: Array[String] = []
 
 const ROGUELIKE_BLESSINGS = {
-	"vitality_boost": {"title": "Vitality Boost", "description": "Max Health +20", "stat": "max_health", "value": 20},
-	"swift_step": {"title": "Swift Step", "description": "Move Speed +30", "stat": "max_speed", "value": 30.0},
-	"dash_tune": {"title": "Dash Tune", "description": "Dash CD -0.15s", "stat": "dash_cooldown", "value": -0.15}
+	"vitality_boost": {"title_key": "blessing.vitality_boost.title", "description_key": "blessing.vitality_boost.description", "stat": "max_health", "value": 20},
+	"swift_step": {"title_key": "blessing.swift_step.title", "description_key": "blessing.swift_step.description", "stat": "max_speed", "value": 30.0},
+	"dash_tune": {"title_key": "blessing.dash_tune.title", "description_key": "blessing.dash_tune.description", "stat": "dash_cooldown", "value": -0.15}
 }
 
 # 测试注入点（默认使用 autoload 节点）
@@ -207,8 +207,7 @@ func complete_level() -> void:
 # Roguelike Run Contract
 func start_minimal_roguelike_run(start_level_id := "arena_01") -> void:
 	roguelike_run_active = true
-	roguelike_reward_active = false
-	roguelike_transition_in_flight = false
+	_clear_roguelike_reward_gate_state()
 	roguelike_level_sequence = ["arena_01", "arena_02"]
 	if start_level_id != "" and not roguelike_level_sequence.is_empty():
 		roguelike_level_sequence[0] = start_level_id
@@ -218,8 +217,7 @@ func start_minimal_roguelike_run(start_level_id := "arena_01") -> void:
 
 func reset_minimal_roguelike_run() -> void:
 	roguelike_run_active = false
-	roguelike_reward_active = false
-	roguelike_transition_in_flight = false
+	_clear_roguelike_reward_gate_state()
 	roguelike_level_sequence.clear()
 	roguelike_level_index = 0
 	roguelike_selected_blessings.clear()
@@ -258,11 +256,12 @@ func notify_roguelike_room_cleared(level_id: String) -> void:
 
 
 func _ensure_roguelike_reward_modal() -> void:
-	if roguelike_reward_modal and is_instance_valid(roguelike_reward_modal):
-		return
-
 	var current_scene := get_tree().current_scene
 	if current_scene == null:
+		return
+
+	_reset_stale_roguelike_ui_refs(current_scene)
+	if roguelike_reward_modal and is_instance_valid(roguelike_reward_modal):
 		return
 
 	if runtime_ui_layer and is_instance_valid(runtime_ui_layer):
@@ -349,13 +348,46 @@ func _get_next_roguelike_level_id() -> String:
 
 
 func _on_roguelike_level_loaded(level_data: LevelData) -> void:
-	roguelike_transition_in_flight = false
+	_clear_roguelike_reward_gate_state()
 	if level_data == null:
 		return
 	if not roguelike_run_active:
 		return
 
 	# 玩家由场景/LevelManager 注册，register_player() 会执行 blessing 重应用。
+
+
+func _clear_roguelike_reward_gate_state() -> void:
+	roguelike_reward_active = false
+	roguelike_transition_in_flight = false
+	if roguelike_reward_modal and is_instance_valid(roguelike_reward_modal):
+		roguelike_reward_modal.visible = false
+	_reset_stale_roguelike_ui_refs(get_tree().current_scene if get_tree() else null)
+
+
+func _reset_stale_roguelike_ui_refs(current_scene: Node = null) -> void:
+	if current_scene == null and get_tree():
+		current_scene = get_tree().current_scene
+
+	if runtime_ui_layer and is_instance_valid(runtime_ui_layer):
+		if current_scene == null or not _node_belongs_to_scene(runtime_ui_layer, current_scene):
+			runtime_ui_layer = null
+	else:
+		runtime_ui_layer = null
+
+	if roguelike_reward_modal and is_instance_valid(roguelike_reward_modal):
+		if current_scene == null or not _node_belongs_to_scene(roguelike_reward_modal, current_scene):
+			roguelike_reward_modal = null
+	else:
+		roguelike_reward_modal = null
+
+
+func _node_belongs_to_scene(node: Node, current_scene: Node) -> bool:
+	if node == null or current_scene == null:
+		return false
+	if not is_instance_valid(node) or not is_instance_valid(current_scene):
+		return false
+	return node == current_scene or current_scene.is_ancestor_of(node)
 
 
 func _reapply_roguelike_blessings_to_player(player: Node2D) -> void:
@@ -428,6 +460,8 @@ func register_player(player: Node2D) -> void:
 	# Roguelike 模式下，新玩家实例注册时重应用祝福。
 	if roguelike_run_active:
 		_reapply_roguelike_blessings_to_player(player)
+		if roguelike_transition_in_flight:
+			_clear_roguelike_reward_gate_state()
 	
 	# 连接玩家信号
 	if player.has_signal("health_changed"):

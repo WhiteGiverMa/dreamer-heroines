@@ -1,0 +1,127 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://tests/scripts/tooltip_test.gd" id="1_script"]
+[ext_resource type="Script" path="res://src/ui/tooltip_trigger.gd" id="2_tooltip_trigger"]
+[ext_resource type="Script" path="res://src/ui/tooltip_host.gd" id="3_tooltip_host"]
+
+[sub_resource type="Theme" id="1_theme"]
+
+[node name="TooltipTest" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+theme = SubResource("1_theme")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.09, 0.1, 0.12, 1)
+
+[node name="CenterPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -220.0
+offset_right = 320.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="CenterPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="CenterPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="CenterPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Tooltip Runtime Harness"
+horizontal_alignment = 1
+
+[node name="Instructions" type="Label" parent="CenterPanel/Margin/VBox"]
+layout_mode = 2
+text = "Purpose-built scene for runtime tooltip verification. Use hover/focus or MCP method calls on the root node."
+autowrap_mode = 3
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="CenterPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="ControlA" type="Button" parent="CenterPanel/Margin/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 56)
+layout_mode = 2
+focus_mode = 2
+text = "Control A"
+
+[node name="TooltipTrigger" type="Node" parent="CenterPanel/Margin/VBox/Buttons/ControlA"]
+script = ExtResource("2_tooltip_trigger")
+tooltip_enabled = true
+tooltip_translation_key = "ui.main_menu.button.new_game"
+
+[node name="ControlB" type="Button" parent="CenterPanel/Margin/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 56)
+layout_mode = 2
+focus_mode = 2
+text = "Control B"
+
+[node name="TooltipTrigger" type="Node" parent="CenterPanel/Margin/VBox/Buttons/ControlB"]
+script = ExtResource("2_tooltip_trigger")
+tooltip_enabled = true
+tooltip_translation_key = "ui.main_menu.button.settings"
+
+[node name="ControlC" type="Button" parent="CenterPanel/Margin/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 56)
+layout_mode = 2
+focus_mode = 2
+text = "Control C (Disabled)"
+
+[node name="TooltipTrigger" type="Node" parent="CenterPanel/Margin/VBox/Buttons/ControlC"]
+script = ExtResource("2_tooltip_trigger")
+tooltip_enabled = false
+tooltip_translation_key = "ui.main_menu.button.quit"
+
+[node name="Legend" type="RichTextLabel" parent="CenterPanel/Margin/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 120)
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+text = "[b]Expected cases[/b]\n- Control A: enabled tooltip, key ui.main_menu.button.new_game\n- Control B: enabled tooltip, key ui.main_menu.button.settings\n- Control C: tooltip disabled suppression"
+
+[node name="StatusLabel" type="RichTextLabel" parent="CenterPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 120)
+bbcode_enabled = false
+scroll_active = false
+fit_content = true
+text = "Tooltip harness loading..."
+
+[node name="TooltipLayer" type="CanvasLayer" parent="."]
+unique_name_in_owner = true
+script = ExtResource("3_tooltip_host")

@@ -61,6 +61,18 @@ msgstr "Load Game"
 msgid "ui.main_menu.panel.credits.title"
 msgstr "Credits"
 
+msgid "ui.main_menu.level_select.title"
+msgstr "Start New Game"
+
+msgid "ui.main_menu.level_select.subtitle"
+msgstr "Arena 01 starts the roguelike run.\nTest Level is a non-roguelike dev path."
+
+msgid "ui.main_menu.level_select.button.arena_01"
+msgstr "Start Roguelike Run\nArena 01"
+
+msgid "ui.main_menu.level_select.button.test_level"
+msgstr "Open Test Level\nNon-Roguelike / Dev Path"
+
 msgid "ui.main_menu.window_mode.0"
 msgstr "Windowed"
 
@@ -141,6 +153,39 @@ msgstr "VSync"
 
 msgid "ui.settings.developer_mode"
 msgstr "Developer Mode (F12)"
+
+msgid "ui.roguelike_reward_selection.title"
+msgstr "Choose Your Blessing"
+
+msgid "ui.roguelike_reward_selection.subtitle"
+msgstr "Select one blessing to empower your run"
+
+msgid "ui.roguelike_reward_selection.placeholder_option"
+msgstr "Blessing\nDescription"
+
+msgid "ui.roguelike_reward_selection.unknown_blessing"
+msgstr "Unknown Blessing"
+
+msgid "ui.roguelike_reward_selection.unknown_description"
+msgstr "Description unavailable"
+
+msgid "blessing.vitality_boost.title"
+msgstr "Vitality Boost"
+
+msgid "blessing.vitality_boost.description"
+msgstr "Max Health +20"
+
+msgid "blessing.swift_step.title"
+msgstr "Swift Step"
+
+msgid "blessing.swift_step.description"
+msgstr "Move Speed +30"
+
+msgid "blessing.dash_tune.title"
+msgstr "Dash Tune"
+
+msgid "blessing.dash_tune.description"
+msgstr "Dash CD -0.15s"
 
 msgid "ui.pause_menu.title"
 msgstr "PAUSED"

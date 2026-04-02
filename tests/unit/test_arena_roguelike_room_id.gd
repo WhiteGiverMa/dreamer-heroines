@@ -160,3 +160,9 @@ func test_wire_signals_uses_scene_level_id_for_wave_config() -> void:
 	_arena._wire_signals()
 
 	assert_eq(_arena._wave_spawner.wave_config_path, "res://config/waves/arena_02_waves.json", "Arena scene should load wave config based on scene level id")
+
+
+func test_resolve_target_kills_prefers_wave_config_quota() -> void:
+	_arena._prepare_runtime_state()
+
+	assert_eq(_arena._resolve_target_kills(), 25, "Arena scene should read target_kills from the wave config even if WaveSpawner runtime API drifts")

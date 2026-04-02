@@ -37,13 +37,13 @@ theme_override_constants/separation = 16
 [node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 48
-text = "Choose Your Blessing"
+text = "ui.roguelike_reward_selection.title"
 horizontal_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "Select one blessing to empower your run"
+text = "ui.roguelike_reward_selection.subtitle"
 horizontal_alignment = 1
 
 [node name="Options" type="VBoxContainer" parent="CenterContainer/VBoxContainer"]
@@ -54,16 +54,16 @@ theme_override_constants/separation = 12
 layout_mode = 2
 custom_minimum_size = Vector2(520, 84)
 theme_override_font_sizes/font_size = 18
-text = "Blessing One\nDescription"
+text = "ui.roguelike_reward_selection.placeholder_option"
 
 [node name="Option2Button" type="Button" parent="CenterContainer/VBoxContainer/Options"]
 layout_mode = 2
 custom_minimum_size = Vector2(520, 84)
 theme_override_font_sizes/font_size = 18
-text = "Blessing Two\nDescription"
+text = "ui.roguelike_reward_selection.placeholder_option"
 
 [node name="Option3Button" type="Button" parent="CenterContainer/VBoxContainer/Options"]
 layout_mode = 2
 custom_minimum_size = Vector2(520, 84)
 theme_override_font_sizes/font_size = 18
-text = "Blessing Three\nDescription"
+text = "ui.roguelike_reward_selection.placeholder_option"
