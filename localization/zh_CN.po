@@ -65,13 +65,19 @@ msgid "ui.main_menu.level_select.title"
 msgstr "开始新游戏"
 
 msgid "ui.main_menu.level_select.subtitle"
-msgstr "竞技场 01 会开始 Roguelike 轮次。\n测试关卡是非 Roguelike 的开发路径。"
+msgstr "悬停或聚焦关卡按钮以查看说明。"
 
 msgid "ui.main_menu.level_select.button.arena_01"
 msgstr "开始 Roguelike 轮次\n竞技场 01"
 
 msgid "ui.main_menu.level_select.button.test_level"
 msgstr "打开测试关卡\n非 Roguelike / 开发路径"
+
+msgid "ui.main_menu.level_select.tooltip.arena_01"
+msgstr "竞技场 01 会开启 Roguelike 轮次，并进入竞技场循环。"
+
+msgid "ui.main_menu.level_select.tooltip.test_level"
+msgstr "测试关卡会加载独立的开发沙盒，不会开启 Roguelike 轮次。"
 
 msgid "ui.main_menu.window_mode.0"
 msgstr "窗口模式"

@@ -65,13 +65,19 @@ msgid "ui.main_menu.level_select.title"
 msgstr "Start New Game"
 
 msgid "ui.main_menu.level_select.subtitle"
-msgstr "Arena 01 starts the roguelike run.\nTest Level is a non-roguelike dev path."
+msgstr "Hover or focus a destination to preview its rules."
 
 msgid "ui.main_menu.level_select.button.arena_01"
 msgstr "Start Roguelike Run\nArena 01"
 
 msgid "ui.main_menu.level_select.button.test_level"
 msgstr "Open Test Level\nNon-Roguelike / Dev Path"
+
+msgid "ui.main_menu.level_select.tooltip.arena_01"
+msgstr "Arena 01 starts the roguelike run and advances into the arena loop."
+
+msgid "ui.main_menu.level_select.tooltip.test_level"
+msgstr "Test Level loads the standalone dev sandbox and does not start a roguelike run."
 
 msgid "ui.main_menu.window_mode.0"
 msgstr "Windowed"

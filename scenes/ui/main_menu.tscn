@@ -1,7 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://mainmenu12345"]
+[gd_scene load_steps=5 format=3 uid="uid://mainmenu12345"]
 
 [ext_resource type="Script" path="res://src/ui/main_menu.gd" id="1_main_menu"]
 [ext_resource type="PackedScene" path="res://scenes/ui/settings_panel.tscn" id="2_settings_panel"]
+[ext_resource type="Script" path="res://src/ui/tooltip_trigger.gd" id="3_tooltip_trigger"]
+[ext_resource type="Script" path="res://src/ui/tooltip_host.gd" id="4_tooltip_host"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -301,9 +303,22 @@ custom_minimum_size = Vector2(320, 64)
 theme_override_font_sizes/font_size = 16
 text = "ui.main_menu.level_select.button.test_level"
 
+[node name="TooltipTrigger" type="Node" parent="LevelSelectPanel/VBoxContainer/Arena01Button"]
+script = ExtResource("3_tooltip_trigger")
+tooltip_enabled = true
+tooltip_translation_key = "ui.main_menu.level_select.tooltip.arena_01"
+
+[node name="TooltipTrigger" type="Node" parent="LevelSelectPanel/VBoxContainer/TestLevelButton"]
+script = ExtResource("3_tooltip_trigger")
+tooltip_enabled = true
+tooltip_translation_key = "ui.main_menu.level_select.tooltip.test_level"
+
 [node name="BackButton" type="Button" parent="LevelSelectPanel/VBoxContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(320, 45)
 text = "Back"
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+
+[node name="TooltipLayer" type="CanvasLayer" parent="."]
+script = ExtResource("4_tooltip_host")

@@ -109,6 +109,13 @@ func _ready() -> void:
 
 	_apply_localized_texts()
 
+
+func _tr(key: String) -> String:
+	if LocalizationManager and LocalizationManager.has_method("tr"):
+		return String(LocalizationManager.call("tr", StringName(key)))
+
+	return key
+
 func _auto_get_node_references() -> void:
 	"""自动获取节点引用，解决 export 变量未赋值的问题"""
 	# 主面板按钮
@@ -332,8 +339,8 @@ func _on_slot_clicked(slot_index: int) -> void:
 # 新游戏确认
 func _show_new_game_confirmation() -> void:
 	var dialog = ConfirmationDialog.new()
-	dialog.title = LocalizationManager.tr("ui.main_menu.dialog.new_game_overwrite.title")
-	dialog.dialog_text = LocalizationManager.tr("ui.main_menu.dialog.new_game_overwrite.text")
+	dialog.title = _tr("ui.main_menu.dialog.new_game_overwrite.title")
+	dialog.dialog_text = _tr("ui.main_menu.dialog.new_game_overwrite.text")
 	dialog.confirmed.connect(func():
 		SaveManager.delete_save(SaveManager.current_slot)
 		start_game_requested.emit()
@@ -344,7 +351,7 @@ func _show_new_game_confirmation() -> void:
 func _show_delete_confirmation(slot_index: int) -> void:
 	## Show confirmation dialog before deleting a save
 	var dialog = ConfirmationDialog.new()
-	dialog.title = LocalizationManager.tr("ui.main_menu.dialog.delete_save.title")
+	dialog.title = _tr("ui.main_menu.dialog.delete_save.title")
 	dialog.dialog_text = LocalizationManager.call(
 		"tr",
 		"ui.main_menu.dialog.delete_save.text",
@@ -369,7 +376,7 @@ func _on_delete_canceled() -> void:
 func _show_new_game_slot_confirmation() -> void:
 	## Show confirmation dialog for starting new game in an empty slot
 	var dialog = ConfirmationDialog.new()
-	dialog.title = LocalizationManager.tr("ui.main_menu.dialog.new_game_slot.title")
+	dialog.title = _tr("ui.main_menu.dialog.new_game_slot.title")
 	dialog.dialog_text = LocalizationManager.call(
 		"tr",
 		"ui.main_menu.dialog.new_game_slot.text",
@@ -535,67 +542,67 @@ func _on_locale_changed(__new_locale: String) -> void:
 
 func _apply_localized_texts() -> void:
 	if title_label:
-		title_label.text = LocalizationManager.tr("ui.main_menu.title")
+		title_label.text = _tr("ui.main_menu.title")
 
 	if continue_button:
-		continue_button.text = LocalizationManager.tr("ui.main_menu.button.continue")
+		continue_button.text = _tr("ui.main_menu.button.continue")
 	if new_game_button:
-		new_game_button.text = LocalizationManager.tr("ui.main_menu.button.new_game")
+		new_game_button.text = _tr("ui.main_menu.button.new_game")
 	if load_game_button:
-		load_game_button.text = LocalizationManager.tr("ui.main_menu.button.load_game")
+		load_game_button.text = _tr("ui.main_menu.button.load_game")
 	if settings_button:
-		settings_button.text = LocalizationManager.tr("ui.main_menu.button.settings")
+		settings_button.text = _tr("ui.main_menu.button.settings")
 	if credits_button:
-		credits_button.text = LocalizationManager.tr("ui.main_menu.button.credits")
+		credits_button.text = _tr("ui.main_menu.button.credits")
 	if quit_button:
-		quit_button.text = LocalizationManager.tr("ui.main_menu.button.quit")
+		quit_button.text = _tr("ui.main_menu.button.quit")
 
 	if window_mode_option:
 		var selected_index: int = window_mode_option.selected
 		window_mode_option.clear()
 		for i in range(WINDOW_MODES.size()):
-			window_mode_option.add_item(LocalizationManager.tr("ui.main_menu.window_mode.%d" % i))
+			window_mode_option.add_item(_tr("ui.main_menu.window_mode.%d" % i))
 		window_mode_option.selected = selected_index if selected_index >= 0 else 0
 
 	if vsync_check:
-		vsync_check.text = LocalizationManager.tr("ui.main_menu.settings.vsync")
+		vsync_check.text = _tr("ui.main_menu.settings.vsync")
 
 	var load_back = get_node_or_null("LoadGamePanel/BackButton")
 	if load_back:
-		load_back.text = LocalizationManager.tr("ui.main_menu.button.back")
+		load_back.text = _tr("ui.main_menu.button.back")
 
 	var load_title: Label = get_node_or_null("LoadGamePanel/Title")
 	if load_title:
-		load_title.text = LocalizationManager.tr("ui.main_menu.panel.load_game.title")
+		load_title.text = _tr("ui.main_menu.panel.load_game.title")
 
 	var credits_title: Label = get_node_or_null("CreditsPanel/Title")
 	if credits_title:
-		credits_title.text = LocalizationManager.tr("ui.main_menu.panel.credits.title")
+		credits_title.text = _tr("ui.main_menu.panel.credits.title")
 
 	var credits_back = get_node_or_null("CreditsPanel/BackButton")
 	if credits_back:
-		credits_back.text = LocalizationManager.tr("ui.main_menu.button.back")
+		credits_back.text = _tr("ui.main_menu.button.back")
 
 	var level_select_title: Label = get_node_or_null("LevelSelectPanel/Title")
 	if level_select_title:
-		level_select_title.text = LocalizationManager.tr("ui.main_menu.level_select.title")
+		level_select_title.text = _tr("ui.main_menu.level_select.title")
 
 	var level_select_subtitle: Label = get_node_or_null("LevelSelectPanel/Subtitle")
 	if level_select_subtitle:
-		level_select_subtitle.text = LocalizationManager.tr("ui.main_menu.level_select.subtitle")
+		level_select_subtitle.text = _tr("ui.main_menu.level_select.subtitle")
 
 	if arena_01_button:
-		arena_01_button.text = LocalizationManager.tr("ui.main_menu.level_select.button.arena_01")
+		arena_01_button.text = _tr("ui.main_menu.level_select.button.arena_01")
 	if test_level_button:
-		test_level_button.text = LocalizationManager.tr("ui.main_menu.level_select.button.test_level")
+		test_level_button.text = _tr("ui.main_menu.level_select.button.test_level")
 
 	var level_select_back = get_node_or_null("LevelSelectPanel/VBoxContainer/BackButton")
 	if level_select_back:
-		level_select_back.text = LocalizationManager.tr("ui.main_menu.button.back")
+		level_select_back.text = _tr("ui.main_menu.button.back")
 
 	var credits_text: Label = get_node_or_null("CreditsPanel/CreditsText")
 	if credits_text:
-		credits_text.text = LocalizationManager.tr("ui.main_menu.credits.text")
+		credits_text.text = _tr("ui.main_menu.credits.text")
 
 func _call_csharp_save_manager(method: String, args: Array = []) -> void:
 	"""调用 C# SaveManager 的方法"""

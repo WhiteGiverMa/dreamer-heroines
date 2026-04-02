@@ -123,6 +123,28 @@ func test_immediate_hide_on_exit() -> void:
 	assert_eq(host_spy.hide_call_count, 2, "Focus loss should also hide the tooltip immediately")
 
 
+func test_hide_still_clears_host_for_disabled_or_empty_config() -> void:
+	var host_spy := TooltipHostSpy.new()
+	var localization: LocalizationManagerStub = autofree(LocalizationManagerStub.new())
+	localization.translations["en"] = {"ui.tooltip.disabled": "Disabled tooltip"}
+
+	var disabled_target := _create_target_control()
+	var disabled_trigger = _create_trigger(disabled_target, host_spy, localization, false, "ui.tooltip.disabled")
+	if disabled_trigger == null:
+		return
+
+	disabled_trigger.call("_hide_tooltip")
+	assert_eq(host_spy.hide_call_count, 1, "Disabled tooltip triggers should still clear the shared host state when hide is requested")
+
+	var missing_key_target := _create_target_control()
+	var missing_key_trigger = _create_trigger(missing_key_target, host_spy, localization, true, "")
+	if missing_key_trigger == null:
+		return
+
+	missing_key_trigger.call("_hide_tooltip")
+	assert_eq(host_spy.hide_call_count, 2, "Triggers without a translation key should still clear the shared host state when hide is requested")
+
+
 func test_disabled_config_suppresses_display() -> void:
 	var host_spy := TooltipHostSpy.new()
 	var localization: LocalizationManagerStub = autofree(LocalizationManagerStub.new())
@@ -172,6 +194,93 @@ func test_single_instance_replacement() -> void:
 
 	assert_true(_has_property(host, "current_target"), "TooltipHost should track the currently anchored control")
 	assert_same(host.get("current_target"), second_target, "Second tooltip request should replace the host's active target")
+
+
+func test_host_show_is_synchronous() -> void:
+	var tooltip_view_scene = _require_view_scene()
+	var host = _create_host_instance(tooltip_view_scene)
+	if host == null:
+		return
+
+	var root: Control = autofree(Control.new())
+	get_tree().root.add_child(root)
+	root.add_child(host)
+
+	var target := _create_target_control(Vector2(64, 64), Vector2(120, 32))
+	root.add_child(target)
+	var trigger: Node = autofree(Node.new())
+
+	host.call("show_tooltip", trigger, target, "Immediate tooltip")
+
+	var tooltip_views := _find_nodes_by_script_path(host, TOOLTIP_VIEW_SCRIPT_PATH)
+	assert_eq(tooltip_views.size(), 1, "TooltipHost should create exactly one tooltip view when showing a tooltip")
+	assert_true((tooltip_views[0] as Control).visible, "TooltipHost should mark the tooltip view visible during show_tooltip without waiting for a deferred frame")
+
+	host.call("update_current_tooltip_position")
+	assert_true((tooltip_views[0] as Control).visible, "TooltipHost position refreshes should keep the tooltip visible synchronously")
+
+
+func test_main_menu_level_select_uses_tooltip_triggers() -> void:
+	const MAIN_MENU_SCENE_PATH := "res://scenes/ui/main_menu.tscn"
+	assert_true(ResourceLoader.exists(MAIN_MENU_SCENE_PATH), "Main menu scene should exist for level-select tooltip coverage")
+	if not ResourceLoader.exists(MAIN_MENU_SCENE_PATH):
+		return
+
+	var main_menu_scene = load(MAIN_MENU_SCENE_PATH) as PackedScene
+	assert_not_null(main_menu_scene, "Main menu scene should load for level-select tooltip coverage")
+	if main_menu_scene == null:
+		return
+
+	var main_menu: Control = autofree(main_menu_scene.instantiate())
+	var tooltip_layer := main_menu.get_node_or_null("TooltipLayer")
+	assert_not_null(tooltip_layer, "Main menu should include a dedicated TooltipLayer so level-select tooltips do not rely on lazy host creation")
+
+	var arena_trigger: Node = main_menu.get_node_or_null("LevelSelectPanel/VBoxContainer/Arena01Button/TooltipTrigger")
+	var test_level_trigger: Node = main_menu.get_node_or_null("LevelSelectPanel/VBoxContainer/TestLevelButton/TooltipTrigger")
+	assert_not_null(arena_trigger, "Arena 01 button should own a TooltipTrigger child")
+	assert_not_null(test_level_trigger, "Test Level button should own a TooltipTrigger child")
+
+	if arena_trigger != null:
+		assert_eq(String(arena_trigger.get("tooltip_translation_key")), "ui.main_menu.level_select.tooltip.arena_01", "Arena 01 tooltip trigger should point to the localized roguelike description")
+	if test_level_trigger != null:
+		assert_eq(String(test_level_trigger.get("tooltip_translation_key")), "ui.main_menu.level_select.tooltip.test_level", "Test Level tooltip trigger should point to the localized non-roguelike description")
+
+
+func test_main_menu_level_select_localizes_hint_and_tooltip_bodies() -> void:
+	const MAIN_MENU_SCENE_PATH := "res://scenes/ui/main_menu.tscn"
+	assert_true(ResourceLoader.exists(MAIN_MENU_SCENE_PATH), "Main menu scene should exist for localized tooltip integration coverage")
+	if not ResourceLoader.exists(MAIN_MENU_SCENE_PATH):
+		return
+
+	var previous_locale := LocalizationManager.get_locale()
+	LocalizationManager.set_locale("zh_CN")
+
+	var main_menu_scene := load(MAIN_MENU_SCENE_PATH) as PackedScene
+	assert_not_null(main_menu_scene, "Main menu scene should load for localized tooltip integration coverage")
+	if main_menu_scene == null:
+		LocalizationManager.set_locale(previous_locale)
+		return
+
+	var main_menu: Control = autofree(main_menu_scene.instantiate())
+	get_tree().root.add_child(main_menu)
+	main_menu.call("_apply_localized_texts")
+
+	var subtitle := main_menu.get_node_or_null("LevelSelectPanel/Subtitle") as Label
+	assert_not_null(subtitle, "Level-select subtitle label should exist")
+	if subtitle != null:
+		assert_eq(subtitle.text, "悬停或聚焦关卡按钮以查看说明。", "Level-select subtitle should now be a generic hover hint instead of persistent per-level explanations")
+
+	var arena_trigger := main_menu.get_node_or_null("LevelSelectPanel/VBoxContainer/Arena01Button/TooltipTrigger")
+	var test_level_trigger := main_menu.get_node_or_null("LevelSelectPanel/VBoxContainer/TestLevelButton/TooltipTrigger")
+	assert_not_null(arena_trigger, "Arena 01 tooltip trigger should exist for localized body-text coverage")
+	assert_not_null(test_level_trigger, "Test Level tooltip trigger should exist for localized body-text coverage")
+
+	if arena_trigger != null:
+		assert_eq(String(arena_trigger.call("_resolve_tooltip_body_text")), "竞技场 01 会开启 Roguelike 轮次，并进入竞技场循环。", "Arena 01 tooltip trigger should resolve the localized roguelike description")
+	if test_level_trigger != null:
+		assert_eq(String(test_level_trigger.call("_resolve_tooltip_body_text")), "测试关卡会加载独立的开发沙盒，不会开启 Roguelike 轮次。", "Test Level tooltip trigger should resolve the localized non-roguelike description")
+
+	LocalizationManager.set_locale(previous_locale)
 
 
 func test_viewport_anchored_placement() -> void:

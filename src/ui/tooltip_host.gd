@@ -40,7 +40,7 @@ func show_tooltip(trigger: Node, target: Control, body_text: String) -> void:
 	tooltip_view.set_body_text(body_text)
 
 	update_current_tooltip_position()
-	tooltip_view.call_deferred("show")
+	tooltip_view.show()
 
 
 func hide_tooltip() -> void:
@@ -68,7 +68,7 @@ func update_current_tooltip_position() -> void:
 		return
 
 	tooltip_view.update_position(current_target)
-	tooltip_view.call_deferred("show")
+	tooltip_view.show()
 
 
 func _ensure_tooltip_view() -> TooltipView:

@@ -76,9 +76,6 @@ func _hide_tooltip() -> void:
 	if _target_control == null:
 		return
 
-	if not tooltip_enabled or tooltip_translation_key.is_empty():
-		return
-
 	var host = _resolve_tooltip_host(false)
 	if host == null:
 		return

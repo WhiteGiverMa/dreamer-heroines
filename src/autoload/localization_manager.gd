@@ -14,6 +14,7 @@ signal ready_changed(is_ready: bool)
 ## 当前语言
 var _current_locale: String = "zh_CN"
 var _registered_translation_paths: Dictionary = {}
+var _source_translations_by_locale: Dictionary = {}
 
 
 func _ready() -> void:
@@ -53,6 +54,8 @@ func _load_configured_translations() -> void:
 	)
 
 	for path in translation_paths:
+		_load_source_translation(path)
+
 		if _registered_translation_paths.has(path):
 			continue
 
@@ -62,6 +65,79 @@ func _load_configured_translations() -> void:
 			_registered_translation_paths[path] = true
 		else:
 			push_warning("[LocalizationManager] 无法加载翻译资源: %s" % path)
+
+
+func _load_source_translation(path: String) -> void:
+	var locale_code := path.get_file().get_basename()
+	if locale_code.is_empty():
+		return
+
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return
+
+	_source_translations_by_locale[locale_code] = _parse_po_translation(file.get_as_text())
+
+
+func _parse_po_translation(file_text: String) -> Dictionary:
+	var parsed_entries: Dictionary = {}
+	var lines := file_text.split("\n", false)
+	var current_msgid := ""
+	var current_msgstr := ""
+	var active_field := ""
+
+	for raw_line in lines:
+		var line := raw_line.strip_edges()
+
+		if line.is_empty():
+			_finalize_po_entry(parsed_entries, current_msgid, current_msgstr)
+			current_msgid = ""
+			current_msgstr = ""
+			active_field = ""
+			continue
+
+		if line.begins_with("#"):
+			continue
+
+		if line.begins_with("msgid "):
+			_finalize_po_entry(parsed_entries, current_msgid, current_msgstr)
+			current_msgid = _decode_po_string(line.trim_prefix("msgid "))
+			current_msgstr = ""
+			active_field = "msgid"
+			continue
+
+		if line.begins_with("msgstr "):
+			current_msgstr = _decode_po_string(line.trim_prefix("msgstr "))
+			active_field = "msgstr"
+			continue
+
+		if line.begins_with("\""):
+			var decoded := _decode_po_string(line)
+			if active_field == "msgid":
+				current_msgid += decoded
+			elif active_field == "msgstr":
+				current_msgstr += decoded
+
+	_finalize_po_entry(parsed_entries, current_msgid, current_msgstr)
+	return parsed_entries
+
+
+func _finalize_po_entry(parsed_entries: Dictionary, msgid: String, msgstr: String) -> void:
+	if msgid.is_empty():
+		return
+
+	parsed_entries[msgid] = msgstr
+
+
+func _decode_po_string(value: String) -> String:
+	var decoded := value.strip_edges()
+	if decoded.begins_with("\"") and decoded.ends_with("\"") and decoded.length() >= 2:
+		decoded = decoded.substr(1, decoded.length() - 2)
+
+	decoded = decoded.replace("\\n", "\n")
+	decoded = decoded.replace("\\\"", "\"")
+	decoded = decoded.replace("\\\\", "\\")
+	return decoded
 
 
 ## 翻译文本
@@ -84,6 +160,10 @@ func tr(message: StringName, context: Variant = &"") -> String:
 	var server_result := TranslationServer.translate(key)
 	if not server_result.is_empty() and server_result != key:
 		translated = server_result
+
+	var source_translations: Dictionary = _source_translations_by_locale.get(_current_locale, {}) as Dictionary
+	if source_translations.has(key):
+		translated = String(source_translations[key])
 
 	# 插值参数替换
 	for param_key in params:
