@@ -37,17 +37,11 @@ func handle_command(command: String, params: Dictionary) -> Dictionary:
 
 
 func _handle_dev_mode(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
-	return commands.handle_dev_mode(params)
+	return _call_developer_commands("handle_dev_mode", [params])
 
 
 func _handle_dev_cmd(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
-	return commands.handle_dev_cmd(params)
+	return _call_developer_commands("handle_dev_cmd", [params])
 
 
 func _handle_dev_status(_params: Dictionary) -> Dictionary:
@@ -64,97 +58,72 @@ func _handle_dev_status(_params: Dictionary) -> Dictionary:
 
 
 func _handle_dev_wave(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
-
 	var action := str(params.get("action", "")).strip_edges().to_lower()
 	if action.is_empty():
 		return {"success": false, "error": "Missing action. Expected one of: next, jump, pause, resume, info"}
 
 	match action:
 		"next":
-			return commands._handle_wave_command(["next"])
+			return _call_developer_commands("_handle_wave_command", [["next"]])
 		"jump":
 			var wave_result := _parse_required_int_param(params, "wave")
 			if not bool(wave_result.get("success", false)):
 				return wave_result
-			return commands._handle_wave_command(["jump", wave_result.get("value", 0)])
+			return _call_developer_commands("_handle_wave_command", [["jump", wave_result.get("value", 0)]])
 		"pause":
-			return commands._handle_wave_command(["pause"])
+			return _call_developer_commands("_handle_wave_command", [["pause"]])
 		"resume":
-			return commands._handle_wave_command(["resume"])
+			return _call_developer_commands("_handle_wave_command", [["resume"]])
 		"info":
-			return commands._handle_wave_command(["info"])
+			return _call_developer_commands("_handle_wave_command", [["info"]])
 		_:
 			return {"success": false, "error": "Unknown wave action: " + action}
 
 
 func _handle_dev_god_mode(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var enabled_result := _parse_bool_param(params, "enabled", true)
 	if not bool(enabled_result.get("success", false)):
 		return enabled_result
-	return commands._handle_god_mode_command([enabled_result.get("value", true)])
+	return _call_developer_commands("_handle_god_mode_command", [[enabled_result.get("value", true)]])
 
 
 func _handle_dev_infinite_ammo(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var enabled_result := _parse_bool_param(params, "enabled", true)
 	if not bool(enabled_result.get("success", false)):
 		return enabled_result
 	var state := "on" if bool(enabled_result.get("value", true)) else "off"
-	return commands._handle_ammo_command(["infinite", state])
+	return _call_developer_commands("_handle_ammo_command", [["infinite", state]])
 
 
 func _handle_dev_refill_ammo(_params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
-	return commands._handle_ammo_command(["refill"])
+	return _call_developer_commands("_handle_ammo_command", [["refill"]])
 
 
 func _handle_dev_set_ammo(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var current_result := _parse_required_int_param(params, "current")
 	if not bool(current_result.get("success", false)):
 		return current_result
 	var reserve_result := _parse_required_int_param(params, "reserve")
 	if not bool(reserve_result.get("success", false)):
 		return reserve_result
-	return commands._handle_ammo_command(["set", current_result.get("value", 0), reserve_result.get("value", 0)])
+	return _call_developer_commands("_handle_ammo_command", [["set", current_result.get("value", 0), reserve_result.get("value", 0)]])
 
 
 func _handle_dev_reload_config(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var config_name := str(params.get("config", "all")).strip_edges()
 	if config_name.is_empty():
 		config_name = "all"
-	return commands._handle_reload_command([config_name])
+	return _call_developer_commands("_handle_reload_command", [[config_name]])
 
 
 func _handle_dev_get_config(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var config_name := str(params.get("config", "")).strip_edges()
 	if config_name.is_empty():
 		return {"success": false, "error": "Missing config parameter"}
-	return commands._handle_config_command(["get", config_name])
+	return _call_developer_commands("_handle_config_command", [["get", config_name]])
 
 
 func _handle_dev_spawn_enemy(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var enemy_key := str(params.get("enemy_key", "")).strip_edges()
 	if enemy_key.is_empty():
 		return {"success": false, "error": "Missing enemy_key parameter"}
@@ -168,13 +137,10 @@ func _handle_dev_spawn_enemy(params: Dictionary) -> Dictionary:
 			return y_result
 		args.append(x_result.get("value", 0.0))
 		args.append(y_result.get("value", 0.0))
-	return commands._handle_spawn_command(args)
+	return _call_developer_commands("_handle_spawn_command", [args])
 
 
 func _handle_dev_spawn_random_enemies(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var count_result := _parse_required_int_param(params, "count")
 	if not bool(count_result.get("success", false)):
 		return count_result
@@ -187,88 +153,76 @@ func _handle_dev_spawn_random_enemies(params: Dictionary) -> Dictionary:
 	var y_result := _parse_optional_float_param(params, "y", 0.0)
 	if not bool(y_result.get("success", false)):
 		return y_result
-	return commands._handle_spawn_command(["enemy", "x%d" % count, x_result.get("value", 0.0), y_result.get("value", 0.0)])
+	return _call_developer_commands("_handle_spawn_command", [["enemy", "x%d" % count, x_result.get("value", 0.0), y_result.get("value", 0.0)]])
 
 
 func _handle_dev_kill_all_enemies(_params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
-	return commands._handle_kill_all_command()
+	return _call_developer_commands("_handle_kill_all_command", [])
 
 
 func _handle_dev_teleport_enemies_to_player(_params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
-	return commands._handle_enemies_to_player_command()
+	return _call_developer_commands("_handle_enemies_to_player_command", [])
 
 
 func _handle_dev_teleport_enemies_to(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var x_result := _parse_required_float_param(params, "x")
 	if not bool(x_result.get("success", false)):
 		return x_result
 	var y_result := _parse_required_float_param(params, "y")
 	if not bool(y_result.get("success", false)):
 		return y_result
-	return commands._handle_enemies_to_command([x_result.get("value", 0.0), y_result.get("value", 0.0)])
+	return _call_developer_commands("_handle_enemies_to_command", [[x_result.get("value", 0.0), y_result.get("value", 0.0)]])
 
 
 func _handle_dev_damage_all_enemies(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var amount_result := _parse_required_int_param(params, "amount")
 	if not bool(amount_result.get("success", false)):
 		return amount_result
-	return commands._handle_damage_all_command([amount_result.get("value", 0)])
+	return _call_developer_commands("_handle_damage_all_command", [[amount_result.get("value", 0)]])
 
 
 func _handle_dev_set_health(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var value_result := _parse_required_int_param(params, "value")
 	if not bool(value_result.get("success", false)):
 		return value_result
-	return commands._handle_health_command([value_result.get("value", 0)])
+	return _call_developer_commands("_handle_health_command", [[value_result.get("value", 0)]])
 
 
 func _handle_dev_heal(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var amount_result := _parse_required_int_param(params, "amount")
 	if not bool(amount_result.get("success", false)):
 		return amount_result
-	return commands._handle_heal_command([amount_result.get("value", 0)])
+	return _call_developer_commands("_handle_heal_command", [[amount_result.get("value", 0)]])
 
 
 func _handle_dev_teleport_player(params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
 	var x_result := _parse_required_float_param(params, "x")
 	if not bool(x_result.get("success", false)):
 		return x_result
 	var y_result := _parse_required_float_param(params, "y")
 	if not bool(y_result.get("success", false)):
 		return y_result
-	return commands._handle_teleport_command([x_result.get("value", 0.0), y_result.get("value", 0.0)])
+	return _call_developer_commands("_handle_teleport_command", [[x_result.get("value", 0.0), y_result.get("value", 0.0)]])
 
 
 func _handle_dev_respawn_player(_params: Dictionary) -> Dictionary:
-	var commands = _get_developer_commands()
-	if not commands:
-		return _missing_dependency("DeveloperCommands")
-	return commands._handle_respawn_command([])
+	return _call_developer_commands("_handle_respawn_command", [[]])
 
 
 func _get_developer_commands():
 	return get_node_or_null("/root/DeveloperCommands")
+
+
+func _call_developer_commands(method_name: String, args: Array) -> Dictionary:
+	var commands = _get_developer_commands()
+	if not commands:
+		return _missing_dependency("DeveloperCommands")
+	if not commands.has_method(method_name):
+		return {"success": false, "error": "DeveloperCommands missing method: %s" % method_name}
+	var result: Variant = commands.callv(method_name, args)
+	if result is Dictionary:
+		return result
+	return {"success": false, "error": "DeveloperCommands returned invalid response for %s" % method_name}
 
 
 func _get_developer_mode():

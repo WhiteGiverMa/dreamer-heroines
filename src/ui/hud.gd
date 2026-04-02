@@ -67,6 +67,7 @@ var _last_ammo_max: int = 0
 var _last_ammo_reserve: int = -1
 var _current_objective_base_text: String = ""
 var _localized_text_binder = null
+var _missing_feedback_warned: Dictionary = {}
 
 # 部署进度状态
 var deploy_duration: float = 0.0
@@ -237,6 +238,8 @@ func _update_health_display() -> void:
 func _show_damage_feedback(damage_amount: int) -> void:
 	if animation_player and animation_player.has_animation("damage_flash"):
 		animation_player.play("damage_flash")
+	elif animation_player:
+		_warn_missing_feedback_once("damage_flash")
 
 	if damage_overlay:
 		var tween = create_tween()
@@ -582,6 +585,17 @@ func show_kill_streak(count: int) -> void:
 
 	if animation_player and animation_player.has_animation("kill_streak"):
 		animation_player.play("kill_streak")
+	elif animation_player:
+		_warn_missing_feedback_once("kill_streak")
+
+
+func _warn_missing_feedback_once(animation_name: String) -> void:
+	var warn_key := "animation:%s" % animation_name
+	if _missing_feedback_warned.has(warn_key):
+		return
+
+	_missing_feedback_warned[warn_key] = true
+	push_warning("HUD animation not found (warn once): " + animation_name)
 
 
 # ============================================
