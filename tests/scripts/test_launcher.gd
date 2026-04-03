@@ -127,6 +127,10 @@ func _get_test_cases() -> Array[Dictionary]:
 			"name": "test_audio_settings_persistence",
 			"description": "验证音量设置持久化",
 		},
+		{
+			"name": "test_settings_slider_value_inputs",
+			"description": "验证设置页滑条输入框格式与联动",
+		},
 		# Crosshair settings integration tests (Task 11)
 		{
 			"name": "test_crosshair_settings_panel_open",
@@ -293,6 +297,9 @@ func _run_test_sync(test: Dictionary) -> Dictionary:
 
 		"test_audio_settings_persistence":
 			result = _run_audio_settings_persistence_test()
+
+		"test_settings_slider_value_inputs":
+			result = _run_settings_slider_value_inputs_test()
 
 		# ----------------------------------------------------------------------------
 		# Crosshair Settings Integration Tests
@@ -617,6 +624,69 @@ func _run_audio_settings_persistence_test() -> Dictionary:
 		return result
 
 	result.passed = true
+	return result
+
+
+func _run_settings_slider_value_inputs_test() -> Dictionary:
+	var result := {"name": "test_settings_slider_value_inputs", "passed": false, "error": ""}
+	var save_manager = get_node_or_null("/root/SaveManager")
+	if save_manager == null:
+		result.error = "SaveManager autoload 不存在"
+		return result
+
+	var original_settings: Dictionary = save_manager.load_settings()
+	var panel = _SETTINGS_PANEL_SCENE.instantiate() as SettingsPanel
+	add_child(panel)
+	panel.show_panel()
+
+	var volume_input := panel.get_node_or_null("TabContainer/BasicTab/BasicScrollContainer/BasicContent/VolumeSliderContainer/VolumeSliderInput") as LineEdit
+	var sensitivity_input := panel.get_node_or_null("TabContainer/BasicTab/BasicScrollContainer/BasicContent/SensitivitySliderContainer/SensitivitySliderInput") as LineEdit
+	var size_input := panel.get_node_or_null("TabContainer/CrosshairTab/CrosshairPanelHost/CrosshairSettingsPanel/MarginContainer/ScrollContainer/Content/ShapeSection/Grid/SizeSliderContainer/SizeSliderInput") as LineEdit
+
+	if volume_input == null:
+		result.error = "未找到 VolumeSliderInput 节点"
+	elif sensitivity_input == null:
+		result.error = "未找到 SensitivitySliderInput 节点"
+	elif size_input == null:
+		result.error = "未找到 SizeSliderInput 节点"
+	else:
+		panel.volume_slider.value = 64.0
+		panel.sensitivity_slider.value = 125.0
+
+		var volume_format_ok := volume_input.text == "64%"
+		var sensitivity_format_ok := sensitivity_input.text == "1.25x"
+
+		volume_input.text = "37%"
+		volume_input.text_submitted.emit(volume_input.text)
+
+		var slider_sync_ok := is_equal_approx(panel.volume_slider.value, 37.0)
+		var saved_settings: Dictionary = save_manager.load_settings()
+		var saved_master := float(saved_settings.get("master_volume", -1.0))
+		var persistence_ok := absf(saved_master - 0.37) <= 0.01
+
+		panel.tab_container.current_tab = 1
+		var crosshair_panel: CrosshairSettingsPanel = panel.get_node_or_null("TabContainer/CrosshairTab/CrosshairPanelHost/CrosshairSettingsPanel") as CrosshairSettingsPanel
+		if crosshair_panel == null:
+			result.error = "未找到 CrosshairSettingsPanel 节点"
+		else:
+			crosshair_panel.alpha_slider.value = 0.42
+			var crosshair_format_ok: bool = crosshair_panel._slider_value_inputs.get(crosshair_panel.alpha_slider).line_edit.text == "42%"
+			if not volume_format_ok:
+				result.error = "音量输入框格式错误: %s" % volume_input.text
+			elif not sensitivity_format_ok:
+				result.error = "灵敏度输入框格式错误: %s" % sensitivity_input.text
+			elif not slider_sync_ok:
+				result.error = "输入框提交未同步滑条: %.2f" % panel.volume_slider.value
+			elif not persistence_ok:
+				result.error = "输入框提交未持久化主音量: %.2f" % saved_master
+			elif not crosshair_format_ok:
+				result.error = "准星百分比输入框格式错误"
+			else:
+				result.passed = true
+
+	if is_instance_valid(panel):
+		panel.queue_free()
+	save_manager.save_settings(original_settings)
 	return result
 
 

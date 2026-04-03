@@ -1,7 +1,9 @@
 class_name CrosshairSettingsPanel
-extends PanelContainer
+extends Panel
 
 const LocalizedTextBinderClass = preload("res://src/ui/localized_text_binder.gd")
+const TooltipTriggerClass = preload("res://src/ui/tooltip_trigger.gd")
+const SliderValueInputClass = preload("res://src/ui/slider_value_input.gd")
 
 const SHAPE_VALUES: Array[String] = ["cross", "dot", "circle", "combined"]
 const COLOR_MODE_VALUES: Array[String] = ["preset", "custom"]
@@ -67,6 +69,7 @@ const STACKING_MODE_KEYS: Array[String] = [
 @onready var hit_feedback_pulse_speed_slider: HSlider = %HitFeedbackPulseSpeedSlider
 @onready var hit_feedback_max_stacks_slider: HSlider = %HitFeedbackMaxStacksSlider
 @onready var hit_feedback_stacking_mode_option: OptionButton = %HitFeedbackStackingModeOption
+@onready var scroll_container: ScrollContainer = $MarginContainer/ScrollContainer
 
 # Section title labels
 @onready var shape_section_title: Label = $MarginContainer/ScrollContainer/Content/ShapeSection/SectionTitle
@@ -113,19 +116,23 @@ const STACKING_MODE_KEYS: Array[String] = [
 
 var _is_refreshing_controls: bool = false
 var _localized_text_binder = null
+var _slider_value_inputs: Dictionary = {}
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_connect_locale_changed()
 	_configure_slider_ranges()
+	_setup_slider_value_inputs()
 	_populate_option_buttons()
 	_connect_control_signals()
 	_connect_service_signals()
+	_configure_scroll_behavior()
 	if CrosshairSettingsService:
 		CrosshairSettingsService.reload_settings()
 	_refresh_from_service()
 	_setup_localized_bindings()
+	_setup_tooltips()
 
 
 func _connect_locale_changed() -> void:
@@ -223,6 +230,145 @@ func _configure_slider(slider: HSlider, min_value: float, max_value: float, step
 	slider.rounded = rounded
 
 
+func _setup_slider_value_inputs() -> void:
+	_slider_value_inputs.clear()
+	_attach_slider_value_input(size_slider)
+	_attach_slider_value_input(alpha_slider)
+	_attach_slider_value_input(custom_color_r_slider)
+	_attach_slider_value_input(custom_color_g_slider)
+	_attach_slider_value_input(custom_color_b_slider)
+	_attach_slider_value_input(line_length_slider)
+	_attach_slider_value_input(line_thickness_slider)
+	_attach_slider_value_input(line_gap_slider)
+	_attach_slider_value_input(outline_thickness_slider)
+	_attach_slider_value_input(outline_color_r_slider)
+	_attach_slider_value_input(outline_color_g_slider)
+	_attach_slider_value_input(outline_color_b_slider)
+	_attach_slider_value_input(center_dot_size_slider)
+	_attach_slider_value_input(center_dot_alpha_slider)
+	_attach_slider_value_input(spread_increase_slider)
+	_attach_slider_value_input(recovery_rate_slider)
+	_attach_slider_value_input(max_spread_multiplier_slider)
+	_attach_slider_value_input(hit_feedback_duration_slider)
+	_attach_slider_value_input(hit_feedback_scale_slider)
+	_attach_slider_value_input(hit_feedback_intensity_slider)
+	_attach_slider_value_input(hit_feedback_expand_ratio_slider)
+	_attach_slider_value_input(hit_feedback_pulse_speed_slider)
+	_attach_slider_value_input(hit_feedback_max_stacks_slider)
+
+
+func _attach_slider_value_input(slider: HSlider) -> void:
+	if slider == null:
+		return
+	var options := _get_slider_value_input_options(slider)
+	var binding = SliderValueInputClass.new().attach_to_slider(slider, options)
+	if binding:
+		_slider_value_inputs[slider] = binding
+
+
+func _get_slider_value_input_options(slider: HSlider) -> Dictionary:
+	var options := {}
+	if slider == hit_feedback_max_stacks_slider:
+		options["decimals"] = 0
+	elif slider.step >= 1.0:
+		options["decimals"] = 0
+	else:
+		options["decimals"] = 2
+
+	if slider == alpha_slider or slider == center_dot_alpha_slider or \
+		slider == custom_color_r_slider or slider == custom_color_g_slider or slider == custom_color_b_slider or \
+		slider == outline_color_r_slider or slider == outline_color_g_slider or slider == outline_color_b_slider or \
+		slider == hit_feedback_expand_ratio_slider:
+		options["display_scale"] = 100.0
+		options["suffix"] = "%"
+	elif slider == hit_feedback_duration_slider:
+		options["suffix"] = "s"
+
+	return options
+
+
+func _set_slider_row_enabled(slider: HSlider, enabled: bool) -> void:
+	if slider == null:
+		return
+	slider.editable = enabled
+	var binding = _slider_value_inputs.get(slider)
+	if binding != null:
+		binding.set_editable(enabled)
+
+
+func _set_slider_row_visible(slider: HSlider, visible: bool) -> void:
+	if slider == null:
+		return
+	var binding = _slider_value_inputs.get(slider)
+	if binding != null:
+		binding.set_visible(visible)
+	else:
+		slider.visible = visible
+
+
+func _configure_scroll_behavior() -> void:
+	if scroll_container == null:
+		return
+
+	scroll_container.follow_focus = true
+	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	for control: Control in _get_focus_scroll_targets():
+		if control != null and not control.focus_entered.is_connected(_on_focus_target_entered.bind(control)):
+			control.focus_entered.connect(_on_focus_target_entered.bind(control))
+			if control is Range:
+				(control as Range).scrollable = false
+
+	for binding in _slider_value_inputs.values():
+		var slider_binding = binding
+		if slider_binding != null and slider_binding.line_edit != null:
+			var line_edit: LineEdit = slider_binding.line_edit
+			if not line_edit.focus_entered.is_connected(_on_focus_target_entered.bind(line_edit)):
+				line_edit.focus_entered.connect(_on_focus_target_entered.bind(line_edit))
+
+
+func _get_focus_scroll_targets() -> Array[Control]:
+	return [
+		shape_option,
+		size_slider,
+		alpha_slider,
+		t_shape_check,
+		color_mode_option,
+		color_preset_option,
+		custom_color_r_slider,
+		custom_color_g_slider,
+		custom_color_b_slider,
+		line_length_slider,
+		line_thickness_slider,
+		line_gap_slider,
+		outline_enabled_check,
+		outline_thickness_slider,
+		outline_color_r_slider,
+		outline_color_g_slider,
+		outline_color_b_slider,
+		center_dot_enabled_check,
+		center_dot_size_slider,
+		center_dot_alpha_slider,
+		dynamic_spread_check,
+		spread_increase_slider,
+		recovery_rate_slider,
+		max_spread_multiplier_slider,
+		hit_feedback_enabled_check,
+		hit_feedback_duration_slider,
+		hit_feedback_scale_slider,
+		hit_feedback_intensity_slider,
+		hit_feedback_expand_ratio_slider,
+		hit_feedback_pulse_speed_slider,
+		hit_feedback_max_stacks_slider,
+		hit_feedback_stacking_mode_option,
+	]
+
+
+func _on_focus_target_entered(control: Control) -> void:
+	if scroll_container != null and control != null:
+		scroll_container.ensure_control_visible(control)
+
+
 func _connect_control_signals() -> void:
 	shape_option.item_selected.connect(_on_shape_selected)
 	size_slider.value_changed.connect(_on_slider_value_changed.bind(&"crosshair_size"))
@@ -297,9 +443,17 @@ func _refresh_from_service() -> void:
 	hit_feedback_pulse_speed_slider.value = settings.hit_feedback_pulse_speed
 	hit_feedback_max_stacks_slider.value = settings.hit_feedback_max_stacks
 	_select_option_value(hit_feedback_stacking_mode_option, HIT_FEEDBACK_STACKING_MODE_VALUES, settings.hit_feedback_stacking_mode)
+	_refresh_slider_value_inputs()
 	_update_color_control_state(settings.color_mode)
 	_update_outline_control_state(settings.outline_enabled)
 	_is_refreshing_controls = false
+
+
+func _refresh_slider_value_inputs() -> void:
+	for binding in _slider_value_inputs.values():
+		var slider_binding = binding
+		if slider_binding != null:
+			slider_binding.refresh_from_slider()
 
 
 func _select_option_value(option_button: OptionButton, values: Array[String], current_value: String) -> void:
@@ -315,14 +469,20 @@ func _update_color_control_state(color_mode: String) -> void:
 	_set_color_control_row_state(custom_color_r_label, custom_color_r_slider, not preset_enabled)
 	_set_color_control_row_state(custom_color_g_label, custom_color_g_slider, not preset_enabled)
 	_set_color_control_row_state(custom_color_b_label, custom_color_b_slider, not preset_enabled)
-	custom_color_r_slider.editable = not preset_enabled
-	custom_color_g_slider.editable = not preset_enabled
-	custom_color_b_slider.editable = not preset_enabled
+	_set_slider_row_visible(custom_color_r_slider, not preset_enabled)
+	_set_slider_row_visible(custom_color_g_slider, not preset_enabled)
+	_set_slider_row_visible(custom_color_b_slider, not preset_enabled)
+	_set_slider_row_enabled(custom_color_r_slider, not preset_enabled)
+	_set_slider_row_enabled(custom_color_g_slider, not preset_enabled)
+	_set_slider_row_enabled(custom_color_b_slider, not preset_enabled)
 
 
 func _set_color_control_row_state(label: Label, control: Control, row_visible: bool) -> void:
 	label.visible = row_visible
-	control.visible = row_visible
+	if control is HSlider:
+		_set_slider_row_visible(control as HSlider, row_visible)
+	else:
+		control.visible = row_visible
 
 
 func _update_outline_control_state(outline_enabled: bool) -> void:
@@ -330,10 +490,10 @@ func _update_outline_control_state(outline_enabled: bool) -> void:
 	_set_color_control_row_state(outline_color_r_label, outline_color_r_slider, outline_enabled)
 	_set_color_control_row_state(outline_color_g_label, outline_color_g_slider, outline_enabled)
 	_set_color_control_row_state(outline_color_b_label, outline_color_b_slider, outline_enabled)
-	outline_thickness_slider.editable = outline_enabled
-	outline_color_r_slider.editable = outline_enabled
-	outline_color_g_slider.editable = outline_enabled
-	outline_color_b_slider.editable = outline_enabled
+	_set_slider_row_enabled(outline_thickness_slider, outline_enabled)
+	_set_slider_row_enabled(outline_color_r_slider, outline_enabled)
+	_set_slider_row_enabled(outline_color_g_slider, outline_enabled)
+	_set_slider_row_enabled(outline_color_b_slider, outline_enabled)
 
 
 func _on_settings_changed(_settings) -> void:
@@ -457,6 +617,41 @@ func _setup_localized_bindings() -> void:
 	_localized_text_binder.bind_node("hit_feedback_stacking_mode_label", hit_feedback_stacking_mode_label, "ui.settings.crosshair.hit_feedback_stacking_mode.label")
 
 	_localized_text_binder.start()
+
+
+func _setup_tooltips() -> void:
+	_attach_tooltip_pair(t_shape_label, t_shape_check, "ui.settings.crosshair.tooltip.t_shape")
+	_attach_tooltip_pair(color_mode_label, color_mode_option, "ui.settings.crosshair.tooltip.color_mode")
+	_attach_tooltip_pair(line_gap_label, line_gap_slider, "ui.settings.crosshair.tooltip.line_gap")
+	_attach_tooltip_pair(outline_enabled_label, outline_enabled_check, "ui.settings.crosshair.tooltip.outline")
+	_attach_tooltip_pair(dynamic_spread_label, dynamic_spread_check, "ui.settings.crosshair.tooltip.dynamic_spread")
+	_attach_tooltip_pair(hit_feedback_enabled_label, hit_feedback_enabled_check, "ui.settings.crosshair.tooltip.hit_feedback")
+	_attach_tooltip_pair(hit_feedback_duration_label, hit_feedback_duration_slider, "ui.settings.crosshair.tooltip.hit_feedback_duration")
+	_attach_tooltip_pair(hit_feedback_scale_label, hit_feedback_scale_slider, "ui.settings.crosshair.tooltip.hit_feedback_scale")
+	_attach_tooltip_pair(hit_feedback_expand_ratio_label, hit_feedback_expand_ratio_slider, "ui.settings.crosshair.tooltip.hit_feedback_expand_ratio")
+	_attach_tooltip_pair(hit_feedback_pulse_speed_label, hit_feedback_pulse_speed_slider, "ui.settings.crosshair.tooltip.hit_feedback_pulse_speed")
+	_attach_tooltip_pair(hit_feedback_max_stacks_label, hit_feedback_max_stacks_slider, "ui.settings.crosshair.tooltip.hit_feedback_max_stacks")
+	_attach_tooltip_pair(hit_feedback_stacking_mode_label, hit_feedback_stacking_mode_option, "ui.settings.crosshair.tooltip.hit_feedback_stacking_mode")
+
+
+func _attach_tooltip_pair(label: Control, control: Control, translation_key: String) -> void:
+	_attach_tooltip(label, translation_key)
+	_attach_tooltip(control, translation_key)
+
+
+func _attach_tooltip(target: Control, translation_key: String) -> void:
+	if target == null or translation_key.is_empty():
+		return
+
+	for child in target.get_children():
+		if child is TooltipTrigger:
+			var existing_trigger := child as TooltipTrigger
+			existing_trigger.tooltip_translation_key = translation_key
+			return
+
+	var trigger := TooltipTriggerClass.new()
+	trigger.tooltip_translation_key = translation_key
+	target.add_child(trigger)
 
 
 func _apply_localized_texts() -> void:

@@ -4,6 +4,7 @@ extends Panel
 const DisplaySettingsBoundary = preload("res://src/autoload/display_settings_boundary.gd")
 const CrosshairSettingsPanelScene = preload("res://scenes/ui/crosshair_settings_panel.tscn")
 const LocalizedTextBinderClass = preload("res://src/ui/localized_text_binder.gd")
+const SliderValueInputClass = preload("res://src/ui/slider_value_input.gd")
 
 # SettingsPanel - 设置面板
 # 处理设置UI逻辑和持久化
@@ -37,6 +38,7 @@ var _is_updating_controls: bool = false
 var _is_loading_settings: bool = false
 var _localized_text_binder = null
 var _crosshair_settings_panel: Control = null
+var _slider_value_inputs: Array = []
 
 
 func _ready() -> void:
@@ -44,6 +46,7 @@ func _ready() -> void:
 		LocalizationManager.locale_changed.connect(_on_locale_changed)
 
 	_init_controls()
+	_setup_slider_value_inputs()
 	_ensure_crosshair_settings_panel()
 	_load_settings()
 	_connect_signals()
@@ -73,6 +76,52 @@ func _init_controls() -> void:
 		for locale in LocalizationManager.get_available_locales():
 			language_option.add_item(_get_locale_display_name(locale))
 		language_option.selected = _get_locale_index(LocalizationManager.get_locale())
+
+	if volume_slider:
+		volume_slider.step = 1.0
+		volume_slider.rounded = true
+
+	if music_slider:
+		music_slider.step = 1.0
+		music_slider.rounded = true
+
+	if sfx_slider:
+		sfx_slider.step = 1.0
+		sfx_slider.rounded = true
+
+	if ui_slider:
+		ui_slider.step = 1.0
+		ui_slider.rounded = true
+
+	if sensitivity_slider:
+		sensitivity_slider.step = 1.0
+		sensitivity_slider.rounded = true
+
+
+func _setup_slider_value_inputs() -> void:
+	_slider_value_inputs.clear()
+	_attach_slider_value_input(volume_slider, 0)
+	_attach_slider_value_input(music_slider, 0)
+	_attach_slider_value_input(sfx_slider, 0)
+	_attach_slider_value_input(ui_slider, 0)
+	_attach_slider_value_input(sensitivity_slider, 0)
+
+
+func _attach_slider_value_input(slider: HSlider, decimals: int) -> void:
+	if slider == null:
+		return
+	var options := {
+		"decimals": decimals,
+	}
+	if slider == sensitivity_slider:
+		options["decimals"] = 2
+		options["display_scale"] = 0.01
+		options["suffix"] = "x"
+	else:
+		options["suffix"] = "%"
+	var binding = SliderValueInputClass.new().attach_to_slider(slider, options)
+	if binding:
+		_slider_value_inputs.append(binding)
 
 
 func _load_settings() -> void:
@@ -384,11 +433,11 @@ func _setup_localized_bindings() -> void:
 	_localized_text_binder = LocalizedTextBinderClass.new(self)
 
 	_localized_text_binder.bind("title", "Title", "ui.settings.title")
-	_localized_text_binder.bind("resolution_label", "TabContainer/BasicTab/ResolutionLabel", "ui.settings.resolution")
-	_localized_text_binder.bind("window_mode_label", "TabContainer/BasicTab/WindowModeLabel", "ui.settings.window_mode")
-	_localized_text_binder.bind("language_label", "TabContainer/BasicTab/LanguageLabel", "ui.settings.language")
-	_localized_text_binder.bind("volume_label", "TabContainer/BasicTab/VolumeLabel", "ui.settings.master_volume")
-	_localized_text_binder.bind("sensitivity_label", "TabContainer/BasicTab/SensitivityLabel", "ui.settings.mouse_sensitivity")
+	_localized_text_binder.bind("resolution_label", "TabContainer/BasicTab/BasicScrollContainer/BasicContent/ResolutionLabel", "ui.settings.resolution")
+	_localized_text_binder.bind("window_mode_label", "TabContainer/BasicTab/BasicScrollContainer/BasicContent/WindowModeLabel", "ui.settings.window_mode")
+	_localized_text_binder.bind("language_label", "TabContainer/BasicTab/BasicScrollContainer/BasicContent/LanguageLabel", "ui.settings.language")
+	_localized_text_binder.bind("volume_label", "TabContainer/BasicTab/BasicScrollContainer/BasicContent/VolumeLabel", "ui.settings.master_volume")
+	_localized_text_binder.bind("sensitivity_label", "TabContainer/BasicTab/BasicScrollContainer/BasicContent/SensitivityLabel", "ui.settings.mouse_sensitivity")
 	_localized_text_binder.bind_node("vsync_text", vsync_check, "ui.settings.vsync")
 	_localized_text_binder.bind_node("developer_mode_text", developer_mode_check, "ui.settings.developer_mode")
 	_localized_text_binder.bind_node("lighting_effects_text", lighting_effects_check, "ui.settings.lighting_effects")
