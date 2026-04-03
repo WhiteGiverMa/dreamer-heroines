@@ -133,6 +133,14 @@ func _ready() -> void:
 	_refresh_from_service()
 	_setup_localized_bindings()
 	_setup_tooltips()
+	_apply_localized_texts()
+
+
+func refresh_panel_state() -> void:
+	if CrosshairSettingsService:
+		CrosshairSettingsService.reload_settings()
+	_refresh_from_service()
+	_apply_localized_texts()
 
 
 func _connect_locale_changed() -> void:

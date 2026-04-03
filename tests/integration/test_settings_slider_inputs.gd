@@ -56,6 +56,19 @@ func test_basic_settings_inputs_show_expected_formats_and_submit_back_to_setting
 		"Submitting percent text should persist normalized master volume")
 
 
+func test_first_open_initializes_reset_button_and_basic_values() -> void:
+	assert_eq(_panel.tab_container.get_tab_title(0), LocalizationManager.tr("ui.settings.tab.basic"),
+		"Basic tab title should be localized on first open")
+	assert_eq(_panel.tab_container.get_tab_title(1), LocalizationManager.tr("ui.settings.tab.crosshair"),
+		"Crosshair tab title should be localized on first open")
+	assert_eq(_panel.reset_page_button.text, LocalizationManager.tr("ui.settings.restore_page_defaults").replace("{page}", LocalizationManager.tr("ui.settings.tab.basic")),
+		"Reset button should resolve the current page placeholder on first open")
+	assert_eq(_panel.volume_slider.value, float(_save_manager.load_settings().get("master_volume", 0.8)) * 100.0,
+		"First open should hydrate master volume from persisted settings")
+	assert_eq(_panel.sensitivity_slider.value, float(_save_manager.load_settings().get("mouse_sensitivity", 1.0)) * 100.0,
+		"First open should hydrate sensitivity from persisted settings")
+
+
 func test_crosshair_settings_inputs_use_runtime_formatting_on_real_scene() -> void:
 	_panel.tab_container.current_tab = 1
 	await wait_process_frames(1)

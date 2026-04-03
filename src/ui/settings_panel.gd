@@ -156,6 +156,9 @@ func _get_saved_settings() -> Dictionary:
 
 func _connect_signals() -> void:
 	"""连接所有控件信号"""
+	if tab_container and not tab_container.tab_changed.is_connected(_on_tab_changed):
+		tab_container.tab_changed.connect(_on_tab_changed)
+
 	if resolution_option:
 		resolution_option.item_selected.connect(_on_resolution_selected)
 	
@@ -243,7 +246,8 @@ func _apply_basic_settings(settings: Dictionary, persist_after_apply: bool) -> v
 
 	if language_option and LocalizationManager:
 		var saved_locale: String = str(settings.get("locale", DEFAULT_BASIC_SETTINGS["locale"]))
-		LocalizationManager.set_locale(saved_locale)
+		if LocalizationManager.get_locale() != saved_locale:
+			LocalizationManager.set_locale(saved_locale)
 		language_option.selected = _get_locale_index(saved_locale)
 
 	if vsync_check:
@@ -430,7 +434,6 @@ func _apply_localized_texts() -> void:
 	if tab_container:
 		tab_container.set_tab_title(0, LocalizationManager.tr("ui.settings.tab.basic"))
 		tab_container.set_tab_title(1, LocalizationManager.tr("ui.settings.tab.crosshair"))
-		_update_reset_button_text()
 
 	if window_mode_option:
 		var selected_window_mode := window_mode_option.selected
@@ -447,6 +450,8 @@ func _apply_localized_texts() -> void:
 			language_option.add_item(_get_locale_display_name(locale))
 		language_option.selected = _get_locale_index(selected_locale)
 		_is_updating_controls = false
+
+	_update_reset_button_text()
 
 
 func _get_locale_display_name(locale: String) -> String:
@@ -465,12 +470,6 @@ func _get_locale_index(locale: String) -> int:
 	return locale_index if locale_index >= 0 else 0
 
 
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_READY:
-		if tab_container and not tab_container.tab_changed.is_connected(_on_tab_changed):
-			tab_container.tab_changed.connect(_on_tab_changed)
-
-
 func _on_tab_changed(_tab: int) -> void:
 	_update_reset_button_text()
 
@@ -478,6 +477,10 @@ func _on_tab_changed(_tab: int) -> void:
 func show_panel() -> void:
 	"""显示面板（带淡入动画）"""
 	_ensure_crosshair_settings_panel()
+	_load_settings()
+	_apply_localized_texts()
+	if is_instance_valid(_crosshair_settings_panel) and _crosshair_settings_panel.has_method("refresh_panel_state"):
+		_crosshair_settings_panel.call("refresh_panel_state")
 	visible = true
 	modulate.a = 0.0
 	
@@ -508,7 +511,6 @@ func _setup_localized_bindings() -> void:
 	_localized_text_binder.bind_node("vsync_text", vsync_check, "ui.settings.vsync")
 	_localized_text_binder.bind_node("developer_mode_text", developer_mode_check, "ui.settings.developer_mode")
 	_localized_text_binder.bind_node("lighting_effects_text", lighting_effects_check, "ui.settings.lighting_effects")
-	_localized_text_binder.bind_node("reset_page_text", reset_page_button, "ui.settings.restore_page_defaults")
 	_localized_text_binder.bind_node("back_text", back_button, "ui.main_menu.button.back")
 
 	_localized_text_binder.start()
