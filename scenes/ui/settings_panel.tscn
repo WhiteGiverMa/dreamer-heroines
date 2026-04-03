@@ -18,7 +18,6 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-custom_minimum_size = Vector2(640, 600)
 script = ExtResource("1_settings_panel")
 
 [node name="Title" type="Label" parent="."]
