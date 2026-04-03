@@ -4,18 +4,21 @@
 [ext_resource type="Script" path="res://src/ui/tooltip_host.gd" id="2_tooltip_host"]
 
 [node name="SettingsPanel" type="Panel"]
-layout_mode = 3
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -320.0
-offset_top = -420.0
-offset_right = 320.0
-offset_bottom = 420.0
+layout_mode = 1
+anchors_preset = 15
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 80.0
+offset_top = 60.0
+offset_right = -80.0
+offset_bottom = -60.0
 grow_horizontal = 2
 grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_minimum_size = Vector2(640, 600)
 script = ExtResource("1_settings_panel")
 
 [node name="Title" type="Label" parent="."]
@@ -35,15 +38,15 @@ horizontal_alignment = 1
 [node name="TabContainer" type="TabContainer" parent="."]
 unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -270.0
-offset_top = -340.0
-offset_right = 270.0
-offset_bottom = 220.0
+anchors_preset = 15
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 50.0
+offset_top = 50.0
+offset_right = -50.0
+offset_bottom = -50.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -177,37 +180,81 @@ custom_minimum_size = Vector2(0, 520)
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="BackButton" type="Button" parent="."]
+
+[node name="UITab" type="Control" parent="TabContainer"]
+layout_mode = 2
+
+[node name="UIScrollContainer" type="ScrollContainer" parent="TabContainer/UITab"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+horizontal_scroll_mode = 0
+
+[node name="UIContent" type="VBoxContainer" parent="TabContainer/UITab/UIScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="SliderWheelOnSliderCheck" type="CheckBox" parent="TabContainer/UITab/UIScrollContainer/UIContent"]
 unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "Mouse Wheel on Slider"
+
+[node name="ButtonContainer" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = 10.0
+offset_left = -300.0
 offset_top = -60.0
-offset_right = 150.0
+offset_right = 300.0
 offset_bottom = -20.0
 grow_horizontal = 2
-grow_vertical = 0
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="ResetPageButton" type="Button" parent="ButtonContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+text = "Restore Defaults"
+
+[node name="CancelButton" type="Button" parent="ButtonContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+disabled = true
+text = "Cancel"
+
+[node name="SaveButton" type="Button" parent="ButtonContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
+disabled = true
+text = "Save"
+
+[node name="BackButton" type="Button" parent="ButtonContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 1.0
 text = "Back"
 
-[node name="ResetPageButton" type="Button" parent="."]
+[node name="UnsavedDialog" type="ConfirmationDialog" parent="."]
 unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -150.0
-offset_top = -60.0
-offset_right = -10.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 0
-text = "Restore Defaults"
+initial_position = 2
+dialog_text = "有未保存的更改，是否保存？"
 
 [node name="TooltipLayer" type="CanvasLayer" parent="."]
 script = ExtResource("2_tooltip_host")

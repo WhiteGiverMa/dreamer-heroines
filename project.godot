@@ -32,6 +32,7 @@ AudioManager="*res://src/autoload/audio_manager.gd"
 GameStateManager="*res://src/cs/Systems/GameStateManager.cs"
 SaveManager="*res://src/autoload/save_manager.gd"
 CrosshairSettingsService="*res://src/autoload/crosshair_settings_service.gd"
+UISettingsService="*res://src/autoload/ui_settings_service.gd"
 CSharpSaveManager="*res://src/cs/Systems/SaveManager.cs"
 LevelManager="*res://src/levels/level_manager.gd"
 EffectManager="*res://src/autoload/effect_manager.gd"
@@ -55,7 +56,8 @@ gdscript/warnings/unused_argument=0
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
-window/stretch/mode="viewport"
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 window/canvas_textures/default_texture_filter=0
 
 [dotnet]
