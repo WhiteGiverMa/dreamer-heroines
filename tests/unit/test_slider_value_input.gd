@@ -80,8 +80,10 @@ func test_display_scale_and_suffix_support_percent_and_multiplier_formats() -> v
 		"decimals": 0,
 	})
 	percent_slider.value = 0.65
-	assert_eq(percent_binding.line_edit.text, "65%", "Display scale should format fractional values as percentages")
-	percent_binding.line_edit.text = "25%"
+	assert_eq(percent_binding.line_edit.text, "65", "Display scale should format fractional values as percentages without embedding the unit")
+	assert_not_null(percent_binding.suffix_label, "Percent format should render an external suffix label")
+	assert_eq(percent_binding.suffix_label.text, "%", "Percent suffix should be rendered outside the input field")
+	percent_binding.line_edit.text = "25"
 	percent_binding.commit_text()
 	assert_eq(percent_slider.value, 0.25, "Percent text should convert back to normalized slider value")
 
@@ -97,7 +99,9 @@ func test_display_scale_and_suffix_support_percent_and_multiplier_formats() -> v
 		"decimals": 2,
 	})
 	multiplier_slider.value = 1.25
-	assert_eq(multiplier_binding.line_edit.text, "1.25x", "Multiplier format should keep decimal precision and suffix")
-	multiplier_binding.line_edit.text = "0.5x"
+	assert_eq(multiplier_binding.line_edit.text, "1.25", "Multiplier format should keep decimal precision in the numeric field")
+	assert_not_null(multiplier_binding.suffix_label, "Multiplier format should render an external suffix label")
+	assert_eq(multiplier_binding.suffix_label.text, "x", "Multiplier suffix should be rendered outside the input field")
+	multiplier_binding.line_edit.text = "0.5"
 	multiplier_binding.commit_text()
 	assert_eq(multiplier_slider.value, 0.5, "Multiplier text should parse back into slider value")

@@ -640,23 +640,29 @@ func _run_settings_slider_value_inputs_test() -> Dictionary:
 	panel.show_panel()
 
 	var volume_input := panel.get_node_or_null("TabContainer/BasicTab/BasicScrollContainer/BasicContent/VolumeSliderContainer/VolumeSliderInput") as LineEdit
+	var volume_suffix := panel.get_node_or_null("TabContainer/BasicTab/BasicScrollContainer/BasicContent/VolumeSliderContainer/VolumeSliderSuffix") as Label
 	var sensitivity_input := panel.get_node_or_null("TabContainer/BasicTab/BasicScrollContainer/BasicContent/SensitivitySliderContainer/SensitivitySliderInput") as LineEdit
+	var sensitivity_suffix := panel.get_node_or_null("TabContainer/BasicTab/BasicScrollContainer/BasicContent/SensitivitySliderContainer/SensitivitySliderSuffix") as Label
 	var size_input := panel.get_node_or_null("TabContainer/CrosshairTab/CrosshairPanelHost/CrosshairSettingsPanel/MarginContainer/ScrollContainer/Content/ShapeSection/Grid/SizeSliderContainer/SizeSliderInput") as LineEdit
 
 	if volume_input == null:
 		result.error = "未找到 VolumeSliderInput 节点"
+	elif volume_suffix == null:
+		result.error = "未找到 VolumeSliderSuffix 节点"
 	elif sensitivity_input == null:
 		result.error = "未找到 SensitivitySliderInput 节点"
+	elif sensitivity_suffix == null:
+		result.error = "未找到 SensitivitySliderSuffix 节点"
 	elif size_input == null:
 		result.error = "未找到 SizeSliderInput 节点"
 	else:
 		panel.volume_slider.value = 64.0
 		panel.sensitivity_slider.value = 125.0
 
-		var volume_format_ok := volume_input.text == "64%"
-		var sensitivity_format_ok := sensitivity_input.text == "1.25x"
+		var volume_format_ok := volume_input.text == "64" and volume_suffix.text == "%"
+		var sensitivity_format_ok := sensitivity_input.text == "1.25" and sensitivity_suffix.text == "x"
 
-		volume_input.text = "37%"
+		volume_input.text = "37"
 		volume_input.text_submitted.emit(volume_input.text)
 
 		var slider_sync_ok := is_equal_approx(panel.volume_slider.value, 37.0)
@@ -670,7 +676,8 @@ func _run_settings_slider_value_inputs_test() -> Dictionary:
 			result.error = "未找到 CrosshairSettingsPanel 节点"
 		else:
 			crosshair_panel.alpha_slider.value = 0.42
-			var crosshair_format_ok: bool = crosshair_panel._slider_value_inputs.get(crosshair_panel.alpha_slider).line_edit.text == "42%"
+			var alpha_binding = crosshair_panel._slider_value_inputs.get(crosshair_panel.alpha_slider)
+			var crosshair_format_ok: bool = alpha_binding != null and alpha_binding.line_edit.text == "42" and alpha_binding.suffix_label != null and alpha_binding.suffix_label.text == "%"
 			if not volume_format_ok:
 				result.error = "音量输入框格式错误: %s" % volume_input.text
 			elif not sensitivity_format_ok:

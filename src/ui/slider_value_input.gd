@@ -7,6 +7,7 @@ const EPSILON := 0.0001
 var slider: HSlider
 var line_edit: LineEdit
 var container: HBoxContainer
+var suffix_label: Label
 
 var _decimals: int = 0
 var _display_scale: float = 1.0
@@ -81,6 +82,13 @@ func _reparent_slider_into_container(input_width: float) -> void:
 	line_edit.name = "%sInput" % slider.name
 	line_edit.custom_minimum_size = Vector2(input_width, 0.0)
 	container.add_child(line_edit)
+
+	if not _suffix.is_empty():
+		suffix_label = Label.new()
+		suffix_label.name = "%sSuffix" % slider.name
+		suffix_label.text = _suffix
+		suffix_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		container.add_child(suffix_label)
 
 
 func _configure_line_edit(options: Dictionary) -> void:
@@ -166,8 +174,8 @@ func _normalize_value(value: float) -> float:
 func _format_value(value: float) -> String:
 	var display_value := value * _display_scale
 	if _decimals <= 0:
-		return "%s%s" % [str(int(round(display_value))), _suffix]
-	return "%s%s" % [(("%.*f" % [_decimals, display_value]).rstrip("0").rstrip(".")), _suffix]
+		return str(int(round(display_value)))
+	return ("%.*f" % [_decimals, display_value]).rstrip("0").rstrip(".")
 
 
 func _is_valid_number(text: String) -> bool:
@@ -175,10 +183,7 @@ func _is_valid_number(text: String) -> bool:
 
 
 func _sanitize_input_text(text: String) -> String:
-	var sanitized := text.strip_edges()
-	if not _suffix.is_empty() and sanitized.ends_with(_suffix):
-		sanitized = sanitized.left(sanitized.length() - _suffix.length()).strip_edges()
-	return sanitized
+	return text.strip_edges()
 
 
 func _infer_decimals(step: float) -> int:
