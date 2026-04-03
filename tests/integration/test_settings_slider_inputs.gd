@@ -91,3 +91,62 @@ func test_crosshair_settings_inputs_use_runtime_formatting_on_real_scene() -> vo
 
 	assert_almost_eq(crosshair_panel.alpha_slider.value, 0.55, 0.001,
 		"Submitting percentage text should convert back to fractional alpha slider value")
+
+
+func test_restore_defaults_button_resets_current_basic_page() -> void:
+	var reset_button := _panel.reset_page_button
+	assert_not_null(reset_button, "Settings panel should expose a reset button for the current page")
+	if reset_button == null:
+		return
+
+	_panel.volume_slider.value = 15.0
+	_panel.music_slider.value = 20.0
+	_panel.sensitivity_slider.value = 180.0
+	_panel.vsync_check.button_pressed = false
+	_panel.developer_mode_check.button_pressed = true
+	_panel.lighting_effects_check.button_pressed = false
+
+	reset_button.pressed.emit()
+	await wait_process_frames(1)
+
+	assert_eq(_panel.volume_slider.value, 80.0, "Basic page reset should restore master volume default")
+	assert_eq(_panel.music_slider.value, 70.0, "Basic page reset should restore music volume default")
+	assert_eq(_panel.sensitivity_slider.value, 100.0, "Basic page reset should restore mouse sensitivity default")
+	assert_true(_panel.vsync_check.button_pressed, "Basic page reset should restore VSync default")
+	assert_false(_panel.developer_mode_check.button_pressed, "Basic page reset should restore developer mode default")
+	assert_true(_panel.lighting_effects_check.button_pressed, "Basic page reset should restore lighting default")
+
+	var saved_settings: Dictionary = _save_manager.load_settings()
+	assert_almost_eq(float(saved_settings.get("master_volume", -1.0)), 0.8, 0.01,
+		"Basic page reset should persist default master volume")
+	assert_false(bool(saved_settings.get("developer_mode_enabled", true)),
+		"Basic page reset should persist default developer mode")
+
+
+func test_restore_defaults_button_resets_current_crosshair_page() -> void:
+	var reset_button := _panel.reset_page_button
+	assert_not_null(reset_button, "Settings panel should expose a reset button for the current page")
+	if reset_button == null:
+		return
+
+	_panel.tab_container.current_tab = 1
+	await wait_process_frames(1)
+
+	var crosshair_panel := _panel.get_node_or_null("TabContainer/CrosshairTab/CrosshairPanelHost/CrosshairSettingsPanel") as CrosshairSettingsPanel
+	assert_not_null(crosshair_panel, "Crosshair settings panel should exist before reset")
+	if crosshair_panel == null:
+		return
+
+	crosshair_panel.size_slider.value = 44.0
+	crosshair_panel.alpha_slider.value = 0.25
+	crosshair_panel.center_dot_enabled_check.button_pressed = false
+	crosshair_panel.hit_feedback_duration_slider.value = 0.45
+
+	reset_button.pressed.emit()
+	await wait_process_frames(1)
+
+	assert_eq(crosshair_panel.size_slider.value, 20.0, "Crosshair page reset should restore size default")
+	assert_eq(crosshair_panel.alpha_slider.value, 1.0, "Crosshair page reset should restore alpha default")
+	assert_true(crosshair_panel.center_dot_enabled_check.button_pressed, "Crosshair page reset should restore center dot default")
+	assert_almost_eq(crosshair_panel.hit_feedback_duration_slider.value, 0.08, 0.001,
+		"Crosshair page reset should restore hit feedback duration default")

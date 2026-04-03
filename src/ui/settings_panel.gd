@@ -6,6 +6,22 @@ const CrosshairSettingsPanelScene = preload("res://scenes/ui/crosshair_settings_
 const LocalizedTextBinderClass = preload("res://src/ui/localized_text_binder.gd")
 const SliderValueInputClass = preload("res://src/ui/slider_value_input.gd")
 
+const DEFAULT_BASIC_SETTINGS := {
+	"master_volume": 0.8,
+	"music_volume": 0.7,
+	"sfx_volume": 1.0,
+	"ui_volume": 0.7,
+	"mouse_sensitivity": 1.0,
+	"fullscreen": false,
+	"vsync": true,
+	"window_mode": 0,
+	"locale": "zh_CN",
+	"developer_mode_enabled": false,
+	"lighting_enabled": true,
+}
+
+const DEFAULT_RESOLUTION_INDEX := 1
+
 # SettingsPanel - 设置面板
 # 处理设置UI逻辑和持久化
 # 可在主菜单和暂停菜单上下文中使用
@@ -32,6 +48,7 @@ const WINDOW_MODES = DisplaySettingsBoundary.WINDOW_MODES
 @onready var developer_mode_check: CheckBox = %DeveloperModeCheck
 @onready var lighting_effects_check: CheckBox = %LightingEffectsCheck
 @onready var crosshair_panel_host: Control = %CrosshairPanelHost
+@onready var reset_page_button: Button = %ResetPageButton
 @onready var back_button: Button = %BackButton
 
 var _is_updating_controls: bool = false
@@ -126,61 +143,11 @@ func _attach_slider_value_input(slider: HSlider, decimals: int) -> void:
 
 func _load_settings() -> void:
 	"""从 SaveManager 加载设置"""
-	_is_loading_settings = true
 	var settings = _get_saved_settings()
 	if settings.is_empty():
-		_is_loading_settings = false
+		_apply_basic_settings(DEFAULT_BASIC_SETTINGS, false)
 		return
-	
-	if volume_slider:
-		var master_vol = settings.get("master_volume", 0.8)
-		volume_slider.value = master_vol * 100
-		if AudioManager:
-			AudioManager.set_bus_volume(AudioManager.BusType.MASTER, master_vol)
-
-	if music_slider:
-		var music_vol = settings.get("music_volume", 0.7)
-		music_slider.value = music_vol * 100
-		if AudioManager:
-			AudioManager.set_bus_volume(AudioManager.BusType.MUSIC, music_vol)
-
-	if sfx_slider:
-		var sfx_vol = settings.get("sfx_volume", 1.0)
-		sfx_slider.value = sfx_vol * 100
-		if AudioManager:
-			AudioManager.set_bus_volume(AudioManager.BusType.SFX, sfx_vol)
-
-	if ui_slider:
-		var ui_vol = settings.get("ui_volume", 0.7)
-		ui_slider.value = ui_vol * 100
-		if AudioManager:
-			AudioManager.set_bus_volume(AudioManager.BusType.UI, ui_vol)
-	
-	if sensitivity_slider:
-		sensitivity_slider.value = settings.get("mouse_sensitivity", 1.0) * 100
-
-	if window_mode_option:
-		window_mode_option.selected = settings.get("window_mode", 0)
-
-	if language_option and LocalizationManager:
-		var saved_locale: String = settings.get("locale", LocalizationManager.get_locale())
-		language_option.selected = _get_locale_index(saved_locale)
-
-	if vsync_check:
-		vsync_check.button_pressed = settings.get("vsync", true)
-
-	if developer_mode_check:
-		developer_mode_check.button_pressed = settings.get("developer_mode_enabled", false)
-		if DeveloperMode:
-			DeveloperMode.set_user_enabled(developer_mode_check.button_pressed)
-
-	if lighting_effects_check:
-		lighting_effects_check.button_pressed = settings.get("lighting_enabled", true)
-		if LightBudgetManager:
-			LightBudgetManager.set_lighting_enabled(lighting_effects_check.button_pressed)
-	
-	# 分辨率没有保存，保持默认选择
-	_is_loading_settings = false
+	_apply_basic_settings(settings, false)
 
 
 func _get_saved_settings() -> Dictionary:
@@ -224,6 +191,94 @@ func _connect_signals() -> void:
 	
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
+
+	if reset_page_button:
+		reset_page_button.pressed.connect(_on_reset_page_pressed)
+
+
+func _apply_basic_settings(settings: Dictionary, persist_after_apply: bool) -> void:
+	_is_loading_settings = true
+
+	if volume_slider:
+		var master_vol = float(settings.get("master_volume", DEFAULT_BASIC_SETTINGS["master_volume"]))
+		volume_slider.value = master_vol * 100.0
+		if AudioManager:
+			AudioManager.set_bus_volume(AudioManager.BusType.MASTER, master_vol)
+
+	if music_slider:
+		var music_vol = float(settings.get("music_volume", DEFAULT_BASIC_SETTINGS["music_volume"]))
+		music_slider.value = music_vol * 100.0
+		if AudioManager:
+			AudioManager.set_bus_volume(AudioManager.BusType.MUSIC, music_vol)
+
+	if sfx_slider:
+		var sfx_vol = float(settings.get("sfx_volume", DEFAULT_BASIC_SETTINGS["sfx_volume"]))
+		sfx_slider.value = sfx_vol * 100.0
+		if AudioManager:
+			AudioManager.set_bus_volume(AudioManager.BusType.SFX, sfx_vol)
+
+	if ui_slider:
+		var ui_vol = float(settings.get("ui_volume", DEFAULT_BASIC_SETTINGS["ui_volume"]))
+		ui_slider.value = ui_vol * 100.0
+		if AudioManager:
+			AudioManager.set_bus_volume(AudioManager.BusType.UI, ui_vol)
+
+	if sensitivity_slider:
+		sensitivity_slider.value = float(settings.get("mouse_sensitivity", DEFAULT_BASIC_SETTINGS["mouse_sensitivity"])) * 100.0
+
+	if window_mode_option:
+		window_mode_option.selected = int(settings.get("window_mode", DEFAULT_BASIC_SETTINGS["window_mode"]))
+		DisplaySettingsBoundary.set_window_mode(window_mode_option.selected)
+
+	if resolution_option:
+		resolution_option.selected = int(settings.get("resolution_index", DEFAULT_RESOLUTION_INDEX))
+		var res = RESOLUTIONS[clampi(resolution_option.selected, 0, RESOLUTIONS.size() - 1)]
+		var width: int = res.width
+		var height: int = res.height
+		if width == 0 or height == 0:
+			var screen_size := DisplaySettingsBoundary.get_screen_size()
+			width = screen_size.x
+			height = screen_size.y
+		DisplaySettingsBoundary.set_resolution(width, height)
+
+	if language_option and LocalizationManager:
+		var saved_locale: String = str(settings.get("locale", DEFAULT_BASIC_SETTINGS["locale"]))
+		LocalizationManager.set_locale(saved_locale)
+		language_option.selected = _get_locale_index(saved_locale)
+
+	if vsync_check:
+		vsync_check.button_pressed = bool(settings.get("vsync", DEFAULT_BASIC_SETTINGS["vsync"]))
+		DisplaySettingsBoundary.set_vsync(vsync_check.button_pressed)
+
+	if developer_mode_check:
+		developer_mode_check.button_pressed = bool(settings.get("developer_mode_enabled", DEFAULT_BASIC_SETTINGS["developer_mode_enabled"]))
+		if DeveloperMode:
+			DeveloperMode.set_user_enabled(developer_mode_check.button_pressed)
+
+	if lighting_effects_check:
+		lighting_effects_check.button_pressed = bool(settings.get("lighting_enabled", DEFAULT_BASIC_SETTINGS["lighting_enabled"]))
+		if LightBudgetManager:
+			LightBudgetManager.set_lighting_enabled(lighting_effects_check.button_pressed)
+
+	_is_loading_settings = false
+	if persist_after_apply:
+		_save_settings()
+
+
+func _restore_current_page_defaults() -> void:
+	if tab_container == null:
+		return
+
+	match tab_container.current_tab:
+		0:
+			_apply_basic_settings(DEFAULT_BASIC_SETTINGS, true)
+		1:
+			if CrosshairSettingsService:
+				CrosshairSettingsService.reset_to_defaults()
+
+
+func _on_reset_page_pressed() -> void:
+	_restore_current_page_defaults()
 
 
 func _on_resolution_selected(index: int) -> void:
@@ -344,6 +399,7 @@ func _save_settings() -> void:
 	settings["fullscreen"] = window_mode_option.selected == 1 if window_mode_option else false
 	settings["vsync"] = vsync_check.button_pressed if vsync_check else true
 	settings["window_mode"] = window_mode_option.selected if window_mode_option else 0
+	settings["resolution_index"] = resolution_option.selected if resolution_option else DEFAULT_RESOLUTION_INDEX
 	settings["locale"] = LocalizationManager.get_locale() if LocalizationManager else "zh_CN"
 	settings["developer_mode_enabled"] = developer_mode_check.button_pressed if developer_mode_check else false
 	settings["lighting_enabled"] = lighting_effects_check.button_pressed if lighting_effects_check else true
@@ -374,6 +430,7 @@ func _apply_localized_texts() -> void:
 	if tab_container:
 		tab_container.set_tab_title(0, LocalizationManager.tr("ui.settings.tab.basic"))
 		tab_container.set_tab_title(1, LocalizationManager.tr("ui.settings.tab.crosshair"))
+		_update_reset_button_text()
 
 	if window_mode_option:
 		var selected_window_mode := window_mode_option.selected
@@ -406,6 +463,16 @@ func _get_locale_index(locale: String) -> int:
 	var available_locales := LocalizationManager.get_available_locales()
 	var locale_index := available_locales.find(locale)
 	return locale_index if locale_index >= 0 else 0
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_READY:
+		if tab_container and not tab_container.tab_changed.is_connected(_on_tab_changed):
+			tab_container.tab_changed.connect(_on_tab_changed)
+
+
+func _on_tab_changed(_tab: int) -> void:
+	_update_reset_button_text()
 
 
 func show_panel() -> void:
@@ -441,9 +508,23 @@ func _setup_localized_bindings() -> void:
 	_localized_text_binder.bind_node("vsync_text", vsync_check, "ui.settings.vsync")
 	_localized_text_binder.bind_node("developer_mode_text", developer_mode_check, "ui.settings.developer_mode")
 	_localized_text_binder.bind_node("lighting_effects_text", lighting_effects_check, "ui.settings.lighting_effects")
+	_localized_text_binder.bind_node("reset_page_text", reset_page_button, "ui.settings.restore_page_defaults")
 	_localized_text_binder.bind_node("back_text", back_button, "ui.main_menu.button.back")
 
 	_localized_text_binder.start()
+	_update_reset_button_text()
+
+
+func _update_reset_button_text() -> void:
+	if reset_page_button == null or tab_container == null or LocalizationManager == null:
+		return
+
+	var page_name := LocalizationManager.tr("ui.settings.tab.basic")
+	if tab_container.current_tab == 1:
+		page_name = LocalizationManager.tr("ui.settings.tab.crosshair")
+
+	var template := LocalizationManager.tr("ui.settings.restore_page_defaults")
+	reset_page_button.text = template.replace("{page}", page_name)
 
 
 func _ensure_crosshair_settings_panel() -> void:

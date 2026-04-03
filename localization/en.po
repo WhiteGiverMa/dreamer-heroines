@@ -112,6 +112,12 @@ msgstr "Start a new game in slot {slot}?"
 msgid "ui.settings.title"
 msgstr "Settings"
 
+msgid "ui.settings.tab.basic"
+msgstr "Basic"
+
+msgid "ui.settings.tab.crosshair"
+msgstr "Crosshair"
+
 msgid "ui.settings.resolution"
 msgstr "Resolution"
 
@@ -159,6 +165,12 @@ msgstr "VSync"
 
 msgid "ui.settings.developer_mode"
 msgstr "Developer Mode (F12)"
+
+msgid "ui.settings.lighting_effects"
+msgstr "Lighting Effects"
+
+msgid "ui.settings.restore_page_defaults"
+msgstr "Restore {page} Defaults"
 
 msgid "ui.roguelike_reward_selection.title"
 msgstr "Choose Your Blessing"
@@ -327,3 +339,221 @@ msgstr "Penta Kill!"
 
 msgid "ui.hud.kill_streak.multi"
 msgstr "{value} Kills!"
+
+# ===== Crosshair Settings Panel =====
+# Section Titles
+msgid "ui.settings.crosshair.section.shape"
+msgstr "Shape"
+
+msgid "ui.settings.crosshair.section.color"
+msgstr "Color"
+
+msgid "ui.settings.crosshair.section.line"
+msgstr "Line"
+
+msgid "ui.settings.crosshair.section.outline"
+msgstr "Outline"
+
+msgid "ui.settings.crosshair.section.center_dot"
+msgstr "Center Dot"
+
+msgid "ui.settings.crosshair.section.spread"
+msgstr "Spread"
+
+msgid "ui.settings.crosshair.section.hit_feedback"
+msgstr "Hit Feedback"
+
+# Shape Section Labels
+msgid "ui.settings.crosshair.shape.label"
+msgstr "Crosshair Shape"
+
+msgid "ui.settings.crosshair.size.label"
+msgstr "Crosshair Size"
+
+msgid "ui.settings.crosshair.alpha.label"
+msgstr "Crosshair Alpha"
+
+msgid "ui.settings.crosshair.t_shape.label"
+msgstr "Use T Shape"
+
+# Color Section Labels
+msgid "ui.settings.crosshair.color_mode.label"
+msgstr "Color Mode"
+
+msgid "ui.settings.crosshair.color_preset.label"
+msgstr "Color Preset"
+
+msgid "ui.settings.crosshair.custom_red.label"
+msgstr "Custom Red"
+
+msgid "ui.settings.crosshair.custom_green.label"
+msgstr "Custom Green"
+
+msgid "ui.settings.crosshair.custom_blue.label"
+msgstr "Custom Blue"
+
+# Line Section Labels
+msgid "ui.settings.crosshair.line_length.label"
+msgstr "Line Length"
+
+msgid "ui.settings.crosshair.line_thickness.label"
+msgstr "Line Thickness"
+
+msgid "ui.settings.crosshair.line_gap.label"
+msgstr "Line Gap"
+
+# Outline Section Labels
+msgid "ui.settings.crosshair.outline_enabled.label"
+msgstr "Outline Enabled"
+
+msgid "ui.settings.crosshair.outline_thickness.label"
+msgstr "Outline Thickness"
+
+msgid "ui.settings.crosshair.outline_red.label"
+msgstr "Outline Red"
+
+msgid "ui.settings.crosshair.outline_green.label"
+msgstr "Outline Green"
+
+msgid "ui.settings.crosshair.outline_blue.label"
+msgstr "Outline Blue"
+
+# Center Dot Section Labels
+msgid "ui.settings.crosshair.center_dot_enabled.label"
+msgstr "Show Center Dot"
+
+msgid "ui.settings.crosshair.center_dot_size.label"
+msgstr "Center Dot Size"
+
+msgid "ui.settings.crosshair.center_dot_alpha.label"
+msgstr "Center Dot Alpha"
+
+# Spread Section Labels
+msgid "ui.settings.crosshair.dynamic_spread.label"
+msgstr "Dynamic Spread"
+
+msgid "ui.settings.crosshair.spread_increase.label"
+msgstr "Spread Increase / Shot"
+
+msgid "ui.settings.crosshair.recovery_rate.label"
+msgstr "Recovery Rate"
+
+msgid "ui.settings.crosshair.max_spread_multiplier.label"
+msgstr "Max Spread Multiplier"
+
+# Hit Feedback Section Labels
+msgid "ui.settings.crosshair.hit_feedback_enabled.label"
+msgstr "Hit Feedback Enabled"
+
+msgid "ui.settings.crosshair.hit_feedback_duration.label"
+msgstr "Hit Feedback Duration"
+
+msgid "ui.settings.crosshair.hit_feedback_scale.label"
+msgstr "Hit Feedback Scale"
+
+msgid "ui.settings.crosshair.hit_feedback_intensity.label"
+msgstr "Hit Feedback Intensity"
+
+msgid "ui.settings.crosshair.hit_feedback_expand_ratio.label"
+msgstr "Pulse Growth"
+
+msgid "ui.settings.crosshair.hit_feedback_pulse_speed.label"
+msgstr "Pulse Speed"
+
+msgid "ui.settings.crosshair.hit_feedback_max_stacks.label"
+msgstr "Max Layers"
+
+msgid "ui.settings.crosshair.hit_feedback_stacking_mode.label"
+msgstr "Stacking Mode"
+
+# Crosshair Tooltips
+msgid "ui.settings.crosshair.tooltip.t_shape"
+msgstr "Turns the crosshair into a three-arm T by hiding the upper segment."
+
+msgid "ui.settings.crosshair.tooltip.color_mode"
+msgstr "Choose a fast preset color or fine-tune the crosshair with custom RGB sliders."
+
+msgid "ui.settings.crosshair.tooltip.line_gap"
+msgstr "Controls the empty space between the center point and the outer line segments."
+
+msgid "ui.settings.crosshair.tooltip.outline"
+msgstr "Adds a dark border behind the crosshair so it stays readable on bright backgrounds."
+
+msgid "ui.settings.crosshair.tooltip.dynamic_spread"
+msgstr "When enabled, the crosshair expands while firing and recovers over time to preview weapon spread."
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback"
+msgstr "Shows an extra hit marker pulse when your shots connect."
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_duration"
+msgstr "How long each hit pulse remains visible before fading out."
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_scale"
+msgstr "Sets the base size of the hit pulse relative to the current crosshair."
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_expand_ratio"
+msgstr "How much the hit pulse grows outward during its animation."
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_pulse_speed"
+msgstr "Controls how quickly the hit pulse breathes during its short animation."
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_max_stacks"
+msgstr "Maximum number of overlapping hit pulses allowed at once."
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_stacking_mode"
+msgstr "Replace refreshes the latest pulse, Stack layers multiple pulses, Ignore New keeps the current one."
+
+# Shape Options
+msgid "ui.settings.crosshair.shape.cross"
+msgstr "Cross"
+
+msgid "ui.settings.crosshair.shape.dot"
+msgstr "Dot"
+
+msgid "ui.settings.crosshair.shape.circle"
+msgstr "Circle"
+
+msgid "ui.settings.crosshair.shape.combined"
+msgstr "Combined"
+
+# Color Mode Options
+msgid "ui.settings.crosshair.color_mode.preset"
+msgstr "Preset"
+
+msgid "ui.settings.crosshair.color_mode.custom"
+msgstr "Custom"
+
+# Color Preset Options
+msgid "ui.settings.crosshair.color_preset.white"
+msgstr "White"
+
+msgid "ui.settings.crosshair.color_preset.green"
+msgstr "Green"
+
+msgid "ui.settings.crosshair.color_preset.yellow"
+msgstr "Yellow"
+
+msgid "ui.settings.crosshair.color_preset.cyan"
+msgstr "Cyan"
+
+msgid "ui.settings.crosshair.color_preset.red"
+msgstr "Red"
+
+msgid "ui.settings.crosshair.color_preset.magenta"
+msgstr "Magenta"
+
+msgid "ui.settings.crosshair.color_preset.blue"
+msgstr "Blue"
+
+msgid "ui.settings.crosshair.color_preset.orange"
+msgstr "Orange"
+
+# Hit Feedback Stacking Mode Options
+msgid "ui.settings.crosshair.stacking_mode.replace"
+msgstr "Replace"
+
+msgid "ui.settings.crosshair.stacking_mode.stack"
+msgstr "Stack"
+
+msgid "ui.settings.crosshair.stacking_mode.ignore_new"
+msgstr "Ignore New"

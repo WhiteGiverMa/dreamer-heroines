@@ -1,6 +1,7 @@
-[gd_scene format=3]
+[gd_scene load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://src/ui/settings_panel.gd" id="1_settings_panel"]
+[ext_resource type="Script" path="res://src/ui/tooltip_host.gd" id="2_tooltip_host"]
 
 [node name="SettingsPanel" type="Panel"]
 layout_mode = 3
@@ -9,9 +10,9 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -250.0
+offset_left = -320.0
 offset_top = -420.0
-offset_right = 250.0
+offset_right = 320.0
 offset_bottom = 420.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -31,192 +32,150 @@ theme_override_font_sizes/font_size = 24
 text = "Settings"
 horizontal_alignment = 1
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="TabContainer" type="TabContainer" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -200.0
+offset_left = -270.0
 offset_top = -340.0
-offset_right = 200.0
+offset_right = 270.0
 offset_bottom = 220.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="BasicTab" type="Control" parent="TabContainer"]
+layout_mode = 2
+
+[node name="BasicScrollContainer" type="ScrollContainer" parent="TabContainer/BasicTab"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+horizontal_scroll_mode = 0
+
+[node name="BasicContent" type="VBoxContainer" parent="TabContainer/BasicTab/BasicScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="ResolutionLabel" type="Label" parent="VBoxContainer"]
+[node name="ResolutionLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 layout_mode = 2
 text = "Resolution"
 
-[node name="ResolutionOption" type="OptionButton" parent="VBoxContainer"]
+[node name="ResolutionOption" type="OptionButton" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "1080p"
 alignment = 1
 
-[node name="WindowModeLabel" type="Label" parent="VBoxContainer"]
+[node name="WindowModeLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 layout_mode = 2
 text = "Window Mode"
 
-[node name="WindowModeOption" type="OptionButton" parent="VBoxContainer"]
+[node name="WindowModeOption" type="OptionButton" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Windowed"
 alignment = 1
 
-[node name="LanguageLabel" type="Label" parent="VBoxContainer"]
+[node name="LanguageLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 layout_mode = 2
 text = "Language"
 
-[node name="LanguageOption" type="OptionButton" parent="VBoxContainer"]
+[node name="LanguageOption" type="OptionButton" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "简体中文"
 alignment = 1
 
-[node name="VolumeLabel" type="Label" parent="VBoxContainer"]
+[node name="VolumeLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 layout_mode = 2
 text = "Master Volume"
 
-[node name="VolumeSlider" type="HSlider" parent="VBoxContainer"]
+[node name="VolumeSlider" type="HSlider" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 unique_name_in_owner = true
 layout_mode = 2
 max_value = 100.0
 value = 80.0
 
-[node name="MusicLabel" type="Label" parent="VBoxContainer"]
+[node name="MusicLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 layout_mode = 2
 text = "Music Volume"
 
-[node name="MusicSlider" type="HSlider" parent="VBoxContainer"]
+[node name="MusicSlider" type="HSlider" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 unique_name_in_owner = true
 layout_mode = 2
 max_value = 100.0
 value = 70.0
 
-[node name="SFXLabel" type="Label" parent="VBoxContainer"]
+[node name="SFXLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 layout_mode = 2
 text = "SFX Volume"
 
-[node name="SFXSlider" type="HSlider" parent="VBoxContainer"]
+[node name="SFXSlider" type="HSlider" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 unique_name_in_owner = true
 layout_mode = 2
 max_value = 100.0
 value = 100.0
 
-[node name="UILabel" type="Label" parent="VBoxContainer"]
+[node name="UILabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 layout_mode = 2
 text = "UI Volume"
 
-[node name="UISlider" type="HSlider" parent="VBoxContainer"]
+[node name="UISlider" type="HSlider" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 unique_name_in_owner = true
 layout_mode = 2
 max_value = 100.0
 value = 70.0
 
-[node name="SensitivityLabel" type="Label" parent="VBoxContainer"]
+[node name="SensitivityLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 layout_mode = 2
 text = "Mouse Sensitivity"
 
-[node name="SensitivitySlider" type="HSlider" parent="VBoxContainer"]
+[node name="SensitivitySlider" type="HSlider" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 unique_name_in_owner = true
 layout_mode = 2
 max_value = 200.0
 value = 100.0
 
-[node name="CrosshairSizeLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-text = "Crosshair Size"
-
-[node name="CrosshairSizeSlider" type="HSlider" parent="VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-min_value = 2.0
-max_value = 60.0
-step = 0.5
-value = 20.0
-
-[node name="CrosshairAlphaLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-text = "Crosshair Alpha"
-
-[node name="CrosshairAlphaSlider" type="HSlider" parent="VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-max_value = 100.0
-value = 100.0
-
-[node name="CenterDotCheck" type="CheckBox" parent="VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-button_pressed = true
-text = "Show Center Dot"
-
-[node name="CenterDotSizeLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-text = "Center Dot Size"
-
-[node name="CenterDotSizeSlider" type="HSlider" parent="VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-min_value = 1.0
-max_value = 10.0
-step = 0.5
-value = 2.0
-
-[node name="SpreadIncreaseLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-text = "Spread Increase / Shot"
-
-[node name="SpreadIncreaseSlider" type="HSlider" parent="VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-max_value = 20.0
-step = 0.5
-value = 5.0
-
-[node name="CrosshairRecoveryLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-text = "Crosshair Recovery"
-
-[node name="CrosshairRecoverySlider" type="HSlider" parent="VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-min_value = 1.0
-max_value = 120.0
-value = 30.0
-
-[node name="MaxSpreadMultiplierLabel" type="Label" parent="VBoxContainer"]
-layout_mode = 2
-text = "Max Spread Multiplier"
-
-[node name="MaxSpreadMultiplierSlider" type="HSlider" parent="VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-min_value = 1.0
-max_value = 6.0
-step = 0.1
-value = 3.0
-
-[node name="VSyncCheck" type="CheckBox" parent="VBoxContainer"]
+[node name="VSyncCheck" type="CheckBox" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 unique_name_in_owner = true
 layout_mode = 2
 button_pressed = true
 text = "VSync"
 
-[node name="DeveloperModeCheck" type="CheckBox" parent="VBoxContainer"]
+[node name="DeveloperModeCheck" type="CheckBox" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 unique_name_in_owner = true
 layout_mode = 2
 button_pressed = false
 text = "开发者模式 (F12)"
 
-[node name="LightingEffectsCheck" type="CheckBox" parent="VBoxContainer"]
+[node name="LightingEffectsCheck" type="CheckBox" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
 unique_name_in_owner = true
 layout_mode = 2
 button_pressed = true
 text = "光效"
+
+[node name="CrosshairTab" type="VBoxContainer" parent="TabContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="CrosshairPanelHost" type="VBoxContainer" parent="TabContainer/CrosshairTab"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 520)
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
 [node name="BackButton" type="Button" parent="."]
 unique_name_in_owner = true
@@ -226,10 +185,29 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -50.0
+offset_left = 10.0
 offset_top = -60.0
-offset_right = 50.0
+offset_right = 150.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 0
 text = "Back"
+
+[node name="ResetPageButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -60.0
+offset_right = -10.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Restore Defaults"
+
+[node name="TooltipLayer" type="CanvasLayer" parent="."]
+script = ExtResource("2_tooltip_host")

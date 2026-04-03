@@ -112,6 +112,12 @@ msgstr "在槽位 {slot} 开始新游戏？"
 msgid "ui.settings.title"
 msgstr "设置"
 
+msgid "ui.settings.tab.basic"
+msgstr "基础"
+
+msgid "ui.settings.tab.crosshair"
+msgstr "准星"
+
 msgid "ui.settings.resolution"
 msgstr "分辨率"
 
@@ -159,6 +165,12 @@ msgstr "垂直同步"
 
 msgid "ui.settings.developer_mode"
 msgstr "开发者模式 (F12)"
+
+msgid "ui.settings.lighting_effects"
+msgstr "光效"
+
+msgid "ui.settings.restore_page_defaults"
+msgstr "恢复{page}默认值"
 
 msgid "ui.roguelike_reward_selection.title"
 msgstr "选择你的祝福"
@@ -327,3 +339,221 @@ msgstr "五杀！"
 
 msgid "ui.hud.kill_streak.multi"
 msgstr "{value} 连杀！"
+
+# ===== Crosshair Settings Panel =====
+# Section Titles
+msgid "ui.settings.crosshair.section.shape"
+msgstr "形状"
+
+msgid "ui.settings.crosshair.section.color"
+msgstr "颜色"
+
+msgid "ui.settings.crosshair.section.line"
+msgstr "线条"
+
+msgid "ui.settings.crosshair.section.outline"
+msgstr "描边"
+
+msgid "ui.settings.crosshair.section.center_dot"
+msgstr "中心点"
+
+msgid "ui.settings.crosshair.section.spread"
+msgstr "扩散"
+
+msgid "ui.settings.crosshair.section.hit_feedback"
+msgstr "命中反馈"
+
+# Shape Section Labels
+msgid "ui.settings.crosshair.shape.label"
+msgstr "准星形状"
+
+msgid "ui.settings.crosshair.size.label"
+msgstr "准星大小"
+
+msgid "ui.settings.crosshair.alpha.label"
+msgstr "准星透明度"
+
+msgid "ui.settings.crosshair.t_shape.label"
+msgstr "使用 T 形"
+
+# Color Section Labels
+msgid "ui.settings.crosshair.color_mode.label"
+msgstr "颜色模式"
+
+msgid "ui.settings.crosshair.color_preset.label"
+msgstr "颜色预设"
+
+msgid "ui.settings.crosshair.custom_red.label"
+msgstr "自定义红色"
+
+msgid "ui.settings.crosshair.custom_green.label"
+msgstr "自定义绿色"
+
+msgid "ui.settings.crosshair.custom_blue.label"
+msgstr "自定义蓝色"
+
+# Line Section Labels
+msgid "ui.settings.crosshair.line_length.label"
+msgstr "线条长度"
+
+msgid "ui.settings.crosshair.line_thickness.label"
+msgstr "线条粗细"
+
+msgid "ui.settings.crosshair.line_gap.label"
+msgstr "线条间隙"
+
+# Outline Section Labels
+msgid "ui.settings.crosshair.outline_enabled.label"
+msgstr "启用描边"
+
+msgid "ui.settings.crosshair.outline_thickness.label"
+msgstr "描边粗细"
+
+msgid "ui.settings.crosshair.outline_red.label"
+msgstr "描边红色"
+
+msgid "ui.settings.crosshair.outline_green.label"
+msgstr "描边绿色"
+
+msgid "ui.settings.crosshair.outline_blue.label"
+msgstr "描边蓝色"
+
+# Center Dot Section Labels
+msgid "ui.settings.crosshair.center_dot_enabled.label"
+msgstr "显示中心点"
+
+msgid "ui.settings.crosshair.center_dot_size.label"
+msgstr "中心点大小"
+
+msgid "ui.settings.crosshair.center_dot_alpha.label"
+msgstr "中心点透明度"
+
+# Spread Section Labels
+msgid "ui.settings.crosshair.dynamic_spread.label"
+msgstr "动态扩散"
+
+msgid "ui.settings.crosshair.spread_increase.label"
+msgstr "每发扩散增量"
+
+msgid "ui.settings.crosshair.recovery_rate.label"
+msgstr "恢复速度"
+
+msgid "ui.settings.crosshair.max_spread_multiplier.label"
+msgstr "最大扩散倍率"
+
+# Hit Feedback Section Labels
+msgid "ui.settings.crosshair.hit_feedback_enabled.label"
+msgstr "启用命中反馈"
+
+msgid "ui.settings.crosshair.hit_feedback_duration.label"
+msgstr "反馈持续时间"
+
+msgid "ui.settings.crosshair.hit_feedback_scale.label"
+msgstr "反馈缩放"
+
+msgid "ui.settings.crosshair.hit_feedback_intensity.label"
+msgstr "反馈强度"
+
+msgid "ui.settings.crosshair.hit_feedback_expand_ratio.label"
+msgstr "脉冲扩张"
+
+msgid "ui.settings.crosshair.hit_feedback_pulse_speed.label"
+msgstr "脉冲速度"
+
+msgid "ui.settings.crosshair.hit_feedback_max_stacks.label"
+msgstr "最大层数"
+
+msgid "ui.settings.crosshair.hit_feedback_stacking_mode.label"
+msgstr "层叠模式"
+
+# Crosshair Tooltips
+msgid "ui.settings.crosshair.tooltip.t_shape"
+msgstr "隐藏上方线段，让准星变成三向的 T 形样式。"
+
+msgid "ui.settings.crosshair.tooltip.color_mode"
+msgstr "可直接选择预设颜色，或切换到自定义模式手动调节 RGB。"
+
+msgid "ui.settings.crosshair.tooltip.line_gap"
+msgstr "控制中心点与外侧线段之间的留白距离。"
+
+msgid "ui.settings.crosshair.tooltip.outline"
+msgstr "为准星添加深色描边，在明亮背景上也更清晰。"
+
+msgid "ui.settings.crosshair.tooltip.dynamic_spread"
+msgstr "开启后，射击时准星会扩散并逐渐回收，用来提示武器散布变化。"
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback"
+msgstr "命中敌人时额外显示一层命中脉冲反馈。"
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_duration"
+msgstr "每次命中脉冲从出现到淡出的可见时长。"
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_scale"
+msgstr "设置命中脉冲相对于当前准星的基础尺寸。"
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_expand_ratio"
+msgstr "控制命中脉冲在动画期间向外扩张的幅度。"
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_pulse_speed"
+msgstr "控制命中脉冲在短动画中的呼吸速度。"
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_max_stacks"
+msgstr "限制同一时间内最多能叠加多少层命中脉冲。"
+
+msgid "ui.settings.crosshair.tooltip.hit_feedback_stacking_mode"
+msgstr "替换会刷新当前脉冲，叠加会保留多层，忽略新输入则保持现有反馈不变。"
+
+# Shape Options
+msgid "ui.settings.crosshair.shape.cross"
+msgstr "十字"
+
+msgid "ui.settings.crosshair.shape.dot"
+msgstr "点"
+
+msgid "ui.settings.crosshair.shape.circle"
+msgstr "圆圈"
+
+msgid "ui.settings.crosshair.shape.combined"
+msgstr "组合"
+
+# Color Mode Options
+msgid "ui.settings.crosshair.color_mode.preset"
+msgstr "预设"
+
+msgid "ui.settings.crosshair.color_mode.custom"
+msgstr "自定义"
+
+# Color Preset Options
+msgid "ui.settings.crosshair.color_preset.white"
+msgstr "白色"
+
+msgid "ui.settings.crosshair.color_preset.green"
+msgstr "绿色"
+
+msgid "ui.settings.crosshair.color_preset.yellow"
+msgstr "黄色"
+
+msgid "ui.settings.crosshair.color_preset.cyan"
+msgstr "青色"
+
+msgid "ui.settings.crosshair.color_preset.red"
+msgstr "红色"
+
+msgid "ui.settings.crosshair.color_preset.magenta"
+msgstr "品红"
+
+msgid "ui.settings.crosshair.color_preset.blue"
+msgstr "蓝色"
+
+msgid "ui.settings.crosshair.color_preset.orange"
+msgstr "橙色"
+
+# Hit Feedback Stacking Mode Options
+msgid "ui.settings.crosshair.stacking_mode.replace"
+msgstr "替换"
+
+msgid "ui.settings.crosshair.stacking_mode.stack"
+msgstr "叠加"
+
+msgid "ui.settings.crosshair.stacking_mode.ignore_new"
+msgstr "忽略新"
