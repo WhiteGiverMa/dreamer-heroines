@@ -1,5 +1,7 @@
-class_name CrosshairSettingsPanel
+﻿class_name CrosshairSettingsPanel
 extends Panel
+
+signal unsaved_changes_changed(has_unsaved_changes: bool)
 
 const LocalizedTextBinderClass = preload("res://src/ui/localized_text_binder.gd")
 const TooltipTriggerClass = preload("res://src/ui/tooltip_trigger.gd")
@@ -118,6 +120,11 @@ var _is_refreshing_controls: bool = false
 var _localized_text_binder = null
 var _slider_value_inputs: Dictionary = {}
 
+# 暂存系统 - 用于保存/取消功能
+var _pending_settings: Dictionary = {}
+var _original_settings: CrosshairSettings = null
+var _has_unsaved_changes: bool = false
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -130,6 +137,12 @@ func _ready() -> void:
 	_configure_scroll_behavior()
 	if CrosshairSettingsService:
 		CrosshairSettingsService.reload_settings()
+		var settings = CrosshairSettingsService.get_settings()
+		# 防御性检查：确保获取到正确的类型
+		if settings is CrosshairSettings:
+			_original_settings = settings
+		else:
+			push_error("[CrosshairSettingsPanel] get_settings() returned wrong type in _ready: %s" % typeof(settings))
 	_refresh_from_service()
 	_setup_localized_bindings()
 	_setup_tooltips()
@@ -137,8 +150,10 @@ func _ready() -> void:
 
 
 func refresh_panel_state() -> void:
+	"""刷新面板状态并重置暂存系统"""
 	if CrosshairSettingsService:
 		CrosshairSettingsService.reload_settings()
+	_reset_pending_system()
 	_refresh_from_service()
 	_apply_localized_texts()
 
@@ -413,47 +428,91 @@ func _connect_control_signals() -> void:
 
 
 func _refresh_from_service() -> void:
+	"""从服务刷新UI，同时应用暂存设置"""
 	if not CrosshairSettingsService:
 		return
 
-	var settings = CrosshairSettingsService.get_settings()
+	# 获取基础设置（服务中的当前设置或原始设置）
+	var base_settings: CrosshairSettings = CrosshairSettingsService.get_settings()
+
+	# 防御性检查：确保获取到正确的类型
+	if not base_settings is CrosshairSettings:
+		push_error("[CrosshairSettingsPanel] get_settings() returned wrong type: %s" % typeof(base_settings))
+		return
+
+	# 如果有暂存的更改，覆盖显示值（但这里我们不应用它们到服务）
+	# UI显示：优先使用暂存值 > 服务当前值
 	_is_refreshing_controls = true
 
-	_select_option_value(shape_option, SHAPE_VALUES, settings.crosshair_shape)
-	size_slider.value = settings.crosshair_size
-	alpha_slider.value = settings.crosshair_alpha
-	t_shape_check.button_pressed = settings.use_t_shape
-	_select_option_value(color_mode_option, COLOR_MODE_VALUES, settings.color_mode)
-	_select_option_value(color_preset_option, COLOR_PRESET_VALUES, settings.color_preset)
-	custom_color_r_slider.value = settings.custom_color_r
-	custom_color_g_slider.value = settings.custom_color_g
-	custom_color_b_slider.value = settings.custom_color_b
-	line_length_slider.value = settings.line_length
-	line_thickness_slider.value = settings.line_thickness
-	line_gap_slider.value = settings.line_gap
-	outline_enabled_check.button_pressed = settings.outline_enabled
-	outline_thickness_slider.value = settings.outline_thickness
-	outline_color_r_slider.value = settings.outline_color_r
-	outline_color_g_slider.value = settings.outline_color_g
-	outline_color_b_slider.value = settings.outline_color_b
-	center_dot_enabled_check.button_pressed = settings.show_center_dot
-	center_dot_size_slider.value = settings.center_dot_size
-	center_dot_alpha_slider.value = settings.center_dot_alpha
-	dynamic_spread_check.button_pressed = settings.enable_dynamic_spread
-	spread_increase_slider.value = settings.spread_increase_per_shot
-	recovery_rate_slider.value = settings.recovery_rate
-	max_spread_multiplier_slider.value = settings.max_spread_multiplier
-	hit_feedback_enabled_check.button_pressed = settings.hit_feedback_enabled
-	hit_feedback_duration_slider.value = settings.hit_feedback_duration
-	hit_feedback_scale_slider.value = settings.hit_feedback_scale
-	hit_feedback_intensity_slider.value = settings.hit_feedback_intensity
-	hit_feedback_expand_ratio_slider.value = settings.hit_feedback_expand_ratio
-	hit_feedback_pulse_speed_slider.value = settings.hit_feedback_pulse_speed
-	hit_feedback_max_stacks_slider.value = settings.hit_feedback_max_stacks
-	_select_option_value(hit_feedback_stacking_mode_option, HIT_FEEDBACK_STACKING_MODE_VALUES, settings.hit_feedback_stacking_mode)
+	# 获取实际要显示的值（暂存值优先）
+	var crosshair_shape = _pending_settings.get("crosshair_shape", base_settings.crosshair_shape)
+	var crosshair_size = _pending_settings.get("crosshair_size", base_settings.crosshair_size)
+	var crosshair_alpha = _pending_settings.get("crosshair_alpha", base_settings.crosshair_alpha)
+	var use_t_shape = _pending_settings.get("use_t_shape", base_settings.use_t_shape)
+	var color_mode = _pending_settings.get("color_mode", base_settings.color_mode)
+	var color_preset = _pending_settings.get("color_preset", base_settings.color_preset)
+	var custom_color_r = _pending_settings.get("custom_color_r", base_settings.custom_color_r)
+	var custom_color_g = _pending_settings.get("custom_color_g", base_settings.custom_color_g)
+	var custom_color_b = _pending_settings.get("custom_color_b", base_settings.custom_color_b)
+	var line_length = _pending_settings.get("line_length", base_settings.line_length)
+	var line_thickness = _pending_settings.get("line_thickness", base_settings.line_thickness)
+	var line_gap = _pending_settings.get("line_gap", base_settings.line_gap)
+	var outline_enabled = _pending_settings.get("outline_enabled", base_settings.outline_enabled)
+	var outline_thickness = _pending_settings.get("outline_thickness", base_settings.outline_thickness)
+	var outline_color_r = _pending_settings.get("outline_color_r", base_settings.outline_color_r)
+	var outline_color_g = _pending_settings.get("outline_color_g", base_settings.outline_color_g)
+	var outline_color_b = _pending_settings.get("outline_color_b", base_settings.outline_color_b)
+	var show_center_dot = _pending_settings.get("show_center_dot", base_settings.show_center_dot)
+	var center_dot_size = _pending_settings.get("center_dot_size", base_settings.center_dot_size)
+	var center_dot_alpha = _pending_settings.get("center_dot_alpha", base_settings.center_dot_alpha)
+	var enable_dynamic_spread = _pending_settings.get("enable_dynamic_spread", base_settings.enable_dynamic_spread)
+	var spread_increase_per_shot = _pending_settings.get("spread_increase_per_shot", base_settings.spread_increase_per_shot)
+	var recovery_rate = _pending_settings.get("recovery_rate", base_settings.recovery_rate)
+	var max_spread_multiplier = _pending_settings.get("max_spread_multiplier", base_settings.max_spread_multiplier)
+	var hit_feedback_enabled = _pending_settings.get("hit_feedback_enabled", base_settings.hit_feedback_enabled)
+	var hit_feedback_duration = _pending_settings.get("hit_feedback_duration", base_settings.hit_feedback_duration)
+	var hit_feedback_scale = _pending_settings.get("hit_feedback_scale", base_settings.hit_feedback_scale)
+	var hit_feedback_intensity = _pending_settings.get("hit_feedback_intensity", base_settings.hit_feedback_intensity)
+	var hit_feedback_expand_ratio = _pending_settings.get("hit_feedback_expand_ratio", base_settings.hit_feedback_expand_ratio)
+	var hit_feedback_pulse_speed = _pending_settings.get("hit_feedback_pulse_speed", base_settings.hit_feedback_pulse_speed)
+	var hit_feedback_max_stacks = _pending_settings.get("hit_feedback_max_stacks", base_settings.hit_feedback_max_stacks)
+	var hit_feedback_stacking_mode = _pending_settings.get("hit_feedback_stacking_mode", base_settings.hit_feedback_stacking_mode)
+
+	_select_option_value(shape_option, SHAPE_VALUES, crosshair_shape)
+	size_slider.value = crosshair_size
+	alpha_slider.value = crosshair_alpha
+	t_shape_check.button_pressed = use_t_shape
+	_select_option_value(color_mode_option, COLOR_MODE_VALUES, color_mode)
+	_select_option_value(color_preset_option, COLOR_PRESET_VALUES, color_preset)
+	custom_color_r_slider.value = custom_color_r
+	custom_color_g_slider.value = custom_color_g
+	custom_color_b_slider.value = custom_color_b
+	line_length_slider.value = line_length
+	line_thickness_slider.value = line_thickness
+	line_gap_slider.value = line_gap
+	outline_enabled_check.button_pressed = outline_enabled
+	outline_thickness_slider.value = outline_thickness
+	outline_color_r_slider.value = outline_color_r
+	outline_color_g_slider.value = outline_color_g
+	outline_color_b_slider.value = outline_color_b
+	center_dot_enabled_check.button_pressed = show_center_dot
+	center_dot_size_slider.value = center_dot_size
+	center_dot_alpha_slider.value = center_dot_alpha
+	dynamic_spread_check.button_pressed = enable_dynamic_spread
+	spread_increase_slider.value = spread_increase_per_shot
+	recovery_rate_slider.value = recovery_rate
+	max_spread_multiplier_slider.value = max_spread_multiplier
+	hit_feedback_enabled_check.button_pressed = hit_feedback_enabled
+	hit_feedback_duration_slider.value = hit_feedback_duration
+	hit_feedback_scale_slider.value = hit_feedback_scale
+	hit_feedback_intensity_slider.value = hit_feedback_intensity
+	hit_feedback_expand_ratio_slider.value = hit_feedback_expand_ratio
+	hit_feedback_pulse_speed_slider.value = hit_feedback_pulse_speed
+	hit_feedback_max_stacks_slider.value = hit_feedback_max_stacks
+	_select_option_value(hit_feedback_stacking_mode_option, HIT_FEEDBACK_STACKING_MODE_VALUES, hit_feedback_stacking_mode)
 	_refresh_slider_value_inputs()
-	_update_color_control_state(settings.color_mode)
-	_update_outline_control_state(settings.outline_enabled)
+	_update_color_control_state(color_mode)
+	_update_outline_control_state(outline_enabled)
 	_is_refreshing_controls = false
 
 
@@ -505,61 +564,160 @@ func _update_outline_control_state(outline_enabled: bool) -> void:
 
 
 func _on_settings_changed(_settings) -> void:
+	"""当服务设置变化时刷新（通常是外部保存后）"""
+	# 重新加载时，重置暂存系统
+	_reset_pending_system()
 	_refresh_from_service()
 
 
-func _on_slider_value_changed(value: float, property_name: StringName) -> void:
-	if _is_refreshing_controls or not CrosshairSettingsService:
+func _reset_pending_system() -> void:
+	"""重置暂存系统"""
+	_pending_settings.clear()
+	var had_unsaved_changes := _has_unsaved_changes
+	_has_unsaved_changes = false
+	if had_unsaved_changes:
+		unsaved_changes_changed.emit(false)
+
+	if CrosshairSettingsService:
+		var settings = CrosshairSettingsService.get_settings()
+		# 防御性检查：确保获取到正确的类型
+		if settings is CrosshairSettings:
+			_original_settings = settings
+		else:
+			push_error("[CrosshairSettingsPanel] get_settings() returned wrong type in _reset_pending_system: %s" % typeof(settings))
+
+
+func _mark_as_changed() -> void:
+	"""标记有未保存的更改"""
+	if not _has_unsaved_changes:
+		_has_unsaved_changes = true
+		unsaved_changes_changed.emit(true)
+
+
+func save_pending_changes() -> void:
+	"""保存暂存的更改到服务"""
+	if _pending_settings.is_empty() or not CrosshairSettingsService:
+		if _has_unsaved_changes:
+			_has_unsaved_changes = false
+			unsaved_changes_changed.emit(false)
 		return
 
-	CrosshairSettingsService.update_setting(property_name, value)
+	# 应用到服务
+	for key in _pending_settings.keys():
+		CrosshairSettingsService.update_setting(key, _pending_settings[key])
+		# 更新原始设置
+		if _original_settings:
+			_original_settings.set(key, _pending_settings[key])
+
+	_pending_settings.clear()
+	if _has_unsaved_changes:
+		_has_unsaved_changes = false
+		unsaved_changes_changed.emit(false)
+	print("[CrosshairSettingsPanel] Crosshair settings saved")
+
+
+func cancel_pending_changes() -> void:
+	"""取消暂存的更改，恢复原始设置"""
+	if _pending_settings.is_empty():
+		if _has_unsaved_changes:
+			_has_unsaved_changes = false
+			unsaved_changes_changed.emit(false)
+		return
+
+	_pending_settings.clear()
+	if _has_unsaved_changes:
+		_has_unsaved_changes = false
+		unsaved_changes_changed.emit(false)
+
+	# 恢复UI到原始设置
+	_refresh_from_service()
+	print("[CrosshairSettingsPanel] Crosshair changes cancelled")
+
+
+func restore_to_defaults_pending() -> void:
+	"""恢复默认设置（暂存模式）"""
+	if not CrosshairSettingsService:
+		return
+
+	# 使用 CrosshairSettingsResource 获取默认值
+	var CrosshairSettingsResource = load("res://src/data/crosshair_settings.gd")
+	var defaults = CrosshairSettingsResource.DEFAULT_VALUES
+
+	# 将所有可设置属性设为默认值
+	for key in defaults.keys():
+		_pending_settings[key] = defaults[key]
+
+	_mark_as_changed()
+	_refresh_from_service()  # 更新UI显示
+	print("[CrosshairSettingsPanel] Restore to defaults pending")
+
+
+func _on_slider_value_changed(value: float, property_name: StringName) -> void:
+	"""处理滑块值变化 - 暂存到_pending_settings"""
+	if _is_refreshing_controls:
+		return
+
+	_pending_settings[property_name] = value
+	_mark_as_changed()
 
 
 func _on_int_slider_value_changed(value: float, property_name: StringName) -> void:
-	if _is_refreshing_controls or not CrosshairSettingsService:
+	"""处理整数滑块值变化 - 暂存到_pending_settings"""
+	if _is_refreshing_controls:
 		return
 
-	CrosshairSettingsService.update_setting(property_name, int(round(value)))
+	_pending_settings[property_name] = int(round(value))
+	_mark_as_changed()
 
 
 func _on_toggle_changed(enabled: bool, property_name: StringName) -> void:
-	if _is_refreshing_controls or not CrosshairSettingsService:
+	"""处理复选框切换 - 暂存到_pending_settings"""
+	if _is_refreshing_controls:
 		return
 
 	if property_name == &"outline_enabled":
 		_update_outline_control_state(enabled)
 
-	CrosshairSettingsService.update_setting(property_name, enabled)
+	_pending_settings[property_name] = enabled
+	_mark_as_changed()
 
 
 func _on_shape_selected(index: int) -> void:
-	if _is_refreshing_controls or not CrosshairSettingsService:
+	"""处理准星形状选择 - 暂存到_pending_settings"""
+	if _is_refreshing_controls:
 		return
 
-	CrosshairSettingsService.update_setting(&"crosshair_shape", SHAPE_VALUES[index])
+	_pending_settings[&"crosshair_shape"] = SHAPE_VALUES[index]
+	_mark_as_changed()
 
 
 func _on_color_mode_selected(index: int) -> void:
-	if _is_refreshing_controls or not CrosshairSettingsService:
+	"""处理颜色模式选择 - 暂存到_pending_settings"""
+	if _is_refreshing_controls:
 		return
 
 	var color_mode := COLOR_MODE_VALUES[index]
 	_update_color_control_state(color_mode)
-	CrosshairSettingsService.update_setting(&"color_mode", color_mode)
+	_pending_settings[&"color_mode"] = color_mode
+	_mark_as_changed()
 
 
 func _on_color_preset_selected(index: int) -> void:
-	if _is_refreshing_controls or not CrosshairSettingsService:
+	"""处理颜色预设选择 - 暂存到_pending_settings"""
+	if _is_refreshing_controls:
 		return
 
-	CrosshairSettingsService.update_setting(&"color_preset", COLOR_PRESET_VALUES[index])
+	_pending_settings[&"color_preset"] = COLOR_PRESET_VALUES[index]
+	_mark_as_changed()
 
 
 func _on_hit_feedback_stacking_mode_selected(index: int) -> void:
-	if _is_refreshing_controls or not CrosshairSettingsService:
+	"""处理击中反馈堆叠模式选择 - 暂存到_pending_settings"""
+	if _is_refreshing_controls:
 		return
 
-	CrosshairSettingsService.update_setting(&"hit_feedback_stacking_mode", HIT_FEEDBACK_STACKING_MODE_VALUES[index])
+	_pending_settings[&"hit_feedback_stacking_mode"] = HIT_FEEDBACK_STACKING_MODE_VALUES[index]
+	_mark_as_changed()
 
 
 func _prettify_label(value: String) -> String:
