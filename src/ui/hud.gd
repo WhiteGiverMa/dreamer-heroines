@@ -124,6 +124,7 @@ func _ready() -> void:
 		reload_progress.visible = false
 
 	_apply_localized_texts()
+	_sync_crosshair_runtime_from_player()
 
 	print("HUD initialized")
 
@@ -275,11 +276,8 @@ func start_reload_progress(duration: float, checkpoint_percent: float = 0.5) -> 
 		reload_progress.max_value = duration
 		reload_progress.value = 0.0
 
-	# 设置检查点标记位置
-	if checkpoint_marker and reload_progress:
-		var marker_x = reload_progress.size.x * checkpoint_percent
-		checkpoint_marker.position.x = marker_x - 2  # 居中偏移
-		checkpoint_marker.visible = true
+	# 延迟一帧设置检查点标记位置，确保布局系统已计算正确的size
+	_set_checkpoint_marker_position.call_deferred(checkpoint_percent)
 
 	# 隐藏部署进度
 	if deploy_progress:
@@ -289,6 +287,14 @@ func start_reload_progress(duration: float, checkpoint_percent: float = 0.5) -> 
 	# 显示换弹中文本
 	if ammo_label:
 		ammo_label.modulate = Color(1, 0.8, 0.2, 1)  # 黄色表示换弹中
+
+
+## 延迟设置检查点标记位置，确保ProgressBar布局已更新
+func _set_checkpoint_marker_position(checkpoint_percent: float) -> void:
+	if checkpoint_marker and reload_progress:
+		var marker_x = reload_progress.size.x * checkpoint_percent
+		checkpoint_marker.position.x = marker_x - 2  # 居中偏移
+		checkpoint_marker.visible = true
 
 
 func update_reload_progress(elapsed: float) -> void:
@@ -763,6 +769,48 @@ func _get_kills_params() -> Dictionary:
 	return {"current": kill_count, "total": kill_target}
 
 
+func _sync_crosshair_runtime_from_player() -> void:
+	if not crosshair or not GameManager or not GameManager.has_method("get_player"):
+		return
+
+	var player = GameManager.get_player()
+	if player == null:
+		return
+
+	var weapon = player.get("current_weapon")
+	if weapon == null:
+		return
+
+	var ammo_current := int(weapon.get("current_ammo_in_mag")) if "current_ammo_in_mag" in weapon else 0
+	var ammo_max := 0
+	if "stats" in weapon and weapon.stats:
+		ammo_max = int(weapon.stats.magazine_size)
+	on_crosshair_ammo_changed(ammo_current, ammo_max)
+
+	var base_spread := 0.0
+	if "stats" in weapon and weapon.stats:
+		base_spread = float(weapon.stats.spread)
+	var current_spread := float(weapon.get("current_visual_spread")) if "current_visual_spread" in weapon else base_spread
+	update_crosshair_spread(current_spread, base_spread)
+
+	var deploying: bool = false
+	if weapon.has_method("is_deploying"):
+		deploying = bool(weapon.is_deploying())
+	if deploying:
+		on_crosshair_deploy_started()
+		on_crosshair_reload_finished()
+		return
+
+	on_crosshair_deploy_finished()
+	if bool(weapon.get("is_reloading")):
+		var reload_duration := 0.0
+		if "stats" in weapon and weapon.stats:
+			reload_duration = float(weapon.stats.reload_time)
+		on_crosshair_reload_started(reload_duration)
+	else:
+		on_crosshair_reload_finished()
+
+
 # ============================================
 # 准星转发方法
 # ============================================
@@ -777,28 +825,51 @@ func update_crosshair_spread(current_spread: float, base_spread: float) -> void:
 ## 换弹开始转发
 func on_crosshair_reload_started(duration: float) -> void:
 	if crosshair:
-		crosshair._on_reload_started(duration)
+		if crosshair.has_method("on_reload_start"):
+			crosshair.on_reload_start(duration)
+		else:
+			crosshair._on_reload_started(duration)
 
 
 ## 换弹结束转发
 func on_crosshair_reload_finished() -> void:
 	if crosshair:
-		crosshair._on_reload_finished()
+		if crosshair.has_method("on_reload_end"):
+			crosshair.on_reload_end()
+		else:
+			crosshair._on_reload_finished()
 
 
 ## 部署开始转发
 func on_crosshair_deploy_started() -> void:
 	if crosshair:
-		crosshair._on_deploy_started()
+		if crosshair.has_method("on_deploy_start"):
+			crosshair.on_deploy_start()
+		else:
+			crosshair._on_deploy_started()
 
 
 ## 部署结束转发
 func on_crosshair_deploy_finished() -> void:
 	if crosshair:
-		crosshair._on_deploy_finished()
+		if crosshair.has_method("on_deploy_end"):
+			crosshair.on_deploy_end()
+		else:
+			crosshair._on_deploy_finished()
 
 
 ## 弹药变化转发
 func on_crosshair_ammo_changed(current: int, maximum: int) -> void:
 	if crosshair:
-		crosshair._on_ammo_changed(current, maximum)
+		if crosshair.has_method("on_ammo_changed"):
+			crosshair.on_ammo_changed(current, maximum)
+		else:
+			crosshair._on_ammo_changed(current, maximum)
+
+
+func on_crosshair_ammo_empty() -> void:
+	if crosshair:
+		if crosshair.has_method("on_ammo_empty"):
+			crosshair.on_ammo_empty()
+		else:
+			crosshair._on_ammo_changed(0, 1)

@@ -319,6 +319,11 @@ func _apply_saved_settings() -> void:
 		else:
 			LocalizationManager.set_locale("zh_CN")
 	
+	# 应用开发者模式设置
+	var dev_mode_enabled = settings.get("developer_mode_enabled", false)
+	if DeveloperMode:
+		DeveloperMode.set_user_enabled(dev_mode_enabled)
+		print("[Boot] 开发者模式设置: ", dev_mode_enabled)
 	print("[Boot] 设置已应用")
 
 
