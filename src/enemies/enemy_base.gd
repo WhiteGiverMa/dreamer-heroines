@@ -22,6 +22,7 @@ signal player_lost
 @export_group("AI")
 @export var patrol_distance: float = 200.0
 @export var patrol_wait_time: float = 2.0
+@export var attack_move_speed_multiplier: float = 0.85
 @export var can_jump: bool = true
 @export var can_shoot: bool = false
 
@@ -72,6 +73,8 @@ func _ready():
 		attack_timer.wait_time = attack_cooldown
 		attack_timer.timeout.connect(_on_attack_cooldown_timeout)
 
+	_sync_detection_range_shape()
+
 	change_state(State.PATROL)
 
 func _physics_process(delta: float) -> void:
@@ -116,7 +119,7 @@ func _enter_state(state: State) -> void:
 		State.CHASE:
 			player_detected.emit()
 		State.ATTACK:
-			velocity.x = 0
+			pass
 		State.HURT:
 			velocity.x = 0
 		State.DEAD:
@@ -150,10 +153,8 @@ func _state_patrol(_delta: float) -> void:
 		change_state(State.IDLE)
 
 func _state_chase(_delta: float) -> void:
-	if not player or player.current_health <= 0:
-		player = null
-		change_state(State.PATROL)
-		player_lost.emit()
+	if not _has_valid_player_target():
+		_clear_player_target()
 		return
 
 	var distance_to_player = global_position.distance_to(player.global_position)
@@ -163,14 +164,7 @@ func _state_chase(_delta: float) -> void:
 		change_state(State.ATTACK)
 		return
 
-	# 朝玩家移动
-	var direction = sign(player.global_position.x - global_position.x)
-	velocity.x = direction * move_speed
-	sprite.flip_h = direction < 0
-
-	# 尝试跳跃越过障碍
-	if can_jump and wall_check and wall_check.is_colliding() and is_on_floor():
-		velocity.y = jump_velocity
+	_move_towards_player()
 
 func _state_attack(_delta: float) -> void:
 	if not player:
@@ -182,6 +176,11 @@ func _state_attack(_delta: float) -> void:
 	if distance_to_player > attack_range:
 		change_state(State.CHASE)
 		return
+
+	if not can_shoot:
+		_move_towards_player(attack_move_speed_multiplier)
+	else:
+		_face_player()
 
 	if can_attack:
 		_perform_attack()
@@ -276,6 +275,62 @@ func _should_turn() -> bool:
 	if wall_check and wall_check.is_colliding():
 		return true
 	return false
+
+
+func _has_valid_player_target() -> bool:
+	return player != null and is_instance_valid(player) and player.current_health > 0
+
+
+func _clear_player_target() -> void:
+	player = null
+	change_state(State.PATROL)
+	player_lost.emit()
+
+
+func _get_horizontal_direction_to_player() -> float:
+	if not player:
+		return 0.0
+	var delta_x := player.global_position.x - global_position.x
+	if is_zero_approx(delta_x):
+		return 0.0
+	return sign(delta_x)
+
+
+func _face_player() -> void:
+	var direction := _get_horizontal_direction_to_player()
+	if direction != 0.0:
+		sprite.flip_h = direction < 0
+
+
+func _move_towards_player(speed_multiplier: float = 1.0) -> void:
+	var direction := _get_horizontal_direction_to_player()
+	velocity.x = direction * move_speed * speed_multiplier
+	_face_player()
+	_try_jump_over_obstacle()
+
+
+func _move_away_from_player(speed_multiplier: float = 1.0) -> void:
+	var direction := _get_horizontal_direction_to_player()
+	velocity.x = -direction * move_speed * speed_multiplier
+	if direction != 0.0:
+		sprite.flip_h = direction > 0
+	_try_jump_over_obstacle()
+
+
+func _try_jump_over_obstacle() -> void:
+	if can_jump and wall_check and wall_check.is_colliding() and is_on_floor():
+		velocity.y = jump_velocity
+
+
+func _sync_detection_range_shape() -> void:
+	if not detection_area:
+		return
+	var detection_shape := detection_area.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if not detection_shape:
+		return
+	var circle_shape := detection_shape.shape as CircleShape2D
+	if circle_shape:
+		circle_shape.radius = detection_range
 
 func _on_detection_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):

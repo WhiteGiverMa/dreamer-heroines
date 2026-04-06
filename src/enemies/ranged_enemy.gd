@@ -6,10 +6,12 @@ extends EnemyBase
 
 @export_group("Ranged Settings")
 @export var preferred_distance: float = 300.0  # 理想攻击距离
-@export var retreat_distance: float = 150.0    # 过近时撤退距离
+@export var retreat_distance: float = 150.0  # 过近时撤退距离
 @export var projectile_scene: PackedScene
 @export var projectile_speed: float = 600.0
-@export var aim_time: float = 0.5
+@export var aim_time: float = 0.25
+@export var strafe_speed_multiplier: float = 0.65
+@export var attack_approach_speed_multiplier: float = 0.9
 
 @export_group("Weapon Loadout")
 @export var initial_weapons: Array[PackedScene] = []  # 武器配置（Inspector）
@@ -20,23 +22,24 @@ var aim_timer: float = 0.0
 @onready var muzzle: Marker2D = $Muzzle
 @onready var aim_line: Line2D = $AimLine
 
+
 func _ready() -> void:
 	# 从配置加载属性
 	_load_enemy_config()
-	
+
 	# 调用父类初始化
 	super._ready()
-	
+
 	# 设置远程敌人特性
 	can_shoot = true
-	
+
 	# 初始化武器配置
 	_initialize_weapon_loadout()
-	
+
 	# 隐藏瞄准线
 	if aim_line:
 		aim_line.visible = false
-	
+
 	print("RangedEnemy initialized")
 
 
@@ -53,7 +56,9 @@ func _initialize_weapon_loadout() -> void:
 		if default_weapon_scene:
 			add_weapon(default_weapon_scene)
 		else:
-			push_warning("RangedEnemy: Failed to load default weapon scene res://scenes/weapons/rifle.tscn")
+			push_warning(
+				"RangedEnemy: Failed to load default weapon scene res://scenes/weapons/rifle.tscn"
+			)
 
 	# If no weapons from inspector, check for WeaponPivot/Weapon in scene
 	if weapons.is_empty():
@@ -67,6 +72,7 @@ func _initialize_weapon_loadout() -> void:
 
 	if not equipped_weapon:
 		push_warning("RangedEnemy: No weapon equipped after loadout initialization")
+
 
 func _load_enemy_config() -> void:
 	var config = _get_enemy_config()
@@ -83,9 +89,9 @@ func _load_enemy_config() -> void:
 	patrol_wait_time = config.get("patrol_wait_time", 2.0)  # Not in JSON, use default
 
 	preferred_distance = _get_config_value(config, "preferred_range", 300.0)  # JSON uses "preferred_range"
-	retreat_distance = config.get("retreat_distance", 150.0)  # Not in JSON, use default
+	retreat_distance = _get_config_value(config, "retreat_distance", 150.0)
 	projectile_speed = _get_config_value(config, "projectile_speed", 600.0)
-	aim_time = config.get("aim_time", 0.5)  # Not in JSON, use default
+	aim_time = _get_config_value(config, "aim_time", 0.25)
 
 
 func _get_config_value(config: Dictionary, key: String, default) -> Variant:
@@ -97,17 +103,18 @@ func _get_config_value(config: Dictionary, key: String, default) -> Variant:
 		return entry
 	return default
 
+
 func _get_enemy_config() -> Dictionary:
 	var file_path = "res://config/enemy_stats.json"
 	if FileAccess.file_exists(file_path):
 		var file = FileAccess.open(file_path, FileAccess.READ)
 		var json = file.get_as_text()
 		file.close()
-		
+
 		var data = JSON.parse_string(json)
 		if data and data.has("ranged_basic"):
 			return data["ranged_basic"]
-	
+
 	# 默认配置
 	return {
 		"max_health": 40,
@@ -125,15 +132,13 @@ func _get_enemy_config() -> Dictionary:
 		"aim_time": 0.5
 	}
 
+
 func _state_chase(delta: float) -> void:
-	if not player or player.current_health <= 0:
-		player = null
-		change_state(State.PATROL)
-		player_lost.emit()
+	if not _has_valid_player_target():
+		_clear_player_target()
 		return
 
 	var distance_to_player = global_position.distance_to(player.global_position)
-	var direction_to_player = sign(player.global_position.x - global_position.x)
 
 	# AI weapon switching based on distance
 	_select_weapon_for_range(distance_to_player)
@@ -143,23 +148,11 @@ func _state_chase(delta: float) -> void:
 		change_state(State.ATTACK)
 		return
 
-	# 距离控制
-	if distance_to_player < retreat_distance:
-		# 太近了，撤退
-		velocity.x = -direction_to_player * move_speed
-		sprite.flip_h = direction_to_player > 0
-	elif distance_to_player > preferred_distance + 50:
-		# 太远了，接近
-		velocity.x = direction_to_player * move_speed
-		sprite.flip_h = direction_to_player < 0
-	else:
-		# 理想距离，停止移动
-		velocity.x = 0
-		sprite.flip_h = direction_to_player < 0
-		
-		# 尝试攻击
-		if can_attack and distance_to_player <= attack_range:
-			change_state(State.ATTACK)
+	_update_combat_movement(distance_to_player, false)
+
+	# 尝试攻击
+	if can_attack and distance_to_player <= attack_range:
+		change_state(State.ATTACK)
 
 
 func _select_weapon_for_range(distance: float) -> void:
@@ -180,13 +173,15 @@ func _select_weapon_for_range(distance: float) -> void:
 				switch_weapon_to(i)
 				return
 
+
 func _state_attack(delta: float) -> void:
 	if not player:
 		change_state(State.CHASE)
 		return
-	
+
 	var distance_to_player = global_position.distance_to(player.global_position)
-	
+	_select_weapon_for_range(distance_to_player)
+
 	# 如果玩家移动太远，取消攻击
 	if distance_to_player > attack_range * 1.2:
 		change_state(State.CHASE)
@@ -194,58 +189,92 @@ func _state_attack(delta: float) -> void:
 		if aim_line:
 			aim_line.visible = false
 		return
-	
+
+	_update_combat_movement(distance_to_player, true)
+
 	if can_attack and not is_aiming:
 		_start_aiming()
+
+
+func _update_combat_movement(distance_to_player: float, attacking: bool) -> void:
+	var preferred_max_distance := preferred_distance + 50.0
+
+	if distance_to_player < retreat_distance:
+		_move_away_from_player(1.0)
+		return
+
+	if distance_to_player > preferred_max_distance:
+		var approach_speed := attack_approach_speed_multiplier if attacking else 1.0
+		_move_towards_player(approach_speed)
+		return
+
+	var strafe_direction := _get_strafe_direction()
+	velocity.x = strafe_direction * move_speed * strafe_speed_multiplier
+	_face_player()
+	_try_jump_over_obstacle()
+
+
+func _get_strafe_direction() -> float:
+	var direction_to_player := _get_horizontal_direction_to_player()
+	if direction_to_player == 0.0:
+		return 0.0
+	return (
+		-direction_to_player
+		if sprite.flip_h == (direction_to_player < 0.0)
+		else direction_to_player
+	)
+
 
 func _start_aiming() -> void:
 	is_aiming = true
 	aim_timer = 0.0
-	
+
 	# 显示瞄准线
 	if aim_line:
 		aim_line.visible = true
 		_update_aim_line()
-	
+
 	# 瞄准动画
 	if animation_player:
 		animation_player.play("aim")
-	
+
 	# 延迟射击
 	await get_tree().create_timer(aim_time).timeout
-	
+
 	if is_aiming and current_state == State.ATTACK:
 		_fire_projectile()
-	
+
 	is_aiming = false
 	if aim_line:
 		aim_line.visible = false
-	
+
 	can_attack = false
 	attack_timer.start()
+
 
 func _update_aim_line() -> void:
 	if not aim_line or not player:
 		return
-	
+
 	# 更新瞄准线
 	aim_line.clear_points()
 	aim_line.add_point(Vector2.ZERO)
-	
+
 	var target_point := _get_player_aim_point()
 	var aim_direction = (target_point - global_position).normalized()
 	aim_line.add_point(aim_direction * attack_range)
 
+
 func _fire_projectile() -> void:
 	if not player:
 		return
-	
+
 	# 射击动画
 	if animation_player:
 		animation_player.play("shoot")
-	
+
 	AudioManager.play_sfx("enemy_shoot")
-	
+
 	# Use weapon component only
 	if equipped_weapon:
 		var muzzle_pos = muzzle.global_position if muzzle else global_position
@@ -267,14 +296,16 @@ func _get_player_aim_point() -> Vector2:
 
 	return player.global_position
 
+
 func _perform_attack() -> void:
 	# 远程敌人使用射击而非近战
 	pass
 
+
 func _update_animation() -> void:
 	if not animation_player:
 		return
-	
+
 	match current_state:
 		State.IDLE:
 			if animation_player.has_animation("idle"):
@@ -300,16 +331,17 @@ func _update_animation() -> void:
 				if animation_player.has_animation("death"):
 					animation_player.play("death")
 
+
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
-	
+
 	# 更新瞄准线
 	if is_aiming and aim_line:
 		_update_aim_line()
 
+
 func get_enemy_type() -> String:
 	return "ranged"
-
 
 # === Weapon Integration ===
 
