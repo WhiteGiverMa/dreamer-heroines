@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://mainmenu12345"]
+[gd_scene load_steps=6 format=3 uid="uid://mainmenu12345"]
 
 [ext_resource type="Script" path="res://src/ui/main_menu.gd" id="1_main_menu"]
 [ext_resource type="PackedScene" path="res://scenes/ui/settings_panel.tscn" id="2_settings_panel"]
 [ext_resource type="Script" path="res://src/ui/tooltip_trigger.gd" id="3_tooltip_trigger"]
 [ext_resource type="Script" path="res://src/ui/tooltip_host.gd" id="4_tooltip_host"]
+[ext_resource type="PackedScene" path="res://scenes/ui/character_config_panel.tscn" id="5_char_config"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -89,6 +90,11 @@ layout_mode = 2
 custom_minimum_size = Vector2(300, 50)
 text = "Settings"
 
+[node name="CharacterConfigButton" type="Button" parent="MainPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(300, 50)
+text = "Character Config"
+
 [node name="CreditsButton" type="Button" parent="MainPanel"]
 layout_mode = 2
 custom_minimum_size = Vector2(300, 50)
@@ -163,6 +169,9 @@ grow_vertical = 0
 text = "Back"
 
 [node name="SettingsPanel" parent="." instance=ExtResource("2_settings_panel")]
+visible = false
+
+[node name="CharacterConfigPanel" parent="." instance=ExtResource("5_char_config")]
 visible = false
 
 [node name="CreditsPanel" type="Panel" parent="."]

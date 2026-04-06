@@ -1,0 +1,245 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/ui/character_config_panel.gd" id="1_script"]
+[ext_resource type="Script" path="res://src/ui/tooltip_host.gd" id="2_tooltip_host"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
+bg_color = Color(0.15, 0.17, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.35, 0.4, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2"]
+bg_color = Color(0.15, 0.17, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.35, 0.4, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="CharacterConfigPanel" type="Panel" unique_id=1478956390]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 80.0
+offset_top = 60.0
+offset_right = -80.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Title" type="Label" parent="." unique_id=1677887383]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 20.0
+offset_right = 150.0
+offset_bottom = 50.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 28
+text = "角色配置"
+horizontal_alignment = 1
+
+[node name="HSplitContainer" type="HSplitContainer" parent="." unique_id=1967763961]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 70.0
+offset_right = -30.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+split_offsets = PackedInt32Array(300)
+split_offset = 300
+
+[node name="LeftPanel" type="VBoxContainer" parent="HSplitContainer" unique_id=455029692]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="CharacterSection" type="VBoxContainer" parent="HSplitContainer/LeftPanel" unique_id=539676395]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CharacterTitle" type="Label" parent="HSplitContainer/LeftPanel/CharacterSection" unique_id=381811994]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "角色选择"
+horizontal_alignment = 1
+
+[node name="CharacterList" type="ItemList" parent="HSplitContainer/LeftPanel/CharacterSection" unique_id=538942705]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_vertical = 3
+item_count = 1
+item_0/text = "默认角色"
+
+[node name="CharacterInfo" type="VBoxContainer" parent="HSplitContainer/LeftPanel/CharacterSection" unique_id=1632173052]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="CharacterNameLabel" type="Label" parent="HSplitContainer/LeftPanel/CharacterSection/CharacterInfo" unique_id=1112181383]
+unique_name_in_owner = true
+layout_mode = 2
+text = "默认角色"
+horizontal_alignment = 1
+
+[node name="CharacterDescLabel" type="Label" parent="HSplitContainer/LeftPanel/CharacterSection/CharacterInfo" unique_id=1531808463]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "标准突击战士，均衡的能力配置。"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="SkinSection" type="VBoxContainer" parent="HSplitContainer/LeftPanel" unique_id=453576683]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SkinTitle" type="Label" parent="HSplitContainer/LeftPanel/SkinSection" unique_id=1747946969]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "外观"
+horizontal_alignment = 1
+
+[node name="SkinOption" type="OptionButton" parent="HSplitContainer/LeftPanel/SkinSection" unique_id=90612497]
+unique_name_in_owner = true
+layout_mode = 2
+selected = 0
+item_count = 1
+popup/item_0/text = "默认"
+popup/item_0/id = 0
+
+[node name="RightPanel" type="VBoxContainer" parent="HSplitContainer" unique_id=1967707153]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="WeaponSection" type="VBoxContainer" parent="HSplitContainer/RightPanel" unique_id=260757088]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="WeaponTitle" type="Label" parent="HSplitContainer/RightPanel/WeaponSection" unique_id=364001842]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "武器配置"
+horizontal_alignment = 1
+
+[node name="PrimaryWeaponPanel" type="Panel" parent="HSplitContainer/RightPanel/WeaponSection" unique_id=1734695735]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_1")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer/RightPanel/WeaponSection/PrimaryWeaponPanel" unique_id=802629548]
+layout_mode = 0
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="PrimaryTitle" type="Label" parent="HSplitContainer/RightPanel/WeaponSection/PrimaryWeaponPanel/VBoxContainer" unique_id=297033983]
+layout_mode = 2
+text = "主武器"
+
+[node name="PrimaryWeaponOption" type="OptionButton" parent="HSplitContainer/RightPanel/WeaponSection/PrimaryWeaponPanel/VBoxContainer" unique_id=833449311]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PrimaryWeaponInfo" type="VBoxContainer" parent="HSplitContainer/RightPanel/WeaponSection/PrimaryWeaponPanel/VBoxContainer" unique_id=253360666]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="PrimaryWeaponName" type="Label" parent="HSplitContainer/RightPanel/WeaponSection/PrimaryWeaponPanel/VBoxContainer/PrimaryWeaponInfo" unique_id=493853493]
+unique_name_in_owner = true
+layout_mode = 2
+text = "基础突击步枪"
+
+[node name="PrimaryWeaponStats" type="Label" parent="HSplitContainer/RightPanel/WeaponSection/PrimaryWeaponPanel/VBoxContainer/PrimaryWeaponInfo" unique_id=93255410]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "伤害: 15 | 射速: 高 | 弹匣: 30"
+
+[node name="PrimaryWeaponDesc" type="Label" parent="HSplitContainer/RightPanel/WeaponSection/PrimaryWeaponPanel/VBoxContainer/PrimaryWeaponInfo" unique_id=829676589]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "标准突击步枪，射速快，精度高。"
+autowrap_mode = 3
+
+[node name="SecondaryWeaponPanel" type="Panel" parent="HSplitContainer/RightPanel/WeaponSection" unique_id=405138917]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_2")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer/RightPanel/WeaponSection/SecondaryWeaponPanel" unique_id=1464831135]
+layout_mode = 0
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="SecondaryTitle" type="Label" parent="HSplitContainer/RightPanel/WeaponSection/SecondaryWeaponPanel/VBoxContainer" unique_id=376673985]
+layout_mode = 2
+text = "副武器"
+
+[node name="SecondaryWeaponOption" type="OptionButton" parent="HSplitContainer/RightPanel/WeaponSection/SecondaryWeaponPanel/VBoxContainer" unique_id=98959308]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SecondaryWeaponInfo" type="VBoxContainer" parent="HSplitContainer/RightPanel/WeaponSection/SecondaryWeaponPanel/VBoxContainer" unique_id=22471111]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SecondaryWeaponName" type="Label" parent="HSplitContainer/RightPanel/WeaponSection/SecondaryWeaponPanel/VBoxContainer/SecondaryWeaponInfo" unique_id=228110302]
+unique_name_in_owner = true
+layout_mode = 2
+text = "基础霰弹枪"
+
+[node name="SecondaryWeaponStats" type="Label" parent="HSplitContainer/RightPanel/WeaponSection/SecondaryWeaponPanel/VBoxContainer/SecondaryWeaponInfo" unique_id=794757653]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "伤害: 12x8 | 射速: 慢 | 弹匣: 6"
+
+[node name="SecondaryWeaponDesc" type="Label" parent="HSplitContainer/RightPanel/WeaponSection/SecondaryWeaponPanel/VBoxContainer/SecondaryWeaponInfo" unique_id=2045368462]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "近距离高伤害，适合近战突围。"
+autowrap_mode = 3
+
+[node name="ButtonContainer" type="HBoxContainer" parent="." unique_id=1626171857]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -60.0
+offset_right = 100.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="BackButton" type="Button" parent="ButtonContainer" unique_id=1757530215]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "返回"
+
+[node name="TooltipLayer" type="CanvasLayer" parent="." unique_id=1609876842]
+process_mode = 3
+script = ExtResource("2_tooltip_host")
