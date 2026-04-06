@@ -36,7 +36,7 @@ func test_reload_cancel_before_checkpoint_restarts_from_zero() -> void:
 		return
 
 	weapon.reload()
-	await get_tree().create_timer(0.08).timeout
+	weapon._physics_process(0.08)
 	weapon.cancel_reload("pre_checkpoint_interrupt")
 
 	assert_false(weapon.has_reload_checkpoint(), "cancel before checkpoint should not preserve checkpoint")
@@ -63,7 +63,7 @@ func test_reload_cancel_after_checkpoint_resumes_from_checkpoint() -> void:
 		return
 
 	weapon.reload()
-	await get_tree().create_timer(0.26).timeout
+	weapon._physics_process(0.26)
 	weapon.cancel_reload("post_checkpoint_interrupt")
 
 	assert_true(weapon.has_reload_checkpoint(), "cancel after checkpoint should preserve checkpoint")

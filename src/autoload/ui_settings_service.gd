@@ -151,6 +151,10 @@ func _save_settings_deferred() -> void:
 
 
 func _save_settings_to_disk() -> void:
+	if not is_inside_tree() or get_tree() == null:
+		settings_saved.emit(false)
+		return
+
 	var save_manager := get_node_or_null("/root/SaveManager")
 	if save_manager == null:
 		push_warning("[UISettingsService] SaveManager not found, settings will not be persisted")
@@ -174,6 +178,9 @@ func _save_settings_to_disk() -> void:
 
 
 func _load_settings_from_disk() -> Dictionary:
+	if not is_inside_tree() or get_tree() == null:
+		return {}
+
 	var save_manager := get_node_or_null("/root/SaveManager")
 	if save_manager == null:
 		push_warning("[UISettingsService] SaveManager not found, using default settings")

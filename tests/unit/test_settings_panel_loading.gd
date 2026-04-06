@@ -7,13 +7,9 @@ class SettingsPanelSpy:
 	extends SettingsPanelClass
 
 	var stubbed_settings: Dictionary = {}
-	var save_call_count: int = 0
 
 	func _get_saved_settings() -> Dictionary:
 		return stubbed_settings.duplicate(true)
-
-	func _save_settings() -> void:
-		save_call_count += 1
 
 
 var _panel: SettingsPanelSpy
@@ -40,7 +36,8 @@ func test_empty_settings_clear_loading_guard_and_allow_guarded_save_handlers() -
 
 	_panel._on_volume_changed(55.0)
 
-	assert_eq(_panel.save_call_count, 1, "Guarded volume save handler should still persist after empty settings load")
+	assert_true(_panel._has_unsaved_changes, "Volume edits after empty settings load should be tracked as unsaved changes")
+	assert_eq(_panel._pending_settings.get("master_volume"), 0.55, "Volume edits should be staged into pending settings")
 
 
 func test_non_empty_settings_load_still_updates_controls_and_clears_guard() -> void:
@@ -58,4 +55,4 @@ func test_non_empty_settings_load_still_updates_controls_and_clears_guard() -> v
 	assert_eq(_panel.window_mode_option.selected, 2, "Window mode should still load normally")
 	assert_false(_panel.vsync_check.button_pressed, "VSync state should still load normally")
 	assert_false(_panel._is_loading_settings, "Non-empty settings path should also release the loading guard")
-	assert_eq(_panel.save_call_count, 0, "Loading settings should not trigger save operations")
+	assert_true(_panel._pending_settings.is_empty(), "Loading settings should not stage pending changes")

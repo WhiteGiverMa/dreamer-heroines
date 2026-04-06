@@ -19,24 +19,18 @@ func test_default_settings() -> void:
 
 
 func test_set_setting() -> void:
-	var signal_emitted := false
-	var received_value: Variant = null
-
-	ui_settings_service.setting_changed.connect(func(key: StringName, value: Variant):
-		if key == "slider_wheel_on_slider":
-			signal_emitted = true
-			received_value = value
-	)
+	ui_settings_service.reset_to_defaults()
+	watch_signals(ui_settings_service)
 
 	ui_settings_service.set_setting("slider_wheel_on_slider", false, false)
 
-	assert_true(signal_emitted, "setting_changed signal should emit")
-	assert_eq(received_value, false, "Should receive new value")
+	assert_signal_emitted(ui_settings_service, "setting_changed", "setting_changed signal should emit")
 	assert_eq(ui_settings_service.get_setting("slider_wheel_on_slider"), false, "Setting should be updated")
 
 
 func test_set_setting_same_value() -> void:
 	var signal_count := 0
+	ui_settings_service.reset_to_defaults()
 
 	ui_settings_service.setting_changed.connect(func(_key: StringName, _value: Variant):
 		signal_count += 1
@@ -57,8 +51,8 @@ func test_reset_to_defaults() -> void:
 
 
 func test_get_settings_returns_copy() -> void:
-	var settings1 := ui_settings_service.get_settings()
-	var settings2 := ui_settings_service.get_settings()
+	var settings1: Dictionary = ui_settings_service.get_settings()
+	var settings2: Dictionary = ui_settings_service.get_settings()
 
 	settings1["slider_wheel_on_slider"] = false
 
@@ -66,7 +60,6 @@ func test_get_settings_returns_copy() -> void:
 
 
 func test_set_unknown_setting() -> void:
-	var warning_count_before := 0
 	# Note: We can't easily test push_warning output in GUT, but we can verify it doesn't crash
 
 	ui_settings_service.set_setting("unknown_setting", "value", false)

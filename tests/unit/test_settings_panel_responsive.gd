@@ -25,9 +25,7 @@ func _is_button_visible(button):
 	if button == null:
 		return false
 	var global_rect = button.get_global_rect()
-	var viewport_size = DisplayServer.window_get_size()
-	var viewport_pos = DisplayServer.window_get_position()
-	var viewport_rect = Rect2(viewport_pos, viewport_size)
+	var viewport_rect = Rect2(Vector2.ZERO, get_viewport().get_visible_rect().size)
 	return viewport_rect.encloses(global_rect)
 
 
@@ -35,10 +33,10 @@ func _get_buttons():
 	if _panel == null:
 		return []
 	return [
-		_panel.get_node_or_null("BackButton"),
-		_panel.get_node_or_null("SaveButton"),
-		_panel.get_node_or_null("CancelButton"),
-		_panel.get_node_or_null("ResetPageButton"),
+		_panel.get_node_or_null("ButtonContainer/BackButton"),
+		_panel.get_node_or_null("ButtonContainer/SaveButton"),
+		_panel.get_node_or_null("ButtonContainer/CancelButton"),
+		_panel.get_node_or_null("ButtonContainer/ResetPageButton"),
 	]
 
 
@@ -107,9 +105,7 @@ func test_no_horizontal_overflow_at_narrow_viewport():
 	await get_tree().process_frame
 
 	var panel_global_rect = _panel.get_global_rect()
-	var viewport_size = DisplayServer.window_get_size()
-	var viewport_pos = DisplayServer.window_get_position()
-	var viewport_rect = Rect2(viewport_pos, viewport_size)
+	var viewport_rect = Rect2(Vector2.ZERO, get_viewport().get_visible_rect().size)
 
 	var overflows_horizontally = panel_global_rect.end.x > viewport_rect.end.x
 
@@ -125,9 +121,7 @@ func test_panel_stays_centered_at_ultrawide():
 	await get_tree().process_frame
 
 	var panel_global_rect = _panel.get_global_rect()
-	var viewport_size = DisplayServer.window_get_size()
-	var viewport_pos = DisplayServer.window_get_position()
-	var viewport_rect = Rect2(viewport_pos, viewport_size)
+	var viewport_rect = Rect2(Vector2.ZERO, get_viewport().get_visible_rect().size)
 	var panel_center_x = panel_global_rect.position.x + panel_global_rect.size.x * 0.5
 	var viewport_center_x = viewport_rect.position.x + viewport_rect.size.x * 0.5
 	var center_offset = absf(panel_center_x - viewport_center_x)
@@ -163,9 +157,7 @@ func test_no_vertical_overflow_at_720p():
 	await get_tree().process_frame
 
 	var panel_global_rect = _panel.get_global_rect()
-	var viewport_size = DisplayServer.window_get_size()
-	var viewport_pos = DisplayServer.window_get_position()
-	var viewport_rect = Rect2(viewport_pos, viewport_size)
+	var viewport_rect = Rect2(Vector2.ZERO, get_viewport().get_visible_rect().size)
 
 	var overflows_vertically = panel_global_rect.end.y > viewport_rect.end.y
 
