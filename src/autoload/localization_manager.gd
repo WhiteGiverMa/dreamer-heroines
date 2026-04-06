@@ -49,8 +49,7 @@ func initialize() -> void:
 
 func _load_configured_translations() -> void:
 	var translation_paths: PackedStringArray = ProjectSettings.get_setting(
-		"internationalization/translations",
-		PackedStringArray()
+		"internationalization/translations", PackedStringArray()
 	)
 
 	for path in translation_paths:
@@ -111,7 +110,7 @@ func _parse_po_translation(file_text: String) -> Dictionary:
 			active_field = "msgstr"
 			continue
 
-		if line.begins_with("\""):
+		if line.begins_with('"'):
 			var decoded := _decode_po_string(line)
 			if active_field == "msgid":
 				current_msgid += decoded
@@ -131,11 +130,11 @@ func _finalize_po_entry(parsed_entries: Dictionary, msgid: String, msgstr: Strin
 
 func _decode_po_string(value: String) -> String:
 	var decoded := value.strip_edges()
-	if decoded.begins_with("\"") and decoded.ends_with("\"") and decoded.length() >= 2:
+	if decoded.begins_with('"') and decoded.ends_with('"') and decoded.length() >= 2:
 		decoded = decoded.substr(1, decoded.length() - 2)
 
 	decoded = decoded.replace("\\n", "\n")
-	decoded = decoded.replace("\\\"", "\"")
+	decoded = decoded.replace('\\"', '"')
 	decoded = decoded.replace("\\\\", "\\")
 	return decoded
 
@@ -161,7 +160,9 @@ func tr(message: StringName, context: Variant = &"") -> String:
 	if not server_result.is_empty() and server_result != key:
 		translated = server_result
 
-	var source_translations: Dictionary = _source_translations_by_locale.get(_current_locale, {}) as Dictionary
+	var source_translations: Dictionary = (
+		_source_translations_by_locale.get(_current_locale, {}) as Dictionary
+	)
 	if source_translations.has(key):
 		translated = String(source_translations[key])
 

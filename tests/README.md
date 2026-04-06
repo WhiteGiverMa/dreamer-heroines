@@ -59,7 +59,7 @@ G:\dev\Godot_v4.6.1\godot.bat tests/scenes/test_launcher.tscn
 
 ```bash
 # 仅运行单元测试（不需要图形界面）
-G:\dev\Godot_v4.6.1\godot.bat --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -ginclude_subdirs -gexit
+G:\dev\Godot_v4.6.1\godot.bat --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests/unit -ginclude_subdirs -gexit
 ```
 
 ---
@@ -152,7 +152,7 @@ godot-mcp stop_project
 修改 `_get_test_cases()` 返回特定测试，或使用 GUT 框架：
 
 ```bash
-godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -gselect=test_move_right -gexit
+godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests/unit -gselect=test_move_right -gexit
 ```
 
 ### 查看测试结果
@@ -187,6 +187,12 @@ godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -gselect=test_move_ri
     godot --headless tests/scenes/test_launcher.tscn
     # 检查退出码
 ```
+
+### Q: 为什么不要在 headless 下跑 `tests/integration/`？
+
+- `tests/integration/` 里的 GUT 用例依赖场景切换、运行时 UI 或 GUIDE 输入注入。
+- 这些路径更适合在 Godot 编辑器或完整运行时里验证，不适合作为默认 headless 命令的一部分。
+- 如果需要跑集成测试，请优先使用 `godot tests/scenes/test_launcher.tscn` 或在 GUT 编辑器面板中执行。
 
 ---
 

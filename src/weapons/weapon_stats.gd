@@ -36,6 +36,7 @@ extends Resource
 @export var pellet_spread: float = 0.0  # 弹丸散布角度（度）
 @export var use_ammo_system: bool = true  # true=玩家武器，false=敌人无限弹药
 
+
 func _init() -> void:
 	resource_name = "WeaponStats"
 

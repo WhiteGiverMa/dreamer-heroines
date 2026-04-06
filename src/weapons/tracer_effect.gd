@@ -30,7 +30,7 @@ func _ready() -> void:
 	if config:
 		sprite.modulate = config.color
 		# scale根据config.range设置
-	scale = Vector2.ONE * (config.light_range / 100.0)
+		scale = Vector2.ONE * (config.light_range / 100.0)
 	else:
 		# 默认配置
 		sprite.modulate = Color(1, 1, 0, 1)
@@ -77,7 +77,7 @@ func activate() -> void:
 
 	# 重置scale
 	if config:
-	scale = Vector2.ONE * (config.light_range / 100.0)
+		scale = Vector2.ONE * (config.light_range / 100.0)
 
 
 func deactivate() -> void:

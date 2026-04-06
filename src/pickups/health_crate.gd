@@ -6,9 +6,11 @@ extends SupplyCrate
 
 const HEAL_AMOUNT := 25
 
+
 func _ready() -> void:
 	super._ready()
 	allowed_teams = []
+
 
 func _on_pickup(body: Node2D) -> void:
 	if not body.has_method("heal"):

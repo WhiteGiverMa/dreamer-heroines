@@ -188,7 +188,9 @@ func _apply_config_to_light() -> void:
 
 	if config:
 		light_node.color = config.color
-		light_node.texture_scale = maxf(config.light_range / float(DEFAULT_CONE_TEXTURE_SIZE.x), 0.01)
+		light_node.texture_scale = maxf(
+			config.light_range / float(DEFAULT_CONE_TEXTURE_SIZE.x), 0.01
+		)
 		light_node.shadow_enabled = config.shadows_enabled
 	else:
 		light_node.color = Color.WHITE
@@ -210,7 +212,9 @@ func _request_budget_slot() -> bool:
 	var priority := LightBudgetManager.Priority.HIGH
 	if config:
 		priority = (
-			clampi(config.priority, LightBudgetManager.Priority.HIGH, LightBudgetManager.Priority.LOW)
+			clampi(
+				config.priority, LightBudgetManager.Priority.HIGH, LightBudgetManager.Priority.LOW
+			)
 			as LightBudgetManager.Priority
 		)
 

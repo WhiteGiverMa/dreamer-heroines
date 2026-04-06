@@ -14,9 +14,16 @@ var _display_scale: float = 1.0
 var _suffix: String = ""
 var _is_editing_text: bool = false
 
+# === 悬停滚轮控制 ===
+var _is_mouse_over: bool = false
+var _wheel_interception_enabled: bool = true
+var _wheel_signals_connected: bool = false
+
 
 func attach_to_slider(target_slider: HSlider, options: Dictionary = {}) -> SliderValueInput:
 	_setup(target_slider, options)
+	_connect_to_ui_settings_service()
+	_update_wheel_interception_state()
 	return self
 
 
@@ -164,7 +171,9 @@ func _sync_text_from_slider(value: float) -> void:
 func _normalize_value(value: float) -> float:
 	var normalized_value := clampf(value, slider.min_value, slider.max_value)
 	if slider.step > 0.0:
-		normalized_value = slider.min_value + snappedf(normalized_value - slider.min_value, slider.step)
+		normalized_value = (
+			slider.min_value + snappedf(normalized_value - slider.min_value, slider.step)
+		)
 		normalized_value = clampf(normalized_value, slider.min_value, slider.max_value)
 	if slider.rounded:
 		normalized_value = round(normalized_value)
@@ -196,3 +205,110 @@ func _infer_decimals(step: float) -> int:
 		scaled_step *= 10.0
 		decimals += 1
 	return decimals
+
+
+# === 悬停滚轮控制功能 ===
+
+
+func _connect_to_ui_settings_service() -> void:
+	"""连接到UISettingsService以响应设置变化"""
+	var ui_settings = Engine.get_main_loop().root.get_node_or_null("UISettingsService")
+	if ui_settings == null:
+		# 服务不存在，使用默认值
+		_wheel_interception_enabled = true
+		return
+
+	# 获取初始设置值
+	_wheel_interception_enabled = ui_settings.get_setting("slider_wheel_on_slider")
+
+	# 连接设置变化信号
+	if not ui_settings.setting_changed.is_connected(_on_ui_setting_changed):
+		ui_settings.setting_changed.connect(_on_ui_setting_changed)
+
+
+func _on_ui_setting_changed(property_name: StringName, value: Variant) -> void:
+	"""响应UI设置变化"""
+	if property_name == "slider_wheel_on_slider":
+		_wheel_interception_enabled = value
+		_update_wheel_interception_state()
+
+
+func _update_wheel_interception_state() -> void:
+	"""根据设置更新滚轮拦截状态"""
+	if _wheel_interception_enabled:
+		_enable_wheel_interception()
+	else:
+		_disable_wheel_interception()
+
+
+func _enable_wheel_interception() -> void:
+	"""启用滚轮事件拦截"""
+	if slider == null or container == null:
+		return
+
+	if _wheel_signals_connected:
+		return  # 已经启用
+
+	# 连接鼠标进入/离开信号
+	slider.mouse_entered.connect(_on_slider_mouse_entered)
+	slider.mouse_exited.connect(_on_slider_mouse_exited)
+
+	# 设置容器的 _gui_input 回调脚本
+	container.set_script(preload("res://src/ui/slider_container_input_handler.gd"))
+	container.set_meta("slider_value_input", self)
+
+	_wheel_signals_connected = true
+
+
+func _disable_wheel_interception() -> void:
+	"""禁用滚轮事件拦截"""
+	if slider == null or container == null:
+		return
+
+	if not _wheel_signals_connected:
+		return  # 已经禁用
+
+	# 断开鼠标信号
+	if slider.mouse_entered.is_connected(_on_slider_mouse_entered):
+		slider.mouse_entered.disconnect(_on_slider_mouse_entered)
+	if slider.mouse_exited.is_connected(_on_slider_mouse_exited):
+		slider.mouse_exited.disconnect(_on_slider_mouse_exited)
+
+	# 移除容器脚本
+	if container.get_script() == preload("res://src/ui/slider_container_input_handler.gd"):
+		container.set_script(null)
+		container.remove_meta("slider_value_input")
+
+	_wheel_signals_connected = false
+	_is_mouse_over = false
+
+
+func _on_slider_mouse_entered() -> void:
+	"""鼠标进入滑块区域"""
+	_is_mouse_over = true
+
+
+func _on_slider_mouse_exited() -> void:
+	"""鼠标离开滑块区域"""
+	_is_mouse_over = false
+
+
+func _on_container_wheel_event(event: InputEventMouseButton) -> bool:
+	"""
+	处理滚轮事件
+	返回 true 表示事件已处理，应阻止冒泡到 ScrollContainer
+	调用者需要在 _gui_input 中调用 accept_event() 来阻止传播
+	"""
+	if not _wheel_interception_enabled:
+		return false
+	if not _is_mouse_over or slider == null:
+		return false
+
+	# 手动调整滑块值
+	var delta := slider.step
+	if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		delta = -delta
+
+	slider.value = clampf(slider.value + delta, slider.min_value, slider.max_value)
+
+	return true

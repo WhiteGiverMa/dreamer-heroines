@@ -1,7 +1,6 @@
 class_name LocalizedTextBinder
 extends RefCounted
 
-
 var _owner: Node
 var _bindings: Dictionary = {}
 var _is_connected_to_locale_changed: bool = false

@@ -1,6 +1,12 @@
 extends GutTest
 
 
+func should_skip_script():
+	if DisplayServer.get_name() == "headless":
+		return "Skip integration tests in headless mode; this suite depends on runtime arena flow and scene transitions"
+	return false
+
+
 const ArenaScript = preload("res://src/levels/arena_01.gd")
 
 

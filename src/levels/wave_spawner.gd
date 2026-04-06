@@ -310,7 +310,9 @@ func _start_next_wave() -> void:
 	_current_wave_data = _get_wave_data_for_index(_current_wave_index)
 	if _current_wave_data.is_empty():
 		_is_running = false
-		push_warning("WaveSpawner: unable to build wave data for wave %d" % (_current_wave_index + 1))
+		push_warning(
+			"WaveSpawner: unable to build wave data for wave %d" % (_current_wave_index + 1)
+		)
 		return
 
 	var enemies_data: Variant = _current_wave_data.get("enemies", [])

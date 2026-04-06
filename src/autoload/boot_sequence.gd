@@ -14,7 +14,13 @@ const LoadingScreenClass = preload("res://src/ui/loading_screen.gd")
 ## 每个阶段内的系统并行初始化，阶段之间串行执行
 const INIT_PHASES: Array[Array] = [
 	# Phase 1: 基础设施（无依赖，可并行）
-	["CSharpSaveManager", "AudioManager", "EffectManager", "ProjectileSpawner", "LocalizationManager"],
+	[
+		"CSharpSaveManager",
+		"AudioManager",
+		"EffectManager",
+		"ProjectileSpawner",
+		"LocalizationManager"
+	],
 	# Phase 2: 输入系统（依赖 GUIDE）
 	["EnhancedInput"],
 	# Phase 3: 存档系统（依赖 CSharpSaveManager）
@@ -62,12 +68,12 @@ var loading_screen: Control = null
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_calculate_total_systems()
-	
+
 	# 获取 LoadingScreen 子节点
 	var ls_node = get_node_or_null("LoadingScreen")
 	if ls_node:
 		loading_screen = ls_node
-	
+
 	# 延迟启动，确保所有 autoload 已加载
 	call_deferred("_run_boot_sequence")
 
@@ -81,23 +87,23 @@ func _calculate_total_systems() -> void:
 func _run_boot_sequence() -> void:
 	if _boot_started:
 		return
-	
+
 	_boot_started = true
 	print("=== 游戏启动序列开始 ===")
-	
+
 	# 显示加载画面
 	if loading_screen:
 		loading_screen.show_loading()
-	
+
 	var start_time: float = Time.get_ticks_msec() / 1000.0
-	
+
 	for phase_idx in INIT_PHASES.size():
 		current_phase = phase_idx
 		var phase_systems: Array = INIT_PHASES[phase_idx]
-		
+
 		phase_started.emit(phase_idx, "Phase %d" % (phase_idx + 1))
 		print("[Boot] 开始阶段 %d: %s" % [phase_idx + 1, phase_systems])
-		
+
 		# 并行初始化本阶段所有系统
 		var pending: Array = []
 		for system_name in phase_systems:
@@ -105,7 +111,7 @@ func _run_boot_sequence() -> void:
 			if system:
 				current_system = system_name
 				_update_loading_screen()
-				
+
 				# 调用初始化方法
 				if system.has_method("initialize"):
 					system.initialize()
@@ -119,25 +125,25 @@ func _run_boot_sequence() -> void:
 					system_initialized.emit(system_name)
 			else:
 				push_warning("[Boot] 系统节点不存在: %s" % system_name)
-		
+
 		# 等待本阶段所有系统完成
 		for item in pending:
 			await _wait_for_system(item.node, item.name)
-		
+
 		# 更新进度
 		_update_loading_screen()
-	
+
 	var elapsed: float = Time.get_ticks_msec() / 1000.0 - start_time
 	print("=== 启动序列完成 (耗时 %.2fs) ===" % elapsed)
-	
+
 	_boot_completed = true
-	
+
 	# 隐藏加载画面
 	if loading_screen:
 		await loading_screen.fade_out()
-	
+
 	boot_completed.emit()
-	
+
 	# 加载主场景
 	_load_main_scene()
 
@@ -167,12 +173,12 @@ func _get_system(system_name: String) -> Node:
 func _wait_for_system(system: Node, system_name: String) -> void:
 	# 检查是否已初始化
 	var is_init = _check_initialized(system)
-	
+
 	if is_init:
 		initialized_count += 1
 		system_initialized.emit(system_name)
 		return
-	
+
 	# 等待初始化信号
 	var signal_name = "system_ready"
 	if system.has_signal("SystemReady"):
@@ -190,19 +196,19 @@ func _wait_for_system(system: Node, system_name: String) -> void:
 		initialized_count += 1
 		system_initialized.emit(system_name)
 		return
-	
+
 	# 连接信号等待 - 使用数组包装器解决 lambda 捕获问题
 	var init_completed := [false]
 	var timeout_timer := get_tree().create_timer(INIT_TIMEOUT)
-	
+
 	system.connect(signal_name, func(_name): init_completed[0] = true, CONNECT_ONE_SHOT)
-	
+
 	while not init_completed[0]:
 		await get_tree().process_frame
 		if timeout_timer.time_left <= 0:
 			_on_system_timeout(system_name)
 			return
-	
+
 	initialized_count += 1
 	system_initialized.emit(system_name)
 
@@ -222,7 +228,7 @@ func _check_initialized(system: Node) -> bool:
 func _on_system_timeout(system_name: String) -> void:
 	push_error("[Boot] 系统初始化超时: %s" % system_name)
 	boot_failed.emit(system_name, "初始化超时")
-	
+
 	if loading_screen:
 		loading_screen.show_error("系统初始化失败: %s" % system_name)
 
@@ -231,10 +237,10 @@ func _on_system_timeout(system_name: String) -> void:
 func _update_loading_screen() -> void:
 	if not loading_screen:
 		return
-	
+
 	var progress: float = float(initialized_count) / float(total_systems)
 	var status: String = "正在加载: %s" % current_system if current_system else "初始化中..."
-	
+
 	loading_screen.set_progress(progress, status)
 
 
@@ -251,14 +257,14 @@ func _load_main_scene() -> void:
 
 	# 应用已保存的设置
 	_apply_saved_settings()
-	
+
 	# 获取主场景路径
 	var main_scene := ProjectSettings.get_setting("application/run/main_scene") as String
-	
+
 	if main_scene.is_empty():
 		push_error("[Boot] 未配置主场景")
 		return
-	
+
 	# 如果当前场景就是主场景，不需要切换
 	if tree.current_scene and tree.current_scene.scene_file_path == main_scene:
 		print("[Boot] 已在主场景，无需切换")
@@ -272,30 +278,30 @@ func _load_main_scene() -> void:
 ## 应用已保存的设置
 func _apply_saved_settings() -> void:
 	print("[Boot] 应用保存的设置...")
-	
+
 	var settings = SaveManager.load_settings()
 	if settings.is_empty():
 		print("[Boot] 未找到保存的设置，使用默认值")
 		return
-	
+
 	# 应用音量 (AudioManager 使用 BusType 枚举)
 	var master_volume = settings.get("master_volume", 0.8)
 	var music_volume = settings.get("music_volume", 0.7)
 	var sfx_volume = settings.get("sfx_volume", 1.0)
-	
+
 	if AudioManager:
 		AudioManager.set_bus_volume(AudioManager.BusType.MASTER, master_volume)
 		AudioManager.set_bus_volume(AudioManager.BusType.MUSIC, music_volume)
 		AudioManager.set_bus_volume(AudioManager.BusType.SFX, sfx_volume)
-	
+
 	# 应用窗口模式
 	var window_mode = settings.get("window_mode", 0)
 	DisplaySettingsBoundary.set_window_mode(window_mode)
-	
+
 	# 应用 VSync
 	var vsync_enabled = settings.get("vsync", true)
 	DisplaySettingsBoundary.set_vsync(vsync_enabled)
-	
+
 	# 应用鼠标灵敏度
 	var sensitivity = settings.get("mouse_sensitivity", 1.0)
 	# 存储到 ProjectSettings 或全局变量供游戏使用
@@ -306,9 +312,15 @@ func _apply_saved_settings() -> void:
 	ProjectSettings.set_setting("game/ui/crosshair_alpha", settings.get("crosshair_alpha", 1.0))
 	ProjectSettings.set_setting("game/ui/show_center_dot", settings.get("show_center_dot", true))
 	ProjectSettings.set_setting("game/ui/center_dot_size", settings.get("center_dot_size", 2.0))
-	ProjectSettings.set_setting("game/ui/spread_increase_per_shot", settings.get("spread_increase_per_shot", 5.0))
-	ProjectSettings.set_setting("game/ui/crosshair_recovery_rate", settings.get("crosshair_recovery_rate", 30.0))
-	ProjectSettings.set_setting("game/ui/max_spread_multiplier", settings.get("max_spread_multiplier", 3.0))
+	ProjectSettings.set_setting(
+		"game/ui/spread_increase_per_shot", settings.get("spread_increase_per_shot", 5.0)
+	)
+	ProjectSettings.set_setting(
+		"game/ui/crosshair_recovery_rate", settings.get("crosshair_recovery_rate", 30.0)
+	)
+	ProjectSettings.set_setting(
+		"game/ui/max_spread_multiplier", settings.get("max_spread_multiplier", 3.0)
+	)
 
 	# 应用语言
 	var saved_locale: String = settings.get("locale", "")
@@ -318,7 +330,7 @@ func _apply_saved_settings() -> void:
 			LocalizationManager.set_locale(saved_locale)
 		else:
 			LocalizationManager.set_locale("zh_CN")
-	
+
 	# 应用开发者模式设置
 	var dev_mode_enabled = settings.get("developer_mode_enabled", false)
 	if DeveloperMode:

@@ -1,10 +1,16 @@
-﻿extends GutTest
+extends GutTest
 
 ## Roguelike Room Loop Integration Test
 ## Tests the complete roguelike room transition cycle:
 ## arena_01 -> reward -> arena_02 -> reward -> arena_01
 
 var _initial_max_health: int = 100
+
+
+func should_skip_script():
+	if DisplayServer.get_name() == "headless":
+		return "Skip integration tests in headless mode; this suite depends on runtime scene transitions and UI flow"
+	return false
 
 
 func before_all() -> void:

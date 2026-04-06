@@ -44,9 +44,27 @@ var roguelike_level_index: int = 0
 var roguelike_selected_blessings: Array[String] = []
 
 const ROGUELIKE_BLESSINGS = {
-	"vitality_boost": {"title_key": "blessing.vitality_boost.title", "description_key": "blessing.vitality_boost.description", "stat": "max_health", "value": 20},
-	"swift_step": {"title_key": "blessing.swift_step.title", "description_key": "blessing.swift_step.description", "stat": "max_speed", "value": 30.0},
-	"dash_tune": {"title_key": "blessing.dash_tune.title", "description_key": "blessing.dash_tune.description", "stat": "dash_cooldown", "value": -0.15}
+	"vitality_boost":
+	{
+		"title_key": "blessing.vitality_boost.title",
+		"description_key": "blessing.vitality_boost.description",
+		"stat": "max_health",
+		"value": 20
+	},
+	"swift_step":
+	{
+		"title_key": "blessing.swift_step.title",
+		"description_key": "blessing.swift_step.description",
+		"stat": "max_speed",
+		"value": 30.0
+	},
+	"dash_tune":
+	{
+		"title_key": "blessing.dash_tune.title",
+		"description_key": "blessing.dash_tune.description",
+		"stat": "dash_cooldown",
+		"value": -0.15
+	}
 }
 
 # 测试注入点（默认使用 autoload 节点）
@@ -55,24 +73,27 @@ var _enhanced_input_override: Node = null
 var _projectile_spawner_override: Node = null
 var _level_manager_override: Node = null
 
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	system_name = "game_manager"
 	# 不在这里执行初始化，等待 BootSequence 调用
 
+
 func _process(delta: float) -> void:
 	if is_gameplay_active():
 		_pending_playtime_seconds += delta
 
+
 func initialize() -> void:
 	print("[GameManager] 开始初始化...")
-	
+
 	# 等待 SaveManager 依赖
 	var save_mgr = get_node_or_null("/root/SaveManager")
 	if save_mgr and not save_mgr.is_initialized:
 		print("[GameManager] 等待 SaveManager 初始化...")
 		await save_mgr.system_ready
-	
+
 	# 等待 LevelManager 依赖
 	var level_mgr = get_node_or_null("/root/LevelManager")
 	if level_mgr and not level_mgr.is_initialized:
@@ -85,9 +106,10 @@ func initialize() -> void:
 
 	if save_mgr and save_mgr.has_method("set_gameplay_save_state_provider"):
 		save_mgr.set_gameplay_save_state_provider(self)
-	
+
 	print("[GameManager] 初始化完成")
 	_mark_ready()
+
 
 func _input(event: InputEvent):
 	if roguelike_reward_active:
@@ -109,13 +131,14 @@ func _input(event: InputEvent):
 		toggle_pause()
 		get_viewport().set_input_as_handled()
 
+
 func change_state(new_state: GameState) -> void:
 	if current_state == new_state:
 		return
-	
+
 	current_state = new_state
 	state_changed.emit(new_state)
-	
+
 	match new_state:
 		GameState.MENU:
 			_apply_runtime_state(false, INPUT_MODE_UI_ONLY)
@@ -132,11 +155,13 @@ func change_state(new_state: GameState) -> void:
 		GameState.VICTORY:
 			_apply_runtime_state(true, INPUT_MODE_UI_ONLY)
 			_show_game_over(true)
-	
+
 	_sync_state_to_csharp()
+
 
 func toggle_pause() -> void:
 	set_paused(not is_game_paused)
+
 
 func set_paused(paused: bool, restore_playing_state: bool = true) -> void:
 	if paused:
@@ -154,11 +179,14 @@ func set_paused(paused: bool, restore_playing_state: bool = true) -> void:
 
 	_sync_state_to_csharp()
 
+
 func is_playing() -> bool:
 	return current_state == GameState.PLAYING
 
+
 func is_gameplay_active() -> bool:
 	return is_playing()
+
 
 func consume_pending_playtime_seconds() -> int:
 	var whole_seconds := int(floor(_pending_playtime_seconds))
@@ -168,9 +196,11 @@ func consume_pending_playtime_seconds() -> int:
 	_pending_playtime_seconds -= whole_seconds
 	return whole_seconds
 
+
 func add_score(points: int) -> void:
 	current_score += points
 	score_changed.emit(current_score)
+
 
 func reset_game() -> void:
 	current_score = 0
@@ -178,14 +208,15 @@ func reset_game() -> void:
 	player_lives = 3
 	change_state(GameState.PLAYING)
 
+
 func on_player_death() -> void:
 	player_lives -= 1
 	player_died.emit()
-	
+
 	# 更新HUD
 	if hud:
 		hud.update_lives(player_lives)
-	
+
 	if player_lives <= 0:
 		change_state(GameState.GAME_OVER)
 	else:
@@ -193,16 +224,18 @@ func on_player_death() -> void:
 		if LevelManager.current_level:
 			LevelManager.respawn_player()
 
+
 func complete_level() -> void:
 	level_completed.emit()
 	current_level += 1
-	
+
 	# 保存进度
 	if SaveManager.has_current_save():
 		SaveManager.save_current_game()
-	
+
 	# 显示胜利画面或加载下一关
 	change_state(GameState.VICTORY)
+
 
 # Roguelike Run Contract
 func start_minimal_roguelike_run(start_level_id := "arena_01") -> void:
@@ -232,14 +265,20 @@ func notify_roguelike_room_cleared(level_id: String) -> void:
 		return
 
 	var level_manager_node := _get_level_manager_node()
-	if level_manager_node and is_instance_valid(level_manager_node) and "current_level_data" in level_manager_node:
+	if (
+		level_manager_node
+		and is_instance_valid(level_manager_node)
+		and "current_level_data" in level_manager_node
+	):
 		var current_level_data = level_manager_node.current_level_data
 		if current_level_data and "level_id" in current_level_data:
 			var current_level_id := String(current_level_data.level_id)
 			if current_level_id != "" and current_level_id != level_id:
 				push_warning(
-					"[GameManager] Ignoring stale roguelike room clear for %s; current level is %s"
-					% [level_id, current_level_id]
+					(
+						"[GameManager] Ignoring stale roguelike room clear for %s; current level is %s"
+						% [level_id, current_level_id]
+					)
 				)
 				return
 	roguelike_reward_active = true
@@ -320,7 +359,9 @@ func _on_reward_option_selected(blessing_id: String) -> void:
 
 	var loaded = level_manager_node.call("load_level", next_level_id)
 	if not loaded:
-		push_warning("[GameManager] Roguelike transition failed: unable to load level %s" % next_level_id)
+		push_warning(
+			"[GameManager] Roguelike transition failed: unable to load level %s" % next_level_id
+		)
 		_handle_roguelike_transition_load_failure()
 
 
@@ -376,7 +417,10 @@ func _reset_stale_roguelike_ui_refs(current_scene: Node = null) -> void:
 		runtime_ui_layer = null
 
 	if roguelike_reward_modal and is_instance_valid(roguelike_reward_modal):
-		if current_scene == null or not _node_belongs_to_scene(roguelike_reward_modal, current_scene):
+		if (
+			current_scene == null
+			or not _node_belongs_to_scene(roguelike_reward_modal, current_scene)
+		):
 			roguelike_reward_modal = null
 	else:
 		roguelike_reward_modal = null
@@ -405,7 +449,9 @@ func _reapply_roguelike_blessings_to_player(player: Node2D) -> void:
 
 	var has_current_health := "current_health" in player
 	if not has_current_health:
-		push_warning("[GameManager] Roguelike blessing reapply skipped full heal: player missing current_health")
+		push_warning(
+			"[GameManager] Roguelike blessing reapply skipped full heal: player missing current_health"
+		)
 
 	if not player.has_meta("roguelike_base_max_health"):
 		player.set_meta("roguelike_base_max_health", int(player.get("max_health")))
@@ -444,9 +490,11 @@ func _reapply_roguelike_blessings_to_player(player: Node2D) -> void:
 	if has_current_health:
 		player.set("current_health", int(player.get("max_health")))
 
+
 func get_difficulty_multiplier() -> float:
 	# 根据关卡返回难度倍率
 	return 1.0 + (current_level - 1) * 0.1
+
 
 func register_player(player: Node2D) -> void:
 	if player == null:
@@ -462,7 +510,7 @@ func register_player(player: Node2D) -> void:
 		_reapply_roguelike_blessings_to_player(player)
 		if roguelike_transition_in_flight:
 			_clear_roguelike_reward_gate_state()
-	
+
 	# 连接玩家信号
 	if player.has_signal("health_changed"):
 		if not player.health_changed.is_connected(_on_player_health_changed):
@@ -489,9 +537,11 @@ func _disconnect_player_signals(player: Node2D) -> void:
 		if player.died.is_connected(on_player_death):
 			player.died.disconnect(on_player_death)
 
+
 func _on_player_health_changed(current: int, max_val: int) -> void:
 	if hud:
 		hud.update_health(current, max_val)
+
 
 func _on_player_ammo_changed(current: int, max_val: int) -> void:
 	if hud:
@@ -503,14 +553,18 @@ func _on_player_ammo_changed(current: int, max_val: int) -> void:
 				reserve = weapon.current_reserve_ammo
 		hud.update_ammo(current, max_val, reserve)
 
+
 func get_player() -> Node2D:
 	return player_instance
+
 
 func register_level(level: Node2D) -> void:
 	current_level_instance = level
 
+
 func get_level() -> Node2D:
 	return current_level_instance
+
 
 func restart_game() -> void:
 	set_paused(false, false)
@@ -519,29 +573,33 @@ func restart_game() -> void:
 	game_restarted.emit()
 	reload_current_scene()
 
+
 func quit_to_menu() -> void:
 	set_paused(false, false)
 	_clear_runtime_combat_artifacts()
 	change_state(GameState.MENU)
 	change_scene("res://scenes/ui/main_menu.tscn")
 
+
 func quit_to_desktop() -> void:
 	get_tree().quit()
+
 
 func start_new_game() -> void:
 	# 创建新存档
 	var slot = SaveManager.get_first_empty_slot()
 	if slot < 0:
 		slot = 0
-	
+
 	SaveManager.save_to_slot(slot)
-	
+
 	# 重置游戏状态
 	reset_game()
 	game_started.emit()
-	
+
 	# 加载第一关
 	LevelManager.load_level("level_1")
+
 
 func continue_game() -> void:
 	# 加载最近的存档
@@ -550,10 +608,11 @@ func continue_game() -> void:
 		var level_id = SaveManager.current_save_data.get("level_id", "level_1")
 		LevelManager.load_level(level_id)
 
+
 # UI管理
 func register_hud(hud_instance: CanvasLayer) -> void:
 	hud = hud_instance
-	
+
 	# 如果玩家已存在，主动获取弹药状态（解决初始化顺序问题）
 	if player_instance:
 		var weapon = player_instance.get("current_weapon")
@@ -564,6 +623,7 @@ func register_hud(hud_instance: CanvasLayer) -> void:
 				max_val = weapon.stats.magazine_size
 			var reserve = weapon.current_reserve_ammo if "current_reserve_ammo" in weapon else -1
 			hud.update_ammo(current, max_val, reserve)
+
 
 func register_pause_menu(menu: Control) -> void:
 	pause_menu = menu
@@ -577,18 +637,30 @@ func register_pause_menu(menu: Control) -> void:
 		if not pause_menu.quit_to_desktop_requested.is_connected(quit_to_desktop):
 			pause_menu.quit_to_desktop_requested.connect(quit_to_desktop)
 
+
 func register_game_over_screen(screen: Control) -> void:
 	game_over_screen = screen
 	if game_over_screen:
-		if game_over_screen.has_signal("restart_requested") and not game_over_screen.restart_requested.is_connected(restart_game):
+		if (
+			game_over_screen.has_signal("restart_requested")
+			and not game_over_screen.restart_requested.is_connected(restart_game)
+		):
 			game_over_screen.restart_requested.connect(restart_game)
-		if game_over_screen.has_signal("quit_to_menu_requested") and not game_over_screen.quit_to_menu_requested.is_connected(quit_to_menu):
+		if (
+			game_over_screen.has_signal("quit_to_menu_requested")
+			and not game_over_screen.quit_to_menu_requested.is_connected(quit_to_menu)
+		):
 			game_over_screen.quit_to_menu_requested.connect(quit_to_menu)
-		if game_over_screen.has_signal("continue_requested") and not game_over_screen.continue_requested.is_connected(_on_continue_requested):
+		if (
+			game_over_screen.has_signal("continue_requested")
+			and not game_over_screen.continue_requested.is_connected(_on_continue_requested)
+		):
 			game_over_screen.continue_requested.connect(_on_continue_requested)
+
 
 func _show_menu() -> void:
 	_hide_menus()
+
 
 func _show_pause_menu() -> void:
 	_ensure_pause_menu()
@@ -619,11 +691,13 @@ func _ensure_pause_menu() -> void:
 	else:
 		push_warning("[GameManager] 无法创建暂停菜单：场景根节点不是 Control")
 
+
 func _hide_menus() -> void:
 	if pause_menu:
 		pause_menu.hide_pause_menu()
 	if game_over_screen:
 		game_over_screen.hide()
+
 
 func _show_game_over(victory: bool) -> void:
 	_ensure_game_over_screen()
@@ -632,6 +706,7 @@ func _show_game_over(victory: bool) -> void:
 			game_over_screen.show_victory()
 		else:
 			game_over_screen.show_defeat()
+
 
 func _on_resume_requested() -> void:
 	set_paused(false)
@@ -643,7 +718,9 @@ func _on_continue_requested() -> void:
 
 	var next_level_id := "level_%d" % current_level
 	var has_next_level_scene := ResourceLoader.exists("res://scenes/levels/%s.tscn" % next_level_id)
-	var has_next_level_config := ResourceLoader.exists("res://config/levels/%s.tres" % next_level_id)
+	var has_next_level_config := ResourceLoader.exists(
+		"res://config/levels/%s.tres" % next_level_id
+	)
 
 	if (has_next_level_scene or has_next_level_config) and LevelManager:
 		var loaded := LevelManager.load_level(next_level_id)
@@ -766,12 +843,15 @@ func _get_level_manager_node() -> Node:
 		return _level_manager_override
 	return get_node_or_null("/root/LevelManager")
 
+
 # 场景切换
 func change_scene(scene_path: String) -> void:
 	get_tree().change_scene_to_file(scene_path)
 
+
 func reload_current_scene() -> void:
 	get_tree().reload_current_scene()
+
 
 # C# 状态同步
 func _sync_state_to_csharp() -> void:
@@ -780,11 +860,18 @@ func _sync_state_to_csharp() -> void:
 		var csharp_state = _map_state_to_csharp(current_state)
 		gsm.call("SetStateWithoutPause", csharp_state)
 
+
 func _map_state_to_csharp(gd_state: GameState) -> int:
 	match gd_state:
-		GameState.MENU: return 1
-		GameState.PLAYING: return 3
-		GameState.PAUSED: return 4
-		GameState.GAME_OVER: return 5
-		GameState.VICTORY: return 6
-		_: return 0
+		GameState.MENU:
+			return 1
+		GameState.PLAYING:
+			return 3
+		GameState.PAUSED:
+			return 4
+		GameState.GAME_OVER:
+			return 5
+		GameState.VICTORY:
+			return 6
+		_:
+			return 0

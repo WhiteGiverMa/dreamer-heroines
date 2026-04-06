@@ -27,10 +27,10 @@ var _original_status_color: Color
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	modulate.a = 1.0
-	
+
 	if status_label:
 		_original_status_color = status_label.get_theme_color("font_color")
-	
+
 	visible = false
 	print("LoadingScreen initialized")
 
@@ -39,7 +39,7 @@ func _ready() -> void:
 func set_progress(progress: float, status: String = "") -> void:
 	if progress_bar:
 		progress_bar.value = clamp(progress, 0.0, 1.0) * 100.0
-	
+
 	if status_label and not status.is_empty():
 		status_label.text = status
 		# 重置颜色（如果之前显示过错误）
@@ -51,11 +51,11 @@ func set_progress(progress: float, status: String = "") -> void:
 func show_loading() -> void:
 	visible = true
 	modulate.a = 1.0
-	
+
 	# 重置进度
 	if progress_bar:
 		progress_bar.value = 0.0
-	
+
 	if status_label:
 		status_label.text = "加载中..."
 		if _original_status_color:
@@ -75,7 +75,7 @@ func show_error(message: String) -> void:
 	if status_label:
 		status_label.text = "错误: " + message
 		status_label.add_theme_color_override("font_color", error_color)
-	
+
 	# 停止进度条动画（如果有的话）
 	if progress_bar:
 		progress_bar.modulate = Color(1.0, 0.5, 0.5)

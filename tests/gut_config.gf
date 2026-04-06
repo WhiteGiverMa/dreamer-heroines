@@ -6,8 +6,8 @@ script/subcategory = "GutConfig"
 
 [gut]
 
-# Directory containing test scripts
-directory = 'res://tests'
+# Directory containing headless-safe test scripts
+directory = 'res://tests/unit'
 
 # File patterns for test scripts
 file_pattern = 'test_*.gd'

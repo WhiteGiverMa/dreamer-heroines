@@ -28,6 +28,7 @@ const PANEL_SCENE := preload("res://scenes/ui/developer_panel.tscn")
 signal mode_changed(enabled: bool)
 signal state_changed(key: String, value: Variant)
 
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_spawn_rng.randomize()
@@ -87,15 +88,14 @@ func hide_panel() -> void:
 	if GameManager and GameManager.has_method("release_game_and_ui_input"):
 		GameManager.release_game_and_ui_input("developer_panel")
 
+
 func _get_state() -> Dictionary:
-	return {
-		"is_active": is_active,
-		"god_mode": god_mode,
-		"infinite_ammo": infinite_ammo
-	}
+	return {"is_active": is_active, "god_mode": god_mode, "infinite_ammo": infinite_ammo}
+
 
 func _save_original_state() -> void:
 	_original_state = _get_state()
+
 
 func _restore_original_state() -> void:
 	if _original_state.is_empty():
@@ -108,6 +108,7 @@ func _restore_original_state() -> void:
 				infinite_ammo = _original_state[key]
 		state_changed.emit(key, _original_state[key])
 
+
 ## 启用开发者模
 func enable() -> void:
 	if is_active:
@@ -116,6 +117,7 @@ func enable() -> void:
 	is_active = true
 	mode_changed.emit(true)
 	print("[DeveloperMode] 开发者模式已启用")
+
 
 ## 禁用开发者模式并重置所有状
 func disable() -> void:
@@ -131,6 +133,7 @@ func disable() -> void:
 	is_active = false
 	mode_changed.emit(false)
 	print("[DeveloperMode] 开发者模式已禁用")
+
 
 ## 切换开发者模式状
 func toggle() -> void:
@@ -169,6 +172,7 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("dev_mode_toggle"):
 		toggle()
 
+
 ## 设置特定调试状
 func set_state(key: String, value: bool) -> void:
 	match key:
@@ -181,6 +185,7 @@ func set_state(key: String, value: bool) -> void:
 			return
 	state_changed.emit(key, value)
 	print("[DeveloperMode] 状态已更新 - ", key, ": ", value)
+
 
 ## 获取调试状
 func get_state(key: String) -> bool:
@@ -247,6 +252,7 @@ func cmd_set_ammo(current: int, reserve: int) -> void:
 
 ## 玩家控制命令
 
+
 ## 切换无敌状(god_mode)
 func cmd_god_mode(enabled: bool) -> void:
 	var player = GameManager.player_instance
@@ -266,6 +272,7 @@ func cmd_god_mode(enabled: bool) -> void:
 	state_changed.emit("god_mode", enabled)
 	print("[DeveloperMode] God mode: ", enabled)
 
+
 ## 设置玩家生命
 func cmd_set_health(value: int) -> void:
 	var player = GameManager.player_instance
@@ -279,6 +286,7 @@ func cmd_set_health(value: int) -> void:
 	state_changed.emit("health", player.current_health)
 	print("[DeveloperMode] Health set to: ", player.current_health)
 
+
 ## 回复生命
 func cmd_heal(amount: int) -> void:
 	var player = GameManager.player_instance
@@ -288,6 +296,7 @@ func cmd_heal(amount: int) -> void:
 	player.heal(amount)
 	state_changed.emit("healed", amount)
 	print("[DeveloperMode] Healed ", amount, " (current: ", player.current_health, ")")
+
 
 ## 传送玩家到指定位置
 func cmd_teleport_player(x: float, y: float) -> void:
@@ -299,6 +308,7 @@ func cmd_teleport_player(x: float, y: float) -> void:
 	player.global_position = Vector2(x, y)
 	state_changed.emit("teleported", old_pos)
 	print("[DeveloperMode] Teleported from ", old_pos, " to ", player.global_position)
+
 
 ## 复活玩家
 func cmd_respawn_player() -> void:
@@ -334,6 +344,7 @@ func _get_wave_spawner() -> Node:
 
 
 ## 波次控制命令
+
 
 ## 立即开始下一
 func cmd_next_wave() -> void:
@@ -381,13 +392,11 @@ func cmd_get_wave_info() -> Dictionary:
 	var spawner = _get_wave_spawner()
 	if not spawner:
 		return {"error": "No wave spawner found"}
-	return {
-		"current_wave": spawner.get_current_wave(),
-		"total_waves": spawner.get_total_waves()
-	}
+	return {"current_wave": spawner.get_current_wave(), "total_waves": spawner.get_total_waves()}
 
 
 ## === 敌人控制命令 ===
+
 
 ## 获取玩家引用
 func _get_player() -> Node:
@@ -430,10 +439,16 @@ func cmd_spawn_random_enemies(count: int, x: float = 0, y: float = 0) -> Array[N
 	return enemies
 
 
-func _spawn_random_enemies_with_spawner(spawner: Node, count: int, position: Vector2 = Vector2.ZERO) -> Array[Node]:
+func _spawn_random_enemies_with_spawner(
+	spawner: Node, count: int, position: Vector2 = Vector2.ZERO
+) -> Array[Node]:
 	if count <= 0:
 		return []
-	if spawner == null or not spawner.has_method("get_spawnable_enemy_keys") or not spawner.has_method("spawn_enemy_now"):
+	if (
+		spawner == null
+		or not spawner.has_method("get_spawnable_enemy_keys")
+		or not spawner.has_method("spawn_enemy_now")
+	):
 		return []
 
 	var spawnable_enemy_keys_variant: Variant = spawner.call("get_spawnable_enemy_keys")
@@ -481,7 +496,9 @@ func cmd_teleport_enemies_to_player() -> void:
 	for enemy in enemies:
 		if enemy is Node2D:
 			# 随机分布在玩家周0-150像素范围
-			var offset = Vector2(randf_range(-1, 1), randf_range(-1, 0)).normalized() * randf_range(50, 150)
+			var offset = (
+				Vector2(randf_range(-1, 1), randf_range(-1, 0)).normalized() * randf_range(50, 150)
+			)
 			enemy.global_position = player.global_position + offset
 			count += 1
 	print("[DeveloperMode] Teleported %d enemies to player" % count)
@@ -521,7 +538,14 @@ func _load_config(config_path: String) -> Dictionary:
 		return {}
 	var file = FileAccess.open(config_path, FileAccess.READ)
 	if not file:
-		push_error("[DeveloperMode] Failed to open config: " + config_path + " - " + str(FileAccess.get_open_error()))
+		push_error(
+			(
+				"[DeveloperMode] Failed to open config: "
+				+ config_path
+				+ " - "
+				+ str(FileAccess.get_open_error())
+			)
+		)
 		return {}
 	var json = JSON.new()
 	var error = json.parse(file.get_as_text())
@@ -530,6 +554,7 @@ func _load_config(config_path: String) -> Dictionary:
 		push_error("[DeveloperMode] Failed to parse config: " + config_path)
 		return {}
 	return json.data
+
 
 ## 重新加载配置
 func cmd_reload_config(config_name: String = "all") -> Dictionary:
@@ -543,6 +568,7 @@ func cmd_reload_config(config_name: String = "all") -> Dictionary:
 	print("[DeveloperMode] Reloaded config: " + config_name)
 	return {"success": true, "config": config_name}
 
+
 ## 获取配置
 func cmd_get_config(config_name: String) -> Dictionary:
 	if config_name in _config_cache:
@@ -551,7 +577,9 @@ func cmd_get_config(config_name: String) -> Dictionary:
 	match config_name:
 		"gameplay", "gameplay_params":
 			_config_cache["gameplay_params"] = _load_config("res://config/gameplay_params.json")
-			return {"success": true, "config": config_name, "data": _config_cache["gameplay_params"]}
+			return {
+				"success": true, "config": config_name, "data": _config_cache["gameplay_params"]
+			}
 		"enemy", "enemy_stats":
 			_config_cache["enemy_stats"] = _load_config("res://config/enemy_stats.json")
 			return {"success": true, "config": config_name, "data": _config_cache["enemy_stats"]}

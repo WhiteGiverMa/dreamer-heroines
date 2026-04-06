@@ -44,6 +44,7 @@ var owner_player: Node2D:
 @onready var lifetime_timer: Timer = $LifetimeTimer
 var screen_notifier: VisibleOnScreenNotifier2D = null
 
+
 func _ready():
 	# 确保阵营已初始化
 	if faction_type == 0:
@@ -145,6 +146,7 @@ func is_available_for_pool() -> bool:
 func is_pool_active() -> bool:
 	return _is_active
 
+
 func _physics_process(delta: float) -> void:
 	if not _is_active:
 		return
@@ -152,8 +154,9 @@ func _physics_process(delta: float) -> void:
 	if gravity_affected:
 		velocity.y += gravity_strength * delta
 		rotation = velocity.angle()
-	
+
 	position += velocity * delta
+
 
 func _is_valid_target(body: Node2D) -> bool:
 	"""Check if body is a valid target based on faction."""
@@ -165,24 +168,26 @@ func _is_valid_target(body: Node2D) -> bool:
 		return body.is_in_group("enemy")
 	return false
 
+
 func _on_body_entered(body: Node2D) -> void:
 	if not _is_active:
 		return
 
 	if body == owner_node:
 		return
-	
+
 	if _is_valid_target(body):
 		_deal_damage(body)
-		
+
 		if pierce_count > 0 and current_pierces < pierce_count:
 			current_pierces += 1
 			pierced_targets.append(body)
 			return
-		
+
 		_impact()
 	elif body.is_in_group("ground") or body.collision_layer & 8 != 0:
 		_impact()
+
 
 func _on_area_entered(area: Area2D) -> void:
 	if not _is_active:
@@ -190,17 +195,19 @@ func _on_area_entered(area: Area2D) -> void:
 
 	if area.owner == owner_node:
 		return
-	
+
 	if area.is_in_group("hittable") and _is_valid_target(area):
 		_deal_damage(area)
 		_impact()
 
+
 func _deal_damage(target) -> void:
 	if target.has_method("take_damage"):
 		target.take_damage(damage, velocity.normalized() * 100)
-	
+
 	# 创建命中特效
 	_spawn_hit_effect()
+
 
 func _impact() -> void:
 	if explosion_radius > 0:
@@ -211,6 +218,7 @@ func _impact() -> void:
 
 	_recycle_to_pool()
 
+
 func _explode() -> void:
 	# 爆炸伤害
 	var space_state = get_world_2d().direct_space_state
@@ -220,16 +228,19 @@ func _explode() -> void:
 	query.shape = circle
 	query.transform = global_transform
 	query.collision_mask = 0b1110  # 敌人、世界、玩家
-	
+
 	var results = space_state.intersect_shape(query)
-	
+
 	for result in results:
 		var body = result.collider
 		if body.has_method("take_damage"):
 			var distance = global_position.distance_to(body.global_position)
 			var damage_factor = 1.0 - (distance / explosion_radius)
 			var final_damage = int(explosion_damage * damage_factor)
-			body.take_damage(final_damage, (body.global_position - global_position).normalized() * 200)
+			body.take_damage(
+				final_damage, (body.global_position - global_position).normalized() * 200
+			)
+
 
 func _spawn_hit_effect() -> void:
 	# 使用 EffectManager 播放命中特效
@@ -237,11 +248,13 @@ func _spawn_hit_effect() -> void:
 	if effect_manager:
 		effect_manager.play_hit_effect(global_position, true)
 
+
 func _spawn_impact_effect() -> void:
 	# 使用 EffectManager 播放撞击特效
 	var effect_manager = get_tree().get_root().get_node_or_null("EffectManager")
 	if effect_manager:
 		effect_manager.play_impact_effect(global_position, true)
+
 
 func _on_lifetime_timeout() -> void:
 	_recycle_to_pool()

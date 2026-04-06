@@ -63,6 +63,8 @@ func _evaluate_action_edge(action: GUIDEAction) -> Dictionary:
 ## 获取鼠标世界坐标
 func get_mouse_world_position() -> Vector2:
 	return mouse_world_position
+
+
 #endregion
 
 #region 上下文管理
@@ -72,11 +74,7 @@ func get_mouse_world_position() -> Vector2:
 ## UI 输入上下文资源
 @export var ui_context: GUIDEMappingContext
 
-enum InputMode {
-	GAME_ONLY,
-	UI_ONLY,
-	GAME_AND_UI
-}
+enum InputMode { GAME_ONLY, UI_ONLY, GAME_AND_UI }
 
 ## 上下文启用状态
 var _gameplay_context_enabled: bool = false
@@ -106,7 +104,9 @@ func initialize() -> void:
 func _initialize_contexts() -> void:
 	# 尝试加载默认游戏玩法上下文
 	if gameplay_context == null:
-		gameplay_context = load("res://config/input/contexts/gameplay_context.tres") as GUIDEMappingContext
+		gameplay_context = (
+			load("res://config/input/contexts/gameplay_context.tres") as GUIDEMappingContext
+		)
 		if gameplay_context == null:
 			push_error("EnhancedInput: Failed to load gameplay_context.tres")
 			return
@@ -117,7 +117,7 @@ func _initialize_contexts() -> void:
 		if ui_context == null:
 			push_error("EnhancedInput: Failed to load ui_context.tres")
 			return
-	
+
 	# 默认进入 GAME_ONLY（与历史行为一致）
 	set_input_mode(InputMode.GAME_ONLY)
 
@@ -232,7 +232,10 @@ func disable_ui_context() -> void:
 
 func is_ui_context_enabled() -> bool:
 	return _ui_context_enabled
+
+
 #endregion
+
 
 #region 输入查询 (G.U.I.D.E 包装)
 ## 检查动作是否正在按下
@@ -277,7 +280,7 @@ func get_vector(
 ) -> Vector2:
 	var x := 0.0
 	var y := 0.0
-	
+
 	if negative_x != null:
 		x -= negative_x.value_axis_1d
 	if positive_x != null:
@@ -286,7 +289,7 @@ func get_vector(
 		y -= negative_y.value_axis_1d
 	if positive_y != null:
 		y += positive_y.value_axis_1d
-	
+
 	return Vector2(x, y).limit_length(1.0)
 
 

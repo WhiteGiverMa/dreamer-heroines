@@ -7,6 +7,7 @@
 
 ## 先看这里
 
+- 这是个人项目，但执行标准按高技术标准处理：对潜在问题零妥协，必要时敢于推倒重构，明确拒绝把代码继续堆成屎山
 - 本文件里的入口路径、autoload 顺序、端口等属于**当前项目事实**；改启动/全局系统前，先回查 `project.godot` 的 `[autoload]` 与相关配置
 - 这是 **2D 横板射击** Godot 项目，主入口是 `project.godot` 中配置的 `res://scenes/ui/main_menu.tscn`
 - 运行时初始化核心在 `src/autoload/boot_sequence.tscn` + `src/autoload/boot_sequence.gd`
@@ -91,6 +92,9 @@
 
 ## 常用命令
 
+> **注意**: 本项目在 Windows 环境下开发，终端命令实际通过 PowerShell 执行
+> 优先使用 PowerShell 原生命令语法
+
 ```bash
 # 打开编辑器
 godot --editor --path .
@@ -105,7 +109,7 @@ godot --scene scenes/test_level.tscn
 dotnet build DreamerHeroines.csproj
 
 # GUT 单元测试（headless）
-godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -ginclude_subdirs -gexit
+godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests/unit -ginclude_subdirs -gexit
 
 # 自动化/集成测试入口
 godot tests/scenes/test_launcher.tscn
@@ -154,7 +158,7 @@ curl -X POST localhost:9090 -d '{"command":"dev_cmd","params":{"cmd":"wave next"
 - 不要在不检查 phase 依赖的前提下修改启动顺序
 - 不要绕开 `weapon.gd` / `config/weapon_stats.json`，在别处重复实现武器主逻辑
 - 不要绕过 hooks：禁止 `git commit --no-verify` / `-n`
-- 不要忘记修复尾随空格；仓库已有 `scripts/fix-trailing-whitespace.ps1 -Restage`
+- 不要忘记修复尾随空格；优先手动修复
 - 不要默认 headless 可以验证所有输入行为
 
 ## 提交与验证
@@ -170,6 +174,7 @@ curl -X POST localhost:9090 -d '{"command":"dev_cmd","params":{"cmd":"wave next"
 - 若提交被尾随空格拦截：
 
 ```powershell
+# 优先手动修复
 .\scripts\fix-trailing-whitespace.ps1 -Restage
 ```
 

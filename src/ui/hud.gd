@@ -16,7 +16,8 @@ var health_warning_threshold: float = 0.3
 # 弹药显示
 @onready var ammo_label: Label = $MainContainer/BottomBar/WeaponSection/AmmoLabel
 @onready var reload_progress: ProgressBar = $MainContainer/BottomBar/WeaponSection/ReloadProgress
-@onready var checkpoint_marker: ColorRect = $MainContainer/BottomBar/WeaponSection/ReloadProgress/CheckpointMarker
+@onready
+var checkpoint_marker: ColorRect = $MainContainer/BottomBar/WeaponSection/ReloadProgress/CheckpointMarker
 @onready var deploy_progress: ProgressBar = $MainContainer/BottomBar/WeaponSection/DeployProgress
 @onready var slot_label: Label = $MainContainer/BottomBar/WeaponSection/SlotLabel
 
@@ -89,7 +90,10 @@ func _ready() -> void:
 	# 注册到 GameManager
 	GameManager.register_hud(self)
 
-	if LocalizationManager and not LocalizationManager.locale_changed.is_connected(_on_locale_changed):
+	if (
+		LocalizationManager
+		and not LocalizationManager.locale_changed.is_connected(_on_locale_changed)
+	):
 		LocalizationManager.locale_changed.connect(_on_locale_changed)
 
 	_setup_localized_bindings()
@@ -100,7 +104,10 @@ func _ready() -> void:
 
 	# 连接敌人管理器信号（实时更新敌人计数）
 	var enemy_manager := _get_enemy_manager()
-	if enemy_manager and not enemy_manager.enemy_count_changed.is_connected(_on_enemy_count_changed):
+	if (
+		enemy_manager
+		and not enemy_manager.enemy_count_changed.is_connected(_on_enemy_count_changed)
+	):
 		enemy_manager.enemy_count_changed.connect(_on_enemy_count_changed)
 
 	# 初始化显示
@@ -306,7 +313,9 @@ func update_reload_progress(elapsed: float) -> void:
 	# 更新弹药标签显示进度
 	if ammo_label and reload_duration > 0:
 		var progress = reload_elapsed / reload_duration
-		ammo_label.text = LocalizationManager.call("tr", "ui.hud.reloading_progress", {"value": int(progress * 100)})
+		ammo_label.text = LocalizationManager.call(
+			"tr", "ui.hud.reloading_progress", {"value": int(progress * 100)}
+		)
 
 
 func finish_reload_progress() -> void:
@@ -725,7 +734,9 @@ func _apply_localized_texts() -> void:
 		if reload_duration > 0:
 			progress = int((reload_elapsed / reload_duration) * 100)
 		if ammo_label:
-			ammo_label.text = LocalizationManager.call("tr", "ui.hud.reloading_progress", {"value": progress})
+			ammo_label.text = LocalizationManager.call(
+				"tr", "ui.hud.reloading_progress", {"value": progress}
+			)
 	else:
 		update_ammo(_last_ammo_current, _last_ammo_max, _last_ammo_reserve)
 
@@ -736,9 +747,7 @@ func _apply_localized_texts() -> void:
 func _format_ammo_text(current: int, max: int, reserve: int) -> String:
 	if reserve >= 0:
 		return LocalizationManager.call(
-			"tr",
-			"ui.hud.ammo.with_reserve",
-			{"current": current, "max": max, "reserve": reserve}
+			"tr", "ui.hud.ammo.with_reserve", {"current": current, "max": max, "reserve": reserve}
 		)
 	return LocalizationManager.call("tr", "ui.hud.ammo", {"current": current, "max": max})
 
@@ -781,7 +790,9 @@ func _sync_crosshair_runtime_from_player() -> void:
 	if weapon == null:
 		return
 
-	var ammo_current := int(weapon.get("current_ammo_in_mag")) if "current_ammo_in_mag" in weapon else 0
+	var ammo_current := (
+		int(weapon.get("current_ammo_in_mag")) if "current_ammo_in_mag" in weapon else 0
+	)
 	var ammo_max := 0
 	if "stats" in weapon and weapon.stats:
 		ammo_max = int(weapon.stats.magazine_size)
@@ -790,7 +801,11 @@ func _sync_crosshair_runtime_from_player() -> void:
 	var base_spread := 0.0
 	if "stats" in weapon and weapon.stats:
 		base_spread = float(weapon.stats.spread)
-	var current_spread := float(weapon.get("current_visual_spread")) if "current_visual_spread" in weapon else base_spread
+	var current_spread := (
+		float(weapon.get("current_visual_spread"))
+		if "current_visual_spread" in weapon
+		else base_spread
+	)
 	update_crosshair_spread(current_spread, base_spread)
 
 	var deploying: bool = false

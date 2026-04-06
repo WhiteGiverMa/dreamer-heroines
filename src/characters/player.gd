@@ -397,9 +397,9 @@ func equip_slot(slot: int) -> void:
 	_equip_weapon(slot)
 	if current_weapon and current_weapon.has_method("start_deploy"):
 		var deploy_time = current_weapon.stats.deploy_time if current_weapon.stats else 0.5
-		current_weapon.start_deploy()
+		var deploy_started: bool = current_weapon.start_deploy()
 		# 通知 HUD 开始部署
-		if GameManager.hud:
+		if deploy_started and GameManager.hud:
 			GameManager.hud.start_deploy_progress(deploy_time)
 			GameManager.hud.on_crosshair_deploy_started()
 
@@ -453,6 +453,8 @@ func _equip_weapon(index: int) -> void:
 			current_weapon.spread_changed.disconnect(_on_weapon_spread_changed)
 		if current_weapon.has_signal("shot_fired") and current_weapon.shot_fired.is_connected(_on_weapon_shot_fired):
 			current_weapon.shot_fired.disconnect(_on_weapon_shot_fired)
+		if current_weapon.has_signal("out_of_ammo") and current_weapon.out_of_ammo.is_connected(_on_weapon_out_of_ammo):
+			current_weapon.out_of_ammo.disconnect(_on_weapon_out_of_ammo)
 
 	current_weapon = weapons[index]
 
@@ -473,6 +475,8 @@ func _equip_weapon(index: int) -> void:
 		current_weapon.reload_finished.connect(_on_weapon_reload_finished)
 	if current_weapon.has_signal("spread_changed") and not current_weapon.spread_changed.is_connected(_on_weapon_spread_changed):
 		current_weapon.spread_changed.connect(_on_weapon_spread_changed)
+	if current_weapon.has_signal("out_of_ammo") and not current_weapon.out_of_ammo.is_connected(_on_weapon_out_of_ammo):
+		current_weapon.out_of_ammo.connect(_on_weapon_out_of_ammo)
 
 	# 设置阵营并连接 shot_fired 信号
 	current_weapon.faction = "player"
@@ -663,6 +667,14 @@ func _on_weapon_ammo_changed(current: int, max: int) -> void:
 	ammo_changed.emit(current, max)
 	if GameManager.hud:
 		GameManager.hud.on_crosshair_ammo_changed(current, max)
+
+
+func _on_weapon_out_of_ammo() -> void:
+	if GameManager.hud:
+		if GameManager.hud.has_method("on_crosshair_ammo_empty"):
+			GameManager.hud.on_crosshair_ammo_empty()
+		else:
+			GameManager.hud.on_crosshair_ammo_changed(0, 1)
 
 
 func _on_weapon_reload_started() -> void:

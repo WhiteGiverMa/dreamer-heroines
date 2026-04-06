@@ -21,8 +21,22 @@ var _listen_host: String = DEFAULT_HOST
 var _listen_port: int = DEFAULT_PORT
 var _allow_port_fallback: bool = true
 var _max_port_tries: int = DEFAULT_MAX_PORT_TRIES
+var _headless_server_enabled: bool = false
+
+
+func _should_start_in_headless() -> bool:
+	if OS.has_environment("MCP_SERVER_ENABLE_IN_HEADLESS"):
+		var raw_value := OS.get_environment("MCP_SERVER_ENABLE_IN_HEADLESS").strip_edges().to_lower()
+		return raw_value in ["1", "true", "yes", "on"]
+	return false
 
 func _ready() -> void:
+	_headless_server_enabled = _should_start_in_headless()
+	if DisplayServer.get_name() == "headless" and not _headless_server_enabled:
+		_write_runtime_info(true)
+		print("McpInteractionServer: Skipped startup in headless mode")
+		return
+
 	# Ensure MCP server keeps processing even when game is paused
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_init_key_map()

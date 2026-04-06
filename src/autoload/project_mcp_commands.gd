@@ -1,6 +1,5 @@
 extends Node
 
-
 const SUPPORTED_COMMANDS := {
 	"dev_mode": "_handle_dev_mode",
 	"dev_cmd": "_handle_dev_cmd",
@@ -60,7 +59,10 @@ func _handle_dev_status(_params: Dictionary) -> Dictionary:
 func _handle_dev_wave(params: Dictionary) -> Dictionary:
 	var action := str(params.get("action", "")).strip_edges().to_lower()
 	if action.is_empty():
-		return {"success": false, "error": "Missing action. Expected one of: next, jump, pause, resume, info"}
+		return {
+			"success": false,
+			"error": "Missing action. Expected one of: next, jump, pause, resume, info"
+		}
 
 	match action:
 		"next":
@@ -69,7 +71,9 @@ func _handle_dev_wave(params: Dictionary) -> Dictionary:
 			var wave_result := _parse_required_int_param(params, "wave")
 			if not bool(wave_result.get("success", false)):
 				return wave_result
-			return _call_developer_commands("_handle_wave_command", [["jump", wave_result.get("value", 0)]])
+			return _call_developer_commands(
+				"_handle_wave_command", [["jump", wave_result.get("value", 0)]]
+			)
 		"pause":
 			return _call_developer_commands("_handle_wave_command", [["pause"]])
 		"resume":
@@ -84,7 +88,9 @@ func _handle_dev_god_mode(params: Dictionary) -> Dictionary:
 	var enabled_result := _parse_bool_param(params, "enabled", true)
 	if not bool(enabled_result.get("success", false)):
 		return enabled_result
-	return _call_developer_commands("_handle_god_mode_command", [[enabled_result.get("value", true)]])
+	return _call_developer_commands(
+		"_handle_god_mode_command", [[enabled_result.get("value", true)]]
+	)
 
 
 func _handle_dev_infinite_ammo(params: Dictionary) -> Dictionary:
@@ -106,7 +112,10 @@ func _handle_dev_set_ammo(params: Dictionary) -> Dictionary:
 	var reserve_result := _parse_required_int_param(params, "reserve")
 	if not bool(reserve_result.get("success", false)):
 		return reserve_result
-	return _call_developer_commands("_handle_ammo_command", [["set", current_result.get("value", 0), reserve_result.get("value", 0)]])
+	return _call_developer_commands(
+		"_handle_ammo_command",
+		[["set", current_result.get("value", 0), reserve_result.get("value", 0)]]
+	)
 
 
 func _handle_dev_reload_config(params: Dictionary) -> Dictionary:
@@ -153,7 +162,10 @@ func _handle_dev_spawn_random_enemies(params: Dictionary) -> Dictionary:
 	var y_result := _parse_optional_float_param(params, "y", 0.0)
 	if not bool(y_result.get("success", false)):
 		return y_result
-	return _call_developer_commands("_handle_spawn_command", [["enemy", "x%d" % count, x_result.get("value", 0.0), y_result.get("value", 0.0)]])
+	return _call_developer_commands(
+		"_handle_spawn_command",
+		[["enemy", "x%d" % count, x_result.get("value", 0.0), y_result.get("value", 0.0)]]
+	)
 
 
 func _handle_dev_kill_all_enemies(_params: Dictionary) -> Dictionary:
@@ -171,7 +183,9 @@ func _handle_dev_teleport_enemies_to(params: Dictionary) -> Dictionary:
 	var y_result := _parse_required_float_param(params, "y")
 	if not bool(y_result.get("success", false)):
 		return y_result
-	return _call_developer_commands("_handle_enemies_to_command", [[x_result.get("value", 0.0), y_result.get("value", 0.0)]])
+	return _call_developer_commands(
+		"_handle_enemies_to_command", [[x_result.get("value", 0.0), y_result.get("value", 0.0)]]
+	)
 
 
 func _handle_dev_damage_all_enemies(params: Dictionary) -> Dictionary:
@@ -202,7 +216,9 @@ func _handle_dev_teleport_player(params: Dictionary) -> Dictionary:
 	var y_result := _parse_required_float_param(params, "y")
 	if not bool(y_result.get("success", false)):
 		return y_result
-	return _call_developer_commands("_handle_teleport_command", [[x_result.get("value", 0.0), y_result.get("value", 0.0)]])
+	return _call_developer_commands(
+		"_handle_teleport_command", [[x_result.get("value", 0.0), y_result.get("value", 0.0)]]
+	)
 
 
 func _handle_dev_respawn_player(_params: Dictionary) -> Dictionary:
@@ -222,7 +238,10 @@ func _call_developer_commands(method_name: String, args: Array) -> Dictionary:
 	var result: Variant = commands.callv(method_name, args)
 	if result is Dictionary:
 		return result
-	return {"success": false, "error": "DeveloperCommands returned invalid response for %s" % method_name}
+	return {
+		"success": false,
+		"error": "DeveloperCommands returned invalid response for %s" % method_name
+	}
 
 
 func _get_developer_mode():
@@ -272,7 +291,9 @@ func _parse_required_float_param(params: Dictionary, key: String) -> Dictionary:
 	return {"success": true, "value": float(value_text)}
 
 
-func _parse_optional_float_param(params: Dictionary, key: String, default_value: float) -> Dictionary:
+func _parse_optional_float_param(
+	params: Dictionary, key: String, default_value: float
+) -> Dictionary:
 	if not params.has(key):
 		return {"success": true, "value": default_value}
 	return _parse_required_float_param(params, key)

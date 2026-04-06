@@ -41,8 +41,20 @@ extends "res://src/base/game_system.gd"
 # 总线数量: 12 个 (1 Master + 3 顶层 + 5 SFX_* + 3 附加)
 # =============================================================================
 
-enum BusType { MASTER, SFX, MUSIC, UI, VOICE, AMBIENCE, REVERB,
-	SFX_PLAYER, SFX_WEAPONS, SFX_ENEMIES, SFX_IMPACTS, SFX_SKILLS }
+enum BusType {
+	MASTER,
+	SFX,
+	MUSIC,
+	UI,
+	VOICE,
+	AMBIENCE,
+	REVERB,
+	SFX_PLAYER,
+	SFX_WEAPONS,
+	SFX_ENEMIES,
+	SFX_IMPACTS,
+	SFX_SKILLS
+}
 
 @export var sfx_bus: String = "SFX"
 @export var music_bus: String = "Music"
@@ -113,17 +125,14 @@ const _CATEGORY_TO_BUS: Dictionary = {
 const _WEAPON_SHOOT_PREFIX: String = "_shoot"
 const _WEAPON_RELOAD_PREFIX: String = "_reload"
 
-var default_volumes: Dictionary = {
-	"Master": 1.0,
-	"SFX": 0.8,
-	"Music": 0.6,
-	"UI": 0.7
-}
+var default_volumes: Dictionary = {"Master": 1.0, "SFX": 0.8, "Music": 0.6, "UI": 0.7}
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	system_name = "audio_manager"
 	# 不在这里执行初始化，等待 BootSequence 调用
+
 
 func initialize() -> void:
 	print("[AudioManager] 开始初始化...")
@@ -134,6 +143,7 @@ func initialize() -> void:
 	preload_common_sounds()
 	print("[AudioManager] 初始化完")
 	_mark_ready()
+
 
 func _setup_audio_players():
 	# 创建背景音乐播放
@@ -147,11 +157,13 @@ func _setup_audio_players():
 		add_child(player)
 		sfx_players.append(player)
 
+
 func _setup_default_bus_volumes():
 	for bus_name in default_volumes.keys():
 		var bus_idx = AudioServer.get_bus_index(bus_name)
 		if bus_idx >= 0:
 			AudioServer.set_bus_volume_db(bus_idx, linear_to_db(default_volumes[bus_name]))
+
 
 func _load_saved_volumes() -> void:
 	"""从 SaveManager 加载保存的音量设置并应用到总线"""
@@ -176,15 +188,28 @@ func _load_saved_volumes() -> void:
 
 	print("[AudioManager] 已从保存的设置加载音量")
 
+
 const REQUIRED_BUSES: Array[String] = [
-	"Master", "Music", "SFX", "UI", "Voice", "Ambience", "Reverb",
-	"SFX_Player", "SFX_Weapons", "SFX_Enemies", "SFX_Impacts", "SFX_Skills"
+	"Master",
+	"Music",
+	"SFX",
+	"UI",
+	"Voice",
+	"Ambience",
+	"Reverb",
+	"SFX_Player",
+	"SFX_Weapons",
+	"SFX_Enemies",
+	"SFX_Impacts",
+	"SFX_Skills"
 ]
+
 
 func _validate_required_buses() -> void:
 	for bus_name in REQUIRED_BUSES:
 		if AudioServer.get_bus_index(bus_name) < 0:
 			push_warning("[AudioManager] Required audio bus missing: " + bus_name)
+
 
 func play_sfx(sound_name: String, volume_db: float = 0.0, pitch_scale: float = 1.0) -> void:
 	var normalized_key = _normalize_sound_key(sound_name)
@@ -199,6 +224,7 @@ func play_sfx(sound_name: String, volume_db: float = 0.0, pitch_scale: float = 1
 		player.pitch_scale = pitch_scale
 		player.bus = _get_bus_from_category(normalized_key)
 		player.play()
+
 
 # =============================================================================
 # Sound ID Normalization
@@ -242,6 +268,7 @@ func _normalize_sound_key(sound_name: String) -> String:
 	# 3. No normalization found, return original
 	return sound_name
 
+
 # =============================================================================
 # Category to Bus Routing
 # =============================================================================
@@ -253,6 +280,7 @@ func _get_bus_from_category(normalized_key: String) -> String:
 		if normalized_key.begins_with(prefix):
 			return _CATEGORY_TO_BUS[prefix]
 	return "SFX"  # Fallback for unknown categories
+
 
 func play_music(music_name: String, fade_duration: float = 1.0, loop: bool = true) -> void:
 	if not music_library.has(music_name):
@@ -267,22 +295,27 @@ func play_music(music_name: String, fade_duration: float = 1.0, loop: bool = tru
 	music_player.play()
 	_fade_music_in(fade_duration)
 
+
 func stop_music(fade_duration: float = 0.5) -> void:
 	if music_player.playing:
 		_fade_music_out(fade_duration)
 		await get_tree().create_timer(fade_duration).timeout
 		music_player.stop()
 
+
 func pause_music() -> void:
 	music_player.stream_paused = true
 
+
 func resume_music() -> void:
 	music_player.stream_paused = false
+
 
 func set_bus_volume(bus_type: BusType, volume_linear: float) -> void:
 	var bus_name = _get_bus_name(bus_type)
 	var db = linear_to_db(clamp(volume_linear, 0.0, 1.0))
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(bus_name), db)
+
 
 func get_bus_volume(bus_type: BusType) -> float:
 	var bus_name = _get_bus_name(bus_type)
@@ -292,17 +325,21 @@ func get_bus_volume(bus_type: BusType) -> float:
 		return db_to_linear(db)
 	return 1.0
 
+
 func register_sound(sound_name: String, stream: AudioStream) -> void:
 	sound_library[sound_name] = stream
 
+
 func register_music(music_name: String, stream: AudioStream) -> void:
 	music_library[music_name] = stream
+
 
 func _get_available_sfx_player() -> AudioStreamPlayer:
 	for player in sfx_players:
 		if not player.playing:
 			return player
 	return sfx_players[0]  # 如果全部占用，复用第一
+
 
 func _get_bus_name(bus_type: BusType) -> String:
 	match bus_type:
@@ -332,13 +369,16 @@ func _get_bus_name(bus_type: BusType) -> String:
 			return "SFX_Skills"
 	return "Master"
 
+
 func _fade_music_in(duration: float) -> void:
 	var tween = create_tween()
 	tween.tween_property(music_player, "volume_db", 0.0, duration).from(-80.0)
 
+
 func _fade_music_out(duration: float) -> void:
 	var tween = create_tween()
 	tween.tween_property(music_player, "volume_db", -80.0, duration)
+
 
 func _warn_missing_audio_once(audio_type: String, audio_name: String) -> void:
 	var warn_key = "%s:%s" % [audio_type, audio_name]
@@ -352,6 +392,7 @@ func _warn_missing_audio_once(audio_type: String, audio_name: String) -> void:
 
 	push_warning("Sound not found in library (warn once): " + audio_name)
 
+
 # 预加载常用音
 func preload_common_sounds() -> void:
 	# 武器音效
@@ -361,6 +402,7 @@ func preload_common_sounds() -> void:
 	# UI音效
 	_register_ui_sounds()
 	print("[AudioManager] 音效预加载完成，已注册 %d 个音效" % sound_library.size())
+
 
 # 武器音效注册
 func _register_weapon_sounds() -> void:
@@ -378,6 +420,7 @@ func _register_weapon_sounds() -> void:
 		var path: String = weapon_sfx_dir + weapon_sounds[sound_name]
 		_try_register_sound(sound_name, path)
 
+
 # 爆炸音效注册
 func _register_explosion_sounds() -> void:
 	var explosion_sfx_dir := "res://assets/audio/sfx/explosions/"
@@ -389,6 +432,7 @@ func _register_explosion_sounds() -> void:
 		var path: String = explosion_sfx_dir + explosion_sounds[sound_name]
 		_try_register_sound(sound_name, path)
 
+
 # UI音效注册
 func _register_ui_sounds() -> void:
 	var ui_sfx_dir := "res://assets/audio/sfx/ui/"
@@ -399,6 +443,7 @@ func _register_ui_sounds() -> void:
 	for sound_name: String in ui_sounds.keys():
 		var path: String = ui_sfx_dir + ui_sounds[sound_name]
 		_try_register_sound(sound_name, path)
+
 
 # 尝试注册音效（文件不存在时静默跳过）
 func _try_register_sound(sound_name: String, path: String) -> void:

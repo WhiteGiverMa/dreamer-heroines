@@ -271,7 +271,9 @@ func _resolve_level_id() -> String:
 	if not name.is_empty():
 		var normalized_name := name.to_snake_case()
 		if normalized_name.begins_with("arena"):
-			return normalized_name.insert(5, "_") if normalized_name.length() == 7 else normalized_name
+			return (
+				normalized_name.insert(5, "_") if normalized_name.length() == 7 else normalized_name
+			)
 
 	var current_scene := get_tree().current_scene
 	if current_scene:

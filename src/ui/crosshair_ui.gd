@@ -11,6 +11,9 @@ extends Control
 
 signal spread_changed(new_spread: float)
 
+const RING_POINT_COUNT_MIN := 24
+const RING_POINT_COUNT_MAX := 64
+
 # ============================================
 # 导出配置 - 外观
 # ============================================
@@ -260,10 +263,10 @@ var is_empty_mag: bool = false
 var _service_connected: bool = false
 var _active_hit_feedback_stacks: Array[float] = []
 
-
 # ============================================
 # 生命周期
 # ============================================
+
 
 func _ready() -> void:
 	top_level = true
@@ -273,7 +276,9 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	global_position = get_viewport().get_mouse_position()
+	var mouse_position := get_viewport().get_mouse_position()
+	if global_position != mouse_position:
+		global_position = mouse_position
 	_update_hit_feedback(delta)
 	recover(delta)
 
@@ -287,27 +292,32 @@ func _draw() -> void:
 	var segment_length := _get_line_length()
 	var outer_offset := inner_offset + segment_length
 	var outline_color := _get_outline_color(draw_color)
+	var outline_width := _get_outline_width() if outline_color.a > 0.0 else 0.0
 
 	match crosshair_shape:
 		"dot":
 			_draw_center_dot(center, draw_color)
 
 		"circle":
-			_draw_ring_outline(center, outline_color, inner_offset, segment_length)
+			_draw_ring_outline(center, outline_color, inner_offset, segment_length, outline_width)
 			_draw_ring(center, draw_color, inner_offset, segment_length)
 			if show_center_dot:
 				_draw_center_dot(center, draw_color)
 
 		"combined":
-			_draw_cross_segments_outline(center, outline_color, inner_offset, outer_offset)
+			_draw_cross_segments_outline(
+				center, outline_color, inner_offset, outer_offset, outline_width
+			)
 			_draw_cross_segments(center, draw_color, inner_offset, outer_offset)
-			_draw_ring_outline(center, outline_color, inner_offset, segment_length)
+			_draw_ring_outline(center, outline_color, inner_offset, segment_length, outline_width)
 			_draw_ring(center, draw_color, inner_offset, segment_length)
 			if show_center_dot:
 				_draw_center_dot(center, draw_color)
 
 		_:
-			_draw_cross_segments_outline(center, outline_color, inner_offset, outer_offset)
+			_draw_cross_segments_outline(
+				center, outline_color, inner_offset, outer_offset, outline_width
+			)
 			_draw_cross_segments(center, draw_color, inner_offset, outer_offset)
 			if show_center_dot:
 				_draw_center_dot(center, draw_color)
@@ -370,7 +380,12 @@ func _apply_settings(settings) -> void:
 	hit_feedback_pulse_speed = settings.hit_feedback_pulse_speed
 	hit_feedback_max_stacks = settings.hit_feedback_max_stacks
 	hit_feedback_stacking_mode = settings.hit_feedback_stacking_mode
-	hit_color = Color(settings.hit_feedback_color_r, settings.hit_feedback_color_g, settings.hit_feedback_color_b, 1.0)
+	hit_color = Color(
+		settings.hit_feedback_color_r,
+		settings.hit_feedback_color_g,
+		settings.hit_feedback_color_b,
+		1.0
+	)
 
 	_sync_normal_color()
 
@@ -423,7 +438,13 @@ func _get_outline_width() -> float:
 	return line_thickness + (outline_thickness * 2.0)
 
 
-func _draw_cross_segments_outline(center: Vector2, outline_color: Color, inner_offset: float, outer_offset: float) -> void:
+func _draw_cross_segments_outline(
+	center: Vector2,
+	outline_color: Color,
+	inner_offset: float,
+	outer_offset: float,
+	outline_width: float
+) -> void:
 	if outline_color.a <= 0.0:
 		return
 
@@ -431,7 +452,7 @@ func _draw_cross_segments_outline(center: Vector2, outline_color: Color, inner_o
 		Vector2(center.x, center.y - inner_offset),
 		Vector2(center.x, center.y - outer_offset),
 		outline_color,
-		_get_outline_width()
+		outline_width
 	)
 
 	if not use_t_shape:
@@ -439,24 +460,26 @@ func _draw_cross_segments_outline(center: Vector2, outline_color: Color, inner_o
 			Vector2(center.x, center.y + inner_offset),
 			Vector2(center.x, center.y + outer_offset),
 			outline_color,
-			_get_outline_width()
+			outline_width
 		)
 
 	_draw_segment(
 		Vector2(center.x - inner_offset, center.y),
 		Vector2(center.x - outer_offset, center.y),
 		outline_color,
-		_get_outline_width()
+		outline_width
 	)
 	_draw_segment(
 		Vector2(center.x + inner_offset, center.y),
 		Vector2(center.x + outer_offset, center.y),
 		outline_color,
-		_get_outline_width()
+		outline_width
 	)
 
 
-func _draw_cross_segments(center: Vector2, draw_color: Color, inner_offset: float, outer_offset: float) -> void:
+func _draw_cross_segments(
+	center: Vector2, draw_color: Color, inner_offset: float, outer_offset: float
+) -> void:
 	if not use_t_shape:
 		_draw_segment(
 			Vector2(center.x, center.y - inner_offset),
@@ -482,17 +505,30 @@ func _draw_cross_segments(center: Vector2, draw_color: Color, inner_offset: floa
 	)
 
 
-func _draw_ring(center: Vector2, draw_color: Color, inner_offset: float, segment_length: float) -> void:
+func _draw_ring(
+	center: Vector2, draw_color: Color, inner_offset: float, segment_length: float
+) -> void:
 	var radius := maxf(center_dot_size, inner_offset + (segment_length * 0.5))
-	draw_arc(center, radius, 0.0, TAU, 48, draw_color, line_thickness)
+	draw_arc(center, radius, 0.0, TAU, _get_ring_point_count(radius), draw_color, line_thickness)
 
 
-func _draw_ring_outline(center: Vector2, outline_color: Color, inner_offset: float, segment_length: float) -> void:
+func _draw_ring_outline(
+	center: Vector2,
+	outline_color: Color,
+	inner_offset: float,
+	segment_length: float,
+	outline_width: float
+) -> void:
 	if outline_color.a <= 0.0:
 		return
 
 	var radius := maxf(center_dot_size, inner_offset + (segment_length * 0.5))
-	draw_arc(center, radius, 0.0, TAU, 48, outline_color, _get_outline_width())
+	draw_arc(center, radius, 0.0, TAU, _get_ring_point_count(radius), outline_color, outline_width)
+
+
+func _get_ring_point_count(radius: float) -> int:
+	var estimated_points := int(ceil(radius * 2.5))
+	return clampi(estimated_points, RING_POINT_COUNT_MIN, RING_POINT_COUNT_MAX)
 
 
 func _draw_center_dot(center: Vector2, draw_color: Color) -> void:
@@ -505,7 +541,9 @@ func _draw_segment(from: Vector2, to: Vector2, draw_color: Color, width: float =
 	draw_line(from, to, draw_color, width if width > 0.0 else line_thickness)
 
 
-func _draw_hit_feedback_overlay(center: Vector2, inner_offset: float, segment_length: float) -> void:
+func _draw_hit_feedback_overlay(
+	center: Vector2, inner_offset: float, segment_length: float
+) -> void:
 	if _active_hit_feedback_stacks.is_empty():
 		return
 
@@ -513,7 +551,9 @@ func _draw_hit_feedback_overlay(center: Vector2, inner_offset: float, segment_le
 	if stack_count <= 0:
 		return
 
-	var base_extent := maxf(center_dot_size + 2.0, (inner_offset + segment_length) * hit_feedback_scale)
+	var base_extent := maxf(
+		center_dot_size + 2.0, (inner_offset + segment_length) * hit_feedback_scale
+	)
 	var alpha_scale := clampf(crosshair_alpha * hit_feedback_intensity, 0.0, 1.0)
 	var line_width := line_thickness + hit_feedback_intensity
 
@@ -582,6 +622,7 @@ func _normalize_hit_feedback_stacking_mode(value: String) -> String:
 # 公开方法 - 扩散控制
 # ============================================
 
+
 ## 射击时扩展准星
 func expand_on_shot() -> void:
 	# visual-only: 扩散增加，不影响实际弹道精度
@@ -591,7 +632,7 @@ func expand_on_shot() -> void:
 	var previous_spread := current_spread
 	current_spread += spread_increase_per_shot
 	current_spread = minf(current_spread, max_spread)
-	
+
 	# 仅在值有意义的改变时触发重绘
 	if not is_equal_approx(current_spread, previous_spread):
 		queue_redraw()
@@ -604,16 +645,16 @@ func recover(delta: float) -> void:
 	# 简化：每秒恢复 recovery_rate 像素，帧率无关
 	if is_equal_approx(current_spread, base_spread):
 		return
-	
+
 	var previous_spread := current_spread
-	
+
 	# 线性恢复速率（像素/秒），帧率无关
 	var recovery_amount := recovery_rate * delta
-	
+
 	# 恢复到 base_spread，不能低于
 	current_spread -= recovery_amount
 	current_spread = maxf(current_spread, base_spread)
-	
+
 	# 仅在值有意义的改变时触发重绘
 	if not is_equal_approx(current_spread, previous_spread):
 		queue_redraw()
@@ -621,21 +662,30 @@ func recover(delta: float) -> void:
 
 ## 更新基础扩散（来自武器）
 func update_spread(new_current_spread: float, new_base_spread: float) -> void:
+	# 运行态映射规则：
+	# 1) base_spread = 武器基础扩散（通常与弹道 spread 对应）
+	# 2) current_spread = 武器当前视觉扩散（射击峰值/恢复过程）
+	# 3) max_spread 取「配置倍率上限」与「武器上报峰值」的较大值，避免 UI 错误截断
+	var sanitized_base := maxf(new_base_spread, 0.0)
+	var sanitized_current := maxf(new_current_spread, sanitized_base)
+
 	# 更新基础扩散值
 	var previous_base := base_spread
-	base_spread = new_base_spread
-	
+	base_spread = sanitized_base
+
 	# 计算新的最大扩散
-	max_spread = base_spread * max_spread_multiplier
-	
+	var configured_max := base_spread * max_spread_multiplier
+	var fallback_peak := base_spread + spread_increase_per_shot
+	max_spread = maxf(configured_max, maxf(fallback_peak, sanitized_current))
+
 	# 更新当前扩散值（来自武器视觉扩散状态）
 	var previous_current := current_spread
-	current_spread = clampf(new_current_spread, base_spread, max_spread)
-	
+	current_spread = clampf(sanitized_current, base_spread, max_spread)
+
 	# 发射信号通知扩散变化（仅在 base_spread 实际改变时）
 	if not is_equal_approx(base_spread, previous_base):
 		spread_changed.emit(current_spread)
-	
+
 	# 仅在值有意义的改变时触发重绘
 	if not is_equal_approx(current_spread, previous_current):
 		queue_redraw()
@@ -648,35 +698,56 @@ func update_spread(new_current_spread: float, new_base_spread: float) -> void:
 ## 换弹开始回调
 @warning_ignore("unused_parameter")
 func _on_reload_started(_duration: float) -> void:
-	# Task 7: 设置换弹状态，仅在状态改变时重绘
+	on_reload_start(_duration)
+
+
+## 换弹结束回调
+func _on_reload_finished() -> void:
+	on_reload_end()
+
+
+## 部署开始回调
+func _on_deploy_started() -> void:
+	on_deploy_start()
+
+
+## 部署结束回调
+func _on_deploy_finished() -> void:
+	on_deploy_end()
+
+
+## 弹药变化回调
+func _on_ammo_changed(current: int, maximum: int) -> void:
+	on_ammo_changed(current, maximum)
+
+
+func on_reload_start(_duration: float = 0.0) -> void:
+	# 设置换弹状态，仅在状态改变时重绘
 	if is_reloading:
 		return
 	is_reloading = true
 	queue_redraw()
 
 
-## 换弹结束回调
-func _on_reload_finished() -> void:
-	# Task 7: 清除换弹状态，仅在状态改变时重绘
+func on_reload_end() -> void:
+	# 清除换弹状态，仅在状态改变时重绘
 	if not is_reloading:
 		return
 	is_reloading = false
 	queue_redraw()
 
 
-## 部署开始回调
-func _on_deploy_started() -> void:
+func on_deploy_start() -> void:
 	# 设置部署状态，仅在状态改变时重绘
 	if is_deploying:
 		return
 	is_deploying = true
-	# 清除换弹状态
+	# 部署优先清除换弹状态（两态互斥）
 	is_reloading = false
 	queue_redraw()
 
 
-## 部署结束回调
-func _on_deploy_finished() -> void:
+func on_deploy_end() -> void:
 	# 清除部署状态，仅在状态改变时重绘
 	if not is_deploying:
 		return
@@ -684,19 +755,25 @@ func _on_deploy_finished() -> void:
 	queue_redraw()
 
 
-## 弹药变化回调
-func _on_ammo_changed(current: int, maximum: int) -> void:
-	# Task 7: 检测空弹匣状态，仅在状态改变时重绘
-	var new_empty_mag := (current == 0 and maximum > 0)
-	if is_empty_mag == new_empty_mag:
+func on_ammo_changed(current: int, maximum: int) -> void:
+	_set_empty_mag_state(current == 0 and maximum > 0)
+
+
+func on_ammo_empty() -> void:
+	_set_empty_mag_state(true)
+
+
+func _set_empty_mag_state(value: bool) -> void:
+	if is_empty_mag == value:
 		return
-	is_empty_mag = new_empty_mag
+	is_empty_mag = value
 	queue_redraw()
 
 
 # ============================================
 # 反馈方法
 # ============================================
+
 
 ## 显示命中反馈
 func show_hit_feedback() -> void:

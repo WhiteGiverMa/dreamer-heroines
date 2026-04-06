@@ -275,7 +275,7 @@ dotnet build DreamerHeroines.csproj
 godot tests/scenes/test_launcher.tscn
 
 # 运行单元测试（无需图形界面）
-godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -ginclude_subdirs -gexit
+godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests/unit -ginclude_subdirs -gexit
 ```
 
 ### 测试类型
@@ -283,7 +283,7 @@ godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests -ginclude_subdirs -ge
 | 类型 | 命令 | 说明 |
 |------|------|------|
 | 集成测试 | `godot tests/scenes/test_launcher.tscn` | 完整功能测试，自动验证 |
-| 单元测试 | `godot --headless -s addons/gut/gut_cmdln.gd` | 纯逻辑测试 |
+| 单元测试 | `godot --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests/unit -ginclude_subdirs -gexit` | 纯逻辑测试 |
 | 编辑器测试 | GUT 面板 | 在 Godot 编辑器中运行 |
 
 ### 添加新测试

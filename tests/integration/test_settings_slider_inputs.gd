@@ -7,6 +7,12 @@ var _save_manager
 var _original_settings: Dictionary = {}
 
 
+func should_skip_script():
+	if DisplayServer.get_name() == "headless":
+		return "Skip integration tests in headless mode; this suite depends on runtime UI input behavior"
+	return false
+
+
 func before_each() -> void:
 	_save_manager = get_node_or_null("/root/SaveManager")
 	assert_not_null(_save_manager, "SaveManager autoload should exist for settings integration tests")

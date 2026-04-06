@@ -1,4 +1,4 @@
-﻿extends GutTest
+extends GutTest
 
 ## 玩家移动集成测试
 ## 测试 GUIDE 输入系统与玩家移动的集成
@@ -7,6 +7,12 @@ var _player: CharacterBody2D
 var _move_action: GUIDEAction
 var _jump_action: GUIDEAction
 var _guide_context: GUIDEMappingContext
+
+
+func should_skip_script():
+	if DisplayServer.get_name() == "headless":
+		return "Skip integration tests in headless mode; this suite depends on runtime input simulation"
+	return false
 
 
 func before_all() -> void:

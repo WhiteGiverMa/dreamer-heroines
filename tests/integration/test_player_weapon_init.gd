@@ -7,6 +7,12 @@ var _player: Player
 var _guide_context: GUIDEMappingContext
 
 
+func should_skip_script():
+	if DisplayServer.get_name() == "headless":
+		return "Skip integration tests in headless mode; this suite depends on runtime scene initialization"
+	return false
+
+
 func _get_weapon_by_slot(slot_id: int) -> Weapon:
 	if slot_id < 0 or slot_id >= _player.weapons.size():
 		return null

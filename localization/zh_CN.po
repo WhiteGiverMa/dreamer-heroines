@@ -40,6 +40,9 @@ msgstr "加载游戏"
 msgid "ui.main_menu.button.settings"
 msgstr "设置"
 
+msgid "ui.main_menu.button.character_config"
+msgstr "角色配置"
+
 msgid "ui.main_menu.button.credits"
 msgstr "制作人员"
 
@@ -171,6 +174,27 @@ msgstr "光效"
 
 msgid "ui.settings.restore_page_defaults"
 msgstr "恢复{page}默认值"
+
+msgid "ui.settings.tab.ui"
+msgstr "界面"
+
+msgid "ui.settings.slider_wheel_on_slider"
+msgstr "滑块滚轮调整"
+
+msgid "ui.settings.button.save"
+msgstr "保存"
+
+msgid "ui.settings.button.cancel"
+msgstr "取消"
+
+msgid "ui.settings.unsaved_changes_prompt"
+msgstr "有未保存的更改，是否保存？"
+
+msgid "ui.settings.save_and_exit"
+msgstr "保存并退出"
+
+msgid "ui.settings.discard_and_exit"
+msgstr "放弃并退出"
 
 msgid "ui.roguelike_reward_selection.title"
 msgstr "选择你的祝福"
@@ -557,3 +581,46 @@ msgstr "叠加"
 
 msgid "ui.settings.crosshair.stacking_mode.ignore_new"
 msgstr "忽略新"
+
+# Character Config Panel
+msgid "ui.character_config.title"
+msgstr "角色配置"
+
+msgid "ui.character_config.character_select"
+msgstr "角色选择"
+
+msgid "ui.character_config.skin"
+msgstr "外观"
+
+msgid "ui.character_config.weapon_config"
+msgstr "武器配置"
+
+msgid "ui.character_config.primary_weapon"
+msgstr "主武器"
+
+msgid "ui.character_config.secondary_weapon"
+msgstr "副武器"
+
+msgid "ui.character_config.reset"
+msgstr "恢复默认"
+
+msgid "ui.character_config.save"
+msgstr "保存配置"
+
+msgid "ui.character_config.cancel"
+msgstr "取消"
+
+msgid "ui.character_config.back"
+msgstr "返回"
+
+msgid "ui.character_config.unsaved_changes"
+msgstr "有未保存的更改，是否保存？"
+
+msgid "ui.character_config.default_character.name"
+msgstr "默认角色"
+
+msgid "ui.character_config.default_character.description"
+msgstr "标准突击战士，均衡的能力配置。"
+
+msgid "ui.character_config.skin.default"
+msgstr "默认"

@@ -1,4 +1,4 @@
-﻿extends GutTest
+extends GutTest
 
 ## 玩家Dash功能集成测试
 ## TDD RED Phase - 所有测试预期失败
@@ -8,6 +8,12 @@ var _player: CharacterBody2D
 var _dash_action: GUIDEAction
 var _move_action: GUIDEAction
 var _guide_context: GUIDEMappingContext
+
+
+func should_skip_script():
+	if DisplayServer.get_name() == "headless":
+		return "Skip integration tests in headless mode; this suite depends on runtime input and scene behavior"
+	return false
 
 
 func before_all() -> void:

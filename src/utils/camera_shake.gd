@@ -16,11 +16,14 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _shake_amount > 0:
 		# 应用随机偏移
-		offset = _original_offset + Vector2(
-			randf_range(-_shake_amount, _shake_amount),
-			randf_range(-_shake_amount, _shake_amount)
+		offset = (
+			_original_offset
+			+ Vector2(
+				randf_range(-_shake_amount, _shake_amount),
+				randf_range(-_shake_amount, _shake_amount)
+			)
 		)
-		
+
 		# 衰减
 		_shake_amount = max(_shake_amount - _shake_decay * delta, 0)
 	else:

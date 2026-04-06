@@ -33,9 +33,9 @@ const BASE_FORWARD_ANGLE := PI / 2.0
 
 ## 箭头显示状态
 enum ArrowState {
-	EDGE,      ## 屏幕边缘指示
+	EDGE,  ## 屏幕边缘指示
 	OVERHEAD,  ## 头顶指示
-	HIDDEN,    ## 隐藏
+	HIDDEN,  ## 隐藏
 }
 
 # ============================================
@@ -91,6 +91,7 @@ var _pending_transition: bool = false
 # 生命周期
 # ============================================
 
+
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	modulate.a = 0.0  # 初始隐藏，等待 fade_in 调用
@@ -101,10 +102,15 @@ func _ready() -> void:
 # 公开方法 - 状态控制
 # ============================================
 
+
 ## 设置箭头显示状态
 func set_state(state: ArrowState) -> void:
 	# 检测EDGE↔OVERHEAD转换
-	if _state in [ArrowState.EDGE, ArrowState.OVERHEAD] and state in [ArrowState.EDGE, ArrowState.OVERHEAD] and _state != state:
+	if (
+		_state in [ArrowState.EDGE, ArrowState.OVERHEAD]
+		and state in [ArrowState.EDGE, ArrowState.OVERHEAD]
+		and _state != state
+	):
 		# 记录转换起始位置和旋转
 		_transition_start_pos = global_position
 		_transition_start_rot = rotation
@@ -149,7 +155,13 @@ func set_target_position(world_pos: Vector2) -> void:
 
 	# 如果有待处理的状态转换，应用过渡动画
 	if _pending_transition:
-		_tween_transition(_transition_start_pos, _transition_start_rot, global_position, target_rot, TRANSITION_DURATION)
+		_tween_transition(
+			_transition_start_pos,
+			_transition_start_rot,
+			global_position,
+			target_rot,
+			TRANSITION_DURATION
+		)
 		_pending_transition = false
 	else:
 		rotation = target_rot
@@ -182,8 +194,11 @@ func fade_out() -> void:
 # 私有方法
 # ============================================
 
+
 ## 状态转换动画
-func _tween_transition(from_pos: Vector2, from_rot: float, to_pos: Vector2, to_rot: float, duration: float) -> void:
+func _tween_transition(
+	from_pos: Vector2, from_rot: float, to_pos: Vector2, to_rot: float, duration: float
+) -> void:
 	# 停止之前的转换动画
 	if _transition_tween and _transition_tween.is_valid():
 		_transition_tween.kill()

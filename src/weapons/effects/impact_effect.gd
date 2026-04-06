@@ -6,6 +6,7 @@ extends Node2D
 @export var lifetime: float = 0.2
 @export var color: Color = Color(0.8, 0.6, 0.4, 0.7)
 
+
 func _ready() -> void:
 	# 创建视觉特效
 	var sprite = ColorRect.new()
@@ -13,7 +14,7 @@ func _ready() -> void:
 	sprite.size = Vector2(12, 12)
 	sprite.position = Vector2(-6, -6)
 	add_child(sprite)
-	
+
 	# 缩放和淡出动画
 	var tween = create_tween()
 	tween.tween_property(sprite, "scale", Vector2(1.5, 1.5), lifetime)

@@ -40,6 +40,9 @@ msgstr "Load Game"
 msgid "ui.main_menu.button.settings"
 msgstr "Settings"
 
+msgid "ui.main_menu.button.character_config"
+msgstr "Character Config"
+
 msgid "ui.main_menu.button.credits"
 msgstr "Credits"
 
@@ -171,6 +174,27 @@ msgstr "Lighting Effects"
 
 msgid "ui.settings.restore_page_defaults"
 msgstr "Restore {page} Defaults"
+
+msgid "ui.settings.tab.ui"
+msgstr "UI"
+
+msgid "ui.settings.slider_wheel_on_slider"
+msgstr "Mouse Wheel on Slider"
+
+msgid "ui.settings.button.save"
+msgstr "Save"
+
+msgid "ui.settings.button.cancel"
+msgstr "Cancel"
+
+msgid "ui.settings.unsaved_changes_prompt"
+msgstr "You have unsaved changes. Save them?"
+
+msgid "ui.settings.save_and_exit"
+msgstr "Save & Exit"
+
+msgid "ui.settings.discard_and_exit"
+msgstr "Discard & Exit"
 
 msgid "ui.roguelike_reward_selection.title"
 msgstr "Choose Your Blessing"
@@ -557,3 +581,46 @@ msgstr "Stack"
 
 msgid "ui.settings.crosshair.stacking_mode.ignore_new"
 msgstr "Ignore New"
+
+# Character Config Panel
+msgid "ui.character_config.title"
+msgstr "Character Config"
+
+msgid "ui.character_config.character_select"
+msgstr "Character Select"
+
+msgid "ui.character_config.skin"
+msgstr "Skin"
+
+msgid "ui.character_config.weapon_config"
+msgstr "Weapon Loadout"
+
+msgid "ui.character_config.primary_weapon"
+msgstr "Primary Weapon"
+
+msgid "ui.character_config.secondary_weapon"
+msgstr "Secondary Weapon"
+
+msgid "ui.character_config.reset"
+msgstr "Reset to Default"
+
+msgid "ui.character_config.save"
+msgstr "Save Config"
+
+msgid "ui.character_config.cancel"
+msgstr "Cancel"
+
+msgid "ui.character_config.back"
+msgstr "Back"
+
+msgid "ui.character_config.unsaved_changes"
+msgstr "You have unsaved changes. Save before leaving?"
+
+msgid "ui.character_config.default_character.name"
+msgstr "Default Character"
+
+msgid "ui.character_config.default_character.description"
+msgstr "Standard assault fighter with balanced capabilities."
+
+msgid "ui.character_config.skin.default"
+msgstr "Default"

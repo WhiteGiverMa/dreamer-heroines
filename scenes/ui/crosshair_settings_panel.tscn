@@ -1,0 +1,390 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/crosshair_settings_panel.gd" id="1_crosshair_settings_panel"]
+
+[node name="CrosshairSettingsPanel" type="Panel"]
+custom_minimum_size = Vector2(540, 520)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_crosshair_settings_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 0.0
+offset_bottom = 0.0
+horizontal_scroll_mode = 0
+
+
+[node name="Content" type="VBoxContainer" parent="MarginContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="ShapeSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionTitle" type="Label" parent="MarginContainer/ScrollContainer/Content/ShapeSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Shape"
+
+[node name="Grid" type="GridContainer" parent="MarginContainer/ScrollContainer/Content/ShapeSection"]
+layout_mode = 2
+columns = 2
+
+[node name="ShapeLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/ShapeSection/Grid"]
+layout_mode = 2
+text = "Crosshair Shape"
+
+[node name="ShapeOption" type="OptionButton" parent="MarginContainer/ScrollContainer/Content/ShapeSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SizeLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/ShapeSection/Grid"]
+layout_mode = 2
+text = "Crosshair Size"
+
+[node name="SizeSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/ShapeSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AlphaLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/ShapeSection/Grid"]
+layout_mode = 2
+text = "Crosshair Alpha"
+
+[node name="AlphaSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/ShapeSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TShapeLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/ShapeSection/Grid"]
+layout_mode = 2
+text = "Use T Shape"
+
+[node name="TShapeCheck" type="CheckBox" parent="MarginContainer/ScrollContainer/Content/ShapeSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ColorSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionTitle" type="Label" parent="MarginContainer/ScrollContainer/Content/ColorSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Color"
+
+[node name="Grid" type="GridContainer" parent="MarginContainer/ScrollContainer/Content/ColorSection"]
+layout_mode = 2
+columns = 2
+
+[node name="ColorModeLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/ColorSection/Grid"]
+layout_mode = 2
+text = "Color Mode"
+
+[node name="ColorModeOption" type="OptionButton" parent="MarginContainer/ScrollContainer/Content/ColorSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ColorPresetLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/ColorSection/Grid"]
+layout_mode = 2
+text = "Color Preset"
+
+[node name="ColorPresetOption" type="OptionButton" parent="MarginContainer/ScrollContainer/Content/ColorSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CustomColorRLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/ColorSection/Grid"]
+layout_mode = 2
+text = "Custom Red"
+
+[node name="CustomColorRSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/ColorSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CustomColorGLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/ColorSection/Grid"]
+layout_mode = 2
+text = "Custom Green"
+
+[node name="CustomColorGSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/ColorSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CustomColorBLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/ColorSection/Grid"]
+layout_mode = 2
+text = "Custom Blue"
+
+[node name="CustomColorBSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/ColorSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LineSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionTitle" type="Label" parent="MarginContainer/ScrollContainer/Content/LineSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Line"
+
+[node name="Grid" type="GridContainer" parent="MarginContainer/ScrollContainer/Content/LineSection"]
+layout_mode = 2
+columns = 2
+
+[node name="LineLengthLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/LineSection/Grid"]
+layout_mode = 2
+text = "Line Length"
+
+[node name="LineLengthSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/LineSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LineThicknessLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/LineSection/Grid"]
+layout_mode = 2
+text = "Line Thickness"
+
+[node name="LineThicknessSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/LineSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LineGapLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/LineSection/Grid"]
+layout_mode = 2
+text = "Line Gap"
+
+[node name="LineGapSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/LineSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="OutlineSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionTitle" type="Label" parent="MarginContainer/ScrollContainer/Content/OutlineSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Outline"
+
+[node name="Grid" type="GridContainer" parent="MarginContainer/ScrollContainer/Content/OutlineSection"]
+layout_mode = 2
+columns = 2
+
+[node name="OutlineEnabledLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/OutlineSection/Grid"]
+layout_mode = 2
+text = "Outline Enabled"
+
+[node name="OutlineEnabledCheck" type="CheckBox" parent="MarginContainer/ScrollContainer/Content/OutlineSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="OutlineThicknessLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/OutlineSection/Grid"]
+layout_mode = 2
+text = "Outline Thickness"
+
+[node name="OutlineThicknessSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/OutlineSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="OutlineColorRLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/OutlineSection/Grid"]
+layout_mode = 2
+text = "Outline Red"
+
+[node name="OutlineColorRSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/OutlineSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="OutlineColorGLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/OutlineSection/Grid"]
+layout_mode = 2
+text = "Outline Green"
+
+[node name="OutlineColorGSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/OutlineSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="OutlineColorBLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/OutlineSection/Grid"]
+layout_mode = 2
+text = "Outline Blue"
+
+[node name="OutlineColorBSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/OutlineSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CenterDotSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionTitle" type="Label" parent="MarginContainer/ScrollContainer/Content/CenterDotSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Center Dot"
+
+[node name="Grid" type="GridContainer" parent="MarginContainer/ScrollContainer/Content/CenterDotSection"]
+layout_mode = 2
+columns = 2
+
+[node name="CenterDotEnabledLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/CenterDotSection/Grid"]
+layout_mode = 2
+text = "Show Center Dot"
+
+[node name="CenterDotEnabledCheck" type="CheckBox" parent="MarginContainer/ScrollContainer/Content/CenterDotSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CenterDotSizeLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/CenterDotSection/Grid"]
+layout_mode = 2
+text = "Center Dot Size"
+
+[node name="CenterDotSizeSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/CenterDotSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CenterDotAlphaLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/CenterDotSection/Grid"]
+layout_mode = 2
+text = "Center Dot Alpha"
+
+[node name="CenterDotAlphaSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/CenterDotSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SpreadSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionTitle" type="Label" parent="MarginContainer/ScrollContainer/Content/SpreadSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Spread"
+
+[node name="Grid" type="GridContainer" parent="MarginContainer/ScrollContainer/Content/SpreadSection"]
+layout_mode = 2
+columns = 2
+
+[node name="DynamicSpreadLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/SpreadSection/Grid"]
+layout_mode = 2
+text = "Dynamic Spread"
+
+[node name="DynamicSpreadCheck" type="CheckBox" parent="MarginContainer/ScrollContainer/Content/SpreadSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SpreadIncreaseLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/SpreadSection/Grid"]
+layout_mode = 2
+text = "Spread Increase / Shot"
+
+[node name="SpreadIncreaseSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/SpreadSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RecoveryRateLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/SpreadSection/Grid"]
+layout_mode = 2
+text = "Recovery Rate"
+
+[node name="RecoveryRateSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/SpreadSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MaxSpreadMultiplierLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/SpreadSection/Grid"]
+layout_mode = 2
+text = "Max Spread Multiplier"
+
+[node name="MaxSpreadMultiplierSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/SpreadSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HitFeedbackSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SectionTitle" type="Label" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Hit Feedback"
+
+[node name="Grid" type="GridContainer" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection"]
+layout_mode = 2
+columns = 2
+
+[node name="HitFeedbackEnabledLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+layout_mode = 2
+text = "Hit Feedback Enabled"
+
+[node name="HitFeedbackEnabledCheck" type="CheckBox" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HitFeedbackDurationLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+layout_mode = 2
+text = "Hit Feedback Duration"
+
+[node name="HitFeedbackDurationSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HitFeedbackScaleLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+layout_mode = 2
+text = "Hit Feedback Scale"
+
+[node name="HitFeedbackScaleSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HitFeedbackIntensityLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+layout_mode = 2
+text = "Hit Feedback Intensity"
+
+[node name="HitFeedbackIntensitySlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HitFeedbackExpandRatioLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+layout_mode = 2
+text = "Hit Feedback Expand Ratio"
+
+[node name="HitFeedbackExpandRatioSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HitFeedbackPulseSpeedLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+layout_mode = 2
+text = "Hit Feedback Pulse Speed"
+
+[node name="HitFeedbackPulseSpeedSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HitFeedbackMaxStacksLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+layout_mode = 2
+text = "Hit Feedback Max Stacks"
+
+[node name="HitFeedbackMaxStacksSlider" type="HSlider" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+rounded = true
+
+[node name="HitFeedbackStackingModeLabel" type="Label" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+layout_mode = 2
+text = "Hit Feedback Stacking Mode"
+
+[node name="HitFeedbackStackingModeOption" type="OptionButton" parent="MarginContainer/ScrollContainer/Content/HitFeedbackSection/Grid"]
+unique_name_in_owner = true
+layout_mode = 2

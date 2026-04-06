@@ -129,6 +129,7 @@ var _pending_persistence_migration: bool = false
 # 生命周期
 # ============================================
 
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_initialize_settings()
@@ -137,6 +138,7 @@ func _ready() -> void:
 # ============================================
 # 公共API - 设置管理
 # ============================================
+
 
 ## 获取当前设置的副本
 func get_settings() -> CrosshairSettings:
@@ -170,13 +172,25 @@ func update_setting(property_name: StringName, value: Variant) -> void:
 			normalized_value = clampf(float(value), ALPHA_MIN, ALPHA_MAX)
 
 		&"crosshair_shape":
-			normalized_value = _validate_enum(String(value).to_lower(), CrosshairSettingsResource.VALID_SHAPES, _settings.crosshair_shape)
+			normalized_value = _validate_enum(
+				String(value).to_lower(),
+				CrosshairSettingsResource.VALID_SHAPES,
+				_settings.crosshair_shape
+			)
 
 		&"color_mode":
-			normalized_value = _validate_enum(String(value).to_lower(), CrosshairSettingsResource.VALID_COLOR_MODES, _settings.color_mode)
+			normalized_value = _validate_enum(
+				String(value).to_lower(),
+				CrosshairSettingsResource.VALID_COLOR_MODES,
+				_settings.color_mode
+			)
 
 		&"color_preset":
-			normalized_value = _validate_enum(String(value).to_lower(), CrosshairSettingsResource.VALID_COLOR_PRESETS, _settings.color_preset)
+			normalized_value = _validate_enum(
+				String(value).to_lower(),
+				CrosshairSettingsResource.VALID_COLOR_PRESETS,
+				_settings.color_preset
+			)
 
 		&"custom_color_r":
 			normalized_value = clampf(float(value), COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
@@ -233,28 +247,40 @@ func update_setting(property_name: StringName, value: Variant) -> void:
 			normalized_value = clampf(float(value), RECOVERY_RATE_MIN, RECOVERY_RATE_MAX)
 
 		&"max_spread_multiplier":
-			normalized_value = clampf(float(value), MAX_SPREAD_MULTIPLIER_MIN, MAX_SPREAD_MULTIPLIER_MAX)
+			normalized_value = clampf(
+				float(value), MAX_SPREAD_MULTIPLIER_MIN, MAX_SPREAD_MULTIPLIER_MAX
+			)
 
 		&"hit_feedback_enabled":
 			normalized_value = _validate_bool(value, _settings.hit_feedback_enabled)
 
 		&"hit_feedback_duration":
-			normalized_value = clampf(float(value), HIT_FEEDBACK_DURATION_MIN, HIT_FEEDBACK_DURATION_MAX)
+			normalized_value = clampf(
+				float(value), HIT_FEEDBACK_DURATION_MIN, HIT_FEEDBACK_DURATION_MAX
+			)
 
 		&"hit_feedback_scale":
 			normalized_value = clampf(float(value), HIT_FEEDBACK_SCALE_MIN, HIT_FEEDBACK_SCALE_MAX)
 
 		&"hit_feedback_intensity":
-			normalized_value = clampf(float(value), HIT_FEEDBACK_INTENSITY_MIN, HIT_FEEDBACK_INTENSITY_MAX)
+			normalized_value = clampf(
+				float(value), HIT_FEEDBACK_INTENSITY_MIN, HIT_FEEDBACK_INTENSITY_MAX
+			)
 
 		&"hit_feedback_expand_ratio":
-			normalized_value = clampf(float(value), HIT_FEEDBACK_EXPAND_RATIO_MIN, HIT_FEEDBACK_EXPAND_RATIO_MAX)
+			normalized_value = clampf(
+				float(value), HIT_FEEDBACK_EXPAND_RATIO_MIN, HIT_FEEDBACK_EXPAND_RATIO_MAX
+			)
 
 		&"hit_feedback_pulse_speed":
-			normalized_value = clampf(float(value), HIT_FEEDBACK_PULSE_SPEED_MIN, HIT_FEEDBACK_PULSE_SPEED_MAX)
+			normalized_value = clampf(
+				float(value), HIT_FEEDBACK_PULSE_SPEED_MIN, HIT_FEEDBACK_PULSE_SPEED_MAX
+			)
 
 		&"hit_feedback_max_stacks":
-			normalized_value = clampi(int(value), HIT_FEEDBACK_MAX_STACKS_MIN, HIT_FEEDBACK_MAX_STACKS_MAX)
+			normalized_value = clampi(
+				int(value), HIT_FEEDBACK_MAX_STACKS_MIN, HIT_FEEDBACK_MAX_STACKS_MAX
+			)
 
 		&"hit_feedback_stacking_mode":
 			normalized_value = _validate_enum(
@@ -312,6 +338,7 @@ func reload_settings() -> void:
 # ============================================
 # 公共API - Getter/Setter 便捷方法
 # ============================================
+
 
 func set_crosshair_size(value: float) -> void:
 	update_setting(&"crosshair_size", value)
@@ -597,6 +624,7 @@ func get_hit_feedback_color_b() -> float:
 # 私有方法
 # ============================================
 
+
 func _initialize_settings() -> void:
 	_pending_persistence_migration = false
 	_settings = CrosshairSettingsResource.get_defaults() as CrosshairSettings
@@ -633,22 +661,28 @@ func _clamp_settings(settings: CrosshairSettings) -> void:
 	settings.custom_color_g = clampf(settings.custom_color_g, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
 	settings.custom_color_b = clampf(settings.custom_color_b, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
 	settings.line_length = clampf(settings.line_length, LINE_LENGTH_MIN, LINE_LENGTH_MAX)
-	settings.line_thickness = clampf(settings.line_thickness, LINE_THICKNESS_MIN, LINE_THICKNESS_MAX)
-	settings.line_gap = clampf(settings.line_gap, LINE_GAP_MIN, LINE_GAP_MAX)
-	settings.outline_color_r = clampf(settings.outline_color_r, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
-	settings.outline_color_g = clampf(settings.outline_color_g, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
-	settings.outline_color_b = clampf(settings.outline_color_b, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
-	settings.outline_thickness = clampf(settings.outline_thickness, OUTLINE_THICKNESS_MIN, OUTLINE_THICKNESS_MAX)
-	settings.center_dot_size = clampf(
-		settings.center_dot_size, DOT_SIZE_MIN, DOT_SIZE_MAX
+	settings.line_thickness = clampf(
+		settings.line_thickness, LINE_THICKNESS_MIN, LINE_THICKNESS_MAX
 	)
+	settings.line_gap = clampf(settings.line_gap, LINE_GAP_MIN, LINE_GAP_MAX)
+	settings.outline_color_r = clampf(
+		settings.outline_color_r, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX
+	)
+	settings.outline_color_g = clampf(
+		settings.outline_color_g, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX
+	)
+	settings.outline_color_b = clampf(
+		settings.outline_color_b, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX
+	)
+	settings.outline_thickness = clampf(
+		settings.outline_thickness, OUTLINE_THICKNESS_MIN, OUTLINE_THICKNESS_MAX
+	)
+	settings.center_dot_size = clampf(settings.center_dot_size, DOT_SIZE_MIN, DOT_SIZE_MAX)
 	settings.center_dot_alpha = clampf(settings.center_dot_alpha, DOT_ALPHA_MIN, DOT_ALPHA_MAX)
 	settings.spread_increase_per_shot = clampf(
 		settings.spread_increase_per_shot, SPREAD_INCREASE_MIN, SPREAD_INCREASE_MAX
 	)
-	settings.recovery_rate = clampf(
-		settings.recovery_rate, RECOVERY_RATE_MIN, RECOVERY_RATE_MAX
-	)
+	settings.recovery_rate = clampf(settings.recovery_rate, RECOVERY_RATE_MIN, RECOVERY_RATE_MAX)
 	settings.max_spread_multiplier = clampf(
 		settings.max_spread_multiplier, MAX_SPREAD_MULTIPLIER_MIN, MAX_SPREAD_MULTIPLIER_MAX
 	)
@@ -662,10 +696,14 @@ func _clamp_settings(settings: CrosshairSettings) -> void:
 		settings.hit_feedback_intensity, HIT_FEEDBACK_INTENSITY_MIN, HIT_FEEDBACK_INTENSITY_MAX
 	)
 	settings.hit_feedback_expand_ratio = clampf(
-		settings.hit_feedback_expand_ratio, HIT_FEEDBACK_EXPAND_RATIO_MIN, HIT_FEEDBACK_EXPAND_RATIO_MAX
+		settings.hit_feedback_expand_ratio,
+		HIT_FEEDBACK_EXPAND_RATIO_MIN,
+		HIT_FEEDBACK_EXPAND_RATIO_MAX
 	)
 	settings.hit_feedback_pulse_speed = clampf(
-		settings.hit_feedback_pulse_speed, HIT_FEEDBACK_PULSE_SPEED_MIN, HIT_FEEDBACK_PULSE_SPEED_MAX
+		settings.hit_feedback_pulse_speed,
+		HIT_FEEDBACK_PULSE_SPEED_MIN,
+		HIT_FEEDBACK_PULSE_SPEED_MAX
 	)
 	settings.hit_feedback_max_stacks = clampi(
 		settings.hit_feedback_max_stacks, HIT_FEEDBACK_MAX_STACKS_MIN, HIT_FEEDBACK_MAX_STACKS_MAX
@@ -675,9 +713,15 @@ func _clamp_settings(settings: CrosshairSettings) -> void:
 		CrosshairSettingsResource.VALID_HIT_FEEDBACK_STACKING_MODES,
 		CrosshairSettingsResource.DEFAULT_VALUES["hit_feedback_stacking_mode"]
 	)
-	settings.hit_feedback_color_r = clampf(settings.hit_feedback_color_r, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
-	settings.hit_feedback_color_g = clampf(settings.hit_feedback_color_g, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
-	settings.hit_feedback_color_b = clampf(settings.hit_feedback_color_b, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX)
+	settings.hit_feedback_color_r = clampf(
+		settings.hit_feedback_color_r, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX
+	)
+	settings.hit_feedback_color_g = clampf(
+		settings.hit_feedback_color_g, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX
+	)
+	settings.hit_feedback_color_b = clampf(
+		settings.hit_feedback_color_b, COLOR_CHANNEL_MIN, COLOR_CHANNEL_MAX
+	)
 
 
 func _save_settings_deferred() -> void:
@@ -687,7 +731,9 @@ func _save_settings_deferred() -> void:
 func _save_settings_to_disk() -> void:
 	var save_manager := get_node_or_null("/root/SaveManager")
 	if save_manager == null:
-		push_warning("[CrosshairSettingsService] SaveManager not found, settings will not be persisted")
+		push_warning(
+			"[CrosshairSettingsService] SaveManager not found, settings will not be persisted"
+		)
 		settings_saved.emit(false)
 		return
 
@@ -725,7 +771,9 @@ func _load_settings_from_disk() -> CrosshairSettings:
 	return settings
 
 
-func _requires_persisted_migration(raw_settings: Dictionary, normalized_persisted: Dictionary) -> bool:
+func _requires_persisted_migration(
+	raw_settings: Dictionary, normalized_persisted: Dictionary
+) -> bool:
 	for persisted_key in normalized_persisted.keys():
 		if not raw_settings.has(persisted_key):
 			return true

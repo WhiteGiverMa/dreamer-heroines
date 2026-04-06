@@ -15,12 +15,7 @@ signal out_of_ammo
 # 视觉扩散信号：通知UI当前扩散状态（不影响弹道精度）
 signal spread_changed(current_spread: float, base_spread: float)
 
-enum WeaponState {
-	IDLE,
-	RELOADING_PRE_CHECKPOINT,
-	RELOADING_POST_CHECKPOINT,
-	DEPLOYING
-}
+enum WeaponState { IDLE, RELOADING_PRE_CHECKPOINT, RELOADING_POST_CHECKPOINT, DEPLOYING }
 
 # === 配置 ===
 @export var stats: WeaponStats
@@ -51,6 +46,10 @@ var _next_fire_time_usec: int = 0
 # 测试钩子：允许单测注入稳定时钟，运行时默认走 Godot 单调时钟
 var _time_provider: Callable = Callable()
 
+# 视觉扩散映射参数（仅 UI 反馈，不影响实际弹道）
+const VISUAL_SPREAD_PEAK_OFFSET: float = 10.0
+const VISUAL_SPREAD_RECOVERY_PER_SECOND: float = 50.0
+
 # 子节点引用
 @onready var muzzle: Marker2D = $Muzzle
 @onready var lighting: WeaponLighting = _resolve_weapon_lighting()
@@ -79,8 +78,7 @@ func _physics_process(delta: float) -> void:
 func _update_visual_spread(delta: float) -> void:
 	# 恢复视觉扩散（仅视觉，不影响弹道精度）
 	if stats and current_visual_spread > stats.spread:
-		var recovery_rate := 50.0  # 视觉恢复速率（度/秒）
-		var recovery_amount := recovery_rate * delta
+		var recovery_amount := VISUAL_SPREAD_RECOVERY_PER_SECOND * delta
 		var previous_spread := current_visual_spread
 		current_visual_spread -= recovery_amount
 		current_visual_spread = maxf(current_visual_spread, stats.spread)
@@ -107,6 +105,7 @@ func _initialize_stats() -> void:
 
 
 # === 主要接口 ===
+
 
 ## 尝试射击
 ## @param muzzle_pos: 枪口世界坐标
@@ -154,7 +153,7 @@ func _fire(muzzle_pos: Vector2, aim_dir: Vector2, fired_at_usec: int = -1) -> vo
 
 	# 视觉扩散增加（不影响实际弹道）
 	if stats:
-		current_visual_spread = stats.spread + 10.0  # 射击时视觉扩散峰值
+		current_visual_spread = stats.spread + VISUAL_SPREAD_PEAK_OFFSET
 		spread_changed.emit(current_visual_spread, stats.spread)
 
 	# 发射信号 - 让外部决定如何处理投射物
@@ -358,6 +357,7 @@ func is_using_ammo_system() -> bool:
 
 # === 内部方法 ===
 
+
 func _spawn_muzzle_flash(pos: Vector2, dir: Vector2) -> void:
 	if not stats or stats.muzzle_flash_effect.is_empty():
 		return
@@ -407,9 +407,10 @@ func _spawn_muzzle_flash(pos: Vector2, dir: Vector2) -> void:
 	tween.chain().tween_callback(flash.queue_free)
 
 	# Release light budget when flash is freed
-	flash.tree_exiting.connect(func():
-		if LightBudgetManager:
-			LightBudgetManager.release_light()
+	flash.tree_exiting.connect(
+		func():
+			if LightBudgetManager:
+				LightBudgetManager.release_light()
 	)
 
 
@@ -424,7 +425,7 @@ func _create_white_texture() -> ImageTexture:
 func _spawn_shell_casing() -> void:
 	if not stats or not stats.shell_casing_scene:
 		return
-	
+
 	var casing := stats.shell_casing_scene.instantiate()
 	get_tree().current_scene.add_child(casing)
 	casing.global_position = global_position
@@ -515,7 +516,10 @@ func _update_reload_state(delta: float) -> void:
 
 	_reload_elapsed += delta
 
-	if _weapon_state == WeaponState.RELOADING_PRE_CHECKPOINT and _reload_elapsed >= _get_checkpoint_elapsed():
+	if (
+		_weapon_state == WeaponState.RELOADING_PRE_CHECKPOINT
+		and _reload_elapsed >= _get_checkpoint_elapsed()
+	):
 		_checkpoint_reached = true
 		_set_weapon_state(WeaponState.RELOADING_POST_CHECKPOINT)
 

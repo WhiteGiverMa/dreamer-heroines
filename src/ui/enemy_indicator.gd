@@ -39,6 +39,7 @@ var _rescan_elapsed: float = 0.0
 # Lifecycle
 # ============================================
 
+
 func _ready() -> void:
 	_wave_spawner = _find_wave_spawner()
 	if _wave_spawner and not _wave_spawner.enemy_spawned.is_connected(_on_enemy_spawned):

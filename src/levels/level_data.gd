@@ -5,13 +5,9 @@ extends Resource
 # 存储关卡的静态配置数据
 
 enum ObjectiveType {
-	ELIMINATE_ALL,      # 消灭所有敌人
-	SURVIVE_TIME,       # 存活一定时间
-	REACH_LOCATION,     # 到达指定地点
-	DEFEND_OBJECT,      # 保护目标
-	COLLECT_ITEMS,      # 收集物品
-	BOSS_FIGHT          # Boss战
+	ELIMINATE_ALL, SURVIVE_TIME, REACH_LOCATION, DEFEND_OBJECT, COLLECT_ITEMS, BOSS_FIGHT  # 消灭所有敌人  # 存活一定时间  # 到达指定地点  # 保护目标  # 收集物品  # Boss战
 }
+
 
 # 目标数据
 class ObjectiveData:
@@ -21,6 +17,7 @@ class ObjectiveData:
 	var target_id: String = ""
 	var description: String = ""
 	var is_completed: bool = false
+
 
 # 敌人生成组
 class EnemySpawnGroup:
@@ -32,6 +29,7 @@ class EnemySpawnGroup:
 	var spawn_delay: float = 0.0
 	var is_boss: bool = false
 
+
 # 检查点数据
 class CheckpointData:
 	extends Resource
@@ -39,6 +37,7 @@ class CheckpointData:
 	var position: Vector2 = Vector2.ZERO
 	var is_unlocked: bool = false
 	var unlock_condition: String = ""  # 解锁条件描述
+
 
 @export_group("Level Info")
 @export var level_id: String = ""
@@ -68,8 +67,10 @@ class CheckpointData:
 @export var enemy_spawn_groups: Array[EnemySpawnGroup] = []
 @export var checkpoints: Array[CheckpointData] = []
 
+
 func _init() -> void:
 	resource_name = "LevelData"
+
 
 func get_objective_description() -> String:
 	match primary_objective:
@@ -88,6 +89,7 @@ func get_objective_description() -> String:
 		_:
 			return "完成目标"
 
+
 func get_formatted_time_limit() -> String:
 	if time_limit <= 0:
 		return "无限制"
@@ -95,6 +97,7 @@ func get_formatted_time_limit() -> String:
 	var minutes := int(time_limit) / 60
 	var seconds := int(time_limit) % 60
 	return "%02d:%02d" % [minutes, seconds]
+
 
 func create_default_checkpoints() -> void:
 	checkpoints.clear()
@@ -104,11 +107,13 @@ func create_default_checkpoints() -> void:
 	cp.is_unlocked = true
 	checkpoints.append(cp)
 
+
 func get_starting_checkpoint() -> CheckpointData:
 	for cp in checkpoints:
 		if cp.is_unlocked:
 			return cp
 	return null
+
 
 func unlock_checkpoint(checkpoint_id: String) -> bool:
 	for cp in checkpoints:

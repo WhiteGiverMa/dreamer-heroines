@@ -4,6 +4,7 @@ extends SupplyCrate
 ## AmmoCrate - 玩家专用弹药补给箱
 ## 只允许玩家拾取，填充当前武器弹药
 
+
 func _ready() -> void:
 	super._ready()
 	allowed_teams = [&"player"]

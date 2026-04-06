@@ -6,8 +6,8 @@ extends PanelContainer
 ## 用于加载游戏菜单
 
 # 信号
-signal slot_clicked(slot_index: int)      # 点击槽位主区域时触发
-signal load_requested(slot_index: int)    # 点击加载按钮时触发
+signal slot_clicked(slot_index: int)  # 点击槽位主区域时触发
+signal load_requested(slot_index: int)  # 点击加载按钮时触发
 signal delete_requested(slot_index: int)  # 点击删除按钮时触发
 
 # 公共属性
@@ -36,10 +36,10 @@ func _ready() -> void:
 		_delete_button.pressed.connect(_on_delete_button_pressed)
 	if LocalizationManager:
 		LocalizationManager.locale_changed.connect(_on_locale_changed)
-	
+
 	# 连接面板点击信号 (通过 gui_input)
 	gui_input.connect(_on_gui_input)
-	
+
 	# 初始化为空状态
 	_set_empty_state()
 
@@ -48,7 +48,7 @@ func _ready() -> void:
 ## summary 格式: {slot_index, has_save, level_name, save_time, play_time}
 func setup(summary: Dictionary, index: int) -> void:
 	slot_index = index
-	
+
 	if summary.get("has_save", false):
 		is_occupied = true
 		_set_occupied_state(summary)
@@ -68,26 +68,28 @@ func _set_empty_state() -> void:
 	# 虚线边框效果（通过较暗的边框模拟）
 	style.border_color = Color(0.25, 0.25, 0.3)
 	add_theme_stylebox_override("panel", style)
-	
+
 	# 槽位编号
 	if _slot_number_label:
-		_slot_number_label.text = LocalizationManager.call("tr", "ui.save_slot.slot_number", {"slot": slot_index + 1})
+		_slot_number_label.text = LocalizationManager.call(
+			"tr", "ui.save_slot.slot_number", {"slot": slot_index + 1}
+		)
 		_slot_number_label.add_theme_color_override("font_color", EMPTY_TEXT_COLOR)
-	
+
 	# 关卡名称
 	if _level_label:
 		_level_label.text = LocalizationManager.tr("ui.save_slot.empty")
 		_level_label.add_theme_color_override("font_color", EMPTY_TEXT_COLOR)
-	
+
 	# 时间标签隐藏
 	if _time_label:
 		_time_label.visible = false
-	
+
 	# 加载按钮
 	if _load_button:
 		_load_button.text = LocalizationManager.tr("ui.save_slot.button.start_game")
 		_load_button.disabled = false
-	
+
 	# 删除按钮隐藏
 	if _delete_button:
 		_delete_button.visible = false
@@ -102,31 +104,37 @@ func _set_occupied_state(summary: Dictionary) -> void:
 	style.set_border_width_all(1)
 	style.set_corner_radius_all(4)
 	add_theme_stylebox_override("panel", style)
-	
+
 	# 槽位编号
 	if _slot_number_label:
-		_slot_number_label.text = LocalizationManager.call("tr", "ui.save_slot.slot_number", {"slot": slot_index + 1})
+		_slot_number_label.text = LocalizationManager.call(
+			"tr", "ui.save_slot.slot_number", {"slot": slot_index + 1}
+		)
 		_slot_number_label.add_theme_color_override("font_color", OCCUPIED_TEXT_COLOR)
-	
+
 	# 关卡名称
 	if _level_label:
-		var level_name = summary.get("level_name", LocalizationManager.tr("ui.save_slot.unknown_level"))
+		var level_name = summary.get(
+			"level_name", LocalizationManager.tr("ui.save_slot.unknown_level")
+		)
 		_level_label.text = level_name
 		_level_label.add_theme_color_override("font_color", OCCUPIED_TEXT_COLOR)
-	
+
 	# 时间标签显示
 	if _time_label:
 		_time_label.visible = true
 		var play_time_seconds = summary.get("play_time", 0)
 		var formatted_time = _format_play_time(play_time_seconds)
-		_time_label.text = LocalizationManager.call("tr", "ui.save_slot.play_time", {"time": formatted_time})
+		_time_label.text = LocalizationManager.call(
+			"tr", "ui.save_slot.play_time", {"time": formatted_time}
+		)
 		_time_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	
+
 	# 加载按钮
 	if _load_button:
 		_load_button.text = LocalizationManager.tr("ui.save_slot.button.load")
 		_load_button.disabled = false
-	
+
 	# 删除按钮显示
 	if _delete_button:
 		_delete_button.visible = true
@@ -138,17 +146,21 @@ func _set_occupied_state(summary: Dictionary) -> void:
 func _format_play_time(seconds: int) -> String:
 	if seconds <= 0:
 		return LocalizationManager.call("tr", "ui.save_slot.time.minutes", {"minutes": 0})
-	
+
 	@warning_ignore("integer_division")
 	var hours: int = seconds / 3600
 	@warning_ignore("integer_division")
 	var minutes: int = (seconds % 3600) / 60
 	var secs: int = seconds % 60
-	
+
 	if hours > 0:
-		return LocalizationManager.call("tr", "ui.save_slot.time.hours_minutes", {"hours": hours, "minutes": minutes})
+		return LocalizationManager.call(
+			"tr", "ui.save_slot.time.hours_minutes", {"hours": hours, "minutes": minutes}
+		)
 	elif minutes > 0:
-		return LocalizationManager.call("tr", "ui.save_slot.time.minutes_seconds", {"minutes": minutes, "seconds": secs})
+		return LocalizationManager.call(
+			"tr", "ui.save_slot.time.minutes_seconds", {"minutes": minutes, "seconds": secs}
+		)
 	else:
 		return LocalizationManager.call("tr", "ui.save_slot.time.seconds", {"seconds": secs})
 
@@ -178,11 +190,18 @@ func _on_gui_input(event: InputEvent) -> void:
 			# 检查点击是否在按钮区域外
 			var in_load_button := false
 			var in_delete_button := false
-			
-			if _load_button and _load_button.get_global_rect().has_point(get_global_mouse_position()):
+
+			if (
+				_load_button
+				and _load_button.get_global_rect().has_point(get_global_mouse_position())
+			):
 				in_load_button = true
-			if _delete_button and _delete_button.visible and _delete_button.get_global_rect().has_point(get_global_mouse_position()):
+			if (
+				_delete_button
+				and _delete_button.visible
+				and _delete_button.get_global_rect().has_point(get_global_mouse_position())
+			):
 				in_delete_button = true
-			
+
 			if not in_load_button and not in_delete_button:
 				slot_clicked.emit(slot_index)

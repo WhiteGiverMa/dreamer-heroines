@@ -67,21 +67,14 @@ func _compute_position(target_rect: Rect2, tooltip_size: Vector2, viewport_rect:
 	)
 
 	if top_position.y >= viewport_top:
-		return Vector2(
-			clamp(top_position.x, viewport_left, max_x),
-			top_position.y
-		)
+		return Vector2(clamp(top_position.x, viewport_left, max_x), top_position.y)
 
 	var bottom_position := Vector2(
-		target_rect.position.x + (target_rect.size.x - tooltip_size.x) / 2.0,
-		target_rect.end.y
+		target_rect.position.x + (target_rect.size.x - tooltip_size.x) / 2.0, target_rect.end.y
 	)
 
 	if bottom_position.y + tooltip_size.y <= viewport_bottom:
-		return Vector2(
-			clamp(bottom_position.x, viewport_left, max_x),
-			bottom_position.y
-		)
+		return Vector2(clamp(bottom_position.x, viewport_left, max_x), bottom_position.y)
 
 	var clamped_x: float = clamp(top_position.x, viewport_left, max_x)
 
