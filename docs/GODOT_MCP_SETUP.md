@@ -2,12 +2,17 @@
 
 ## 概述
 
-本项目已配置 [Godot MCP](https://github.com/tugcantopaloglu/godot-mcp) - 一个 Model Context Protocol (MCP) 服务器，提供 149+ 个工具用于 AI 驱动的 Godot 游戏开发。
+本项目已配置 Godot MCP。当前实际使用的是统一 fork：
+
+- Fork 仓库：`https://github.com/WhiteGiverMa/godot-mcp-full-control-adaptive`
+- 本地工作目录：`G:\dev\godot-mcp-fc-a`
+
+项目中的 `addons/godot_mcp/` 运行时脚本通过 **vendor** 方式从该 fork 的 `build/scripts/` 同步。
 
 ## 安装状态
 
 ✅ **已完成配置**:
-1. Godot MCP 服务器已安装到 `~/godot-mcp`
+1. Godot MCP fork 已安装到 `G:\dev\godot-mcp-fc-a`
 2. Godot MCP 插件已安装到 `addons/godot_mcp/`
 3. MCP 配置已添加到 `~/.config/opencode/opencode.json`
 4. 项目已启用 Godot MCP 插件
@@ -83,7 +88,7 @@ godot --editor --path .
       "type": "local",
       "command": [
         "node",
-        "C:/Users/A1337/godot-mcp/build/index.js"
+        "G:/dev/godot-mcp-fc-a/build/index.js"
       ],
       "environment": {
         "GODOT_PATH": "G:\\dev\\Godot_v4.6.1\\godot.bat",
@@ -105,7 +110,7 @@ name="Godot MCP"
 description="Model Context Protocol (MCP) server integration for Godot 4.x"
 author="tugcantopaloglu"
 version="2.0.0"
-script="mcp_interaction_server.gd"
+script="mcp_editor_plugin.gd"
 ```
 
 ## 故障排除
@@ -118,12 +123,22 @@ script="mcp_interaction_server.gd"
 - 检查插件是否已启用
 - 查看 Godot 输出面板是否有错误信息
 
+### 同步 addon 脚本
+
+当 fork 更新后，从 fork 仓库执行：
+
+```powershell
+cd G:\dev\godot-mcp-fc-a
+.\scripts\sync-downstream.ps1
+```
+
 ### 端口冲突
 - 插件默认使用端口 9090
-- 如需更改，修改 `mcp_interaction_server.gd` 中的 `PORT` 常量
+- 项目通过 `config/mcp_server.json` 配置端口与回退策略，不再建议在项目内手改运行时脚本常量
 
 ## 参考链接
 
-- [Godot MCP GitHub](https://github.com/tugcantopaloglu/godot-mcp)
+- [当前 fork](https://github.com/WhiteGiverMa/godot-mcp-full-control-adaptive)
+- [上游增强版](https://github.com/tugcantopaloglu/godot-mcp)
 - [MCP 协议文档](https://modelcontextprotocol.io/introduction)
 - [Godot 4.6 文档](https://docs.godotengine.org/en/4.6/)

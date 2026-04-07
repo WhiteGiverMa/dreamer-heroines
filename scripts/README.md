@@ -10,7 +10,7 @@
 | `format.sh` | Linux/macOS 代码格式化（GDScript + C#） |
 | `fix-trailing-whitespace.ps1` | 检测并修复 Git 暂存区的尾随空格 |
 | `git-wrapper.ps1` | Git 命令包装器，阻止绕过 pre-commit hooks |
-| `start-godot-mcp.ps1` | 启动 Godot 编辑器并启用 MCP 调试 |
+| `start-godot-mcp.ps1` | 启动 Godot 编辑器并启用 MCP 调试（运行时脚本来自统一 fork vendor） |
 
 ## 使用示例
 

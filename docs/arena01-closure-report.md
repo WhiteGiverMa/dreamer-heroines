@@ -102,7 +102,7 @@
 
 ## 已知限制
 
-1. **MCP 运行时调试限制**: 缺少 `mcp_interaction_server.gd`，无法使用 `godot-mcp_game_*` 工具
+1. **MCP 运行时调试限制**: 当时测试环境缺少已挂载的 `McpInteractionServer` autoload，无法使用 `godot-mcp_game_*` 工具
 2. **HUD 未实例化**: test_level 场景未加载 HUD，需从主菜单进入验证完整 UI
 3. **箭头运行时验证**: 待 MCP server 修复后补充动态测试
 
@@ -111,7 +111,7 @@
 ## 后续建议
 
 ### 高优先级
-1. 创建 `res://mcp_interaction_server.gd` 自动加载脚本
+1. 确认 `addons/godot_mcp/mcp_interaction_server.gd` 已通过 `project.godot` 自动加载
 2. 补充箭头链路运行时验证
 3. 完整 HUD 集成测试
 

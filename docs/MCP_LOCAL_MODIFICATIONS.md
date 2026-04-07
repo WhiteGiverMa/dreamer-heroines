@@ -1,19 +1,26 @@
 # godot-mcp 本地修改记录
 
-> **修改日期**: 2025-03-22
-> **源码位置**: `C:\Users\A1337\godot-mcp\src\index.ts`
-> **目的**: 修复 JSON Schema 验证错误，使 MCP 工具能正常使用
+> **最近更新**: 2026-04-07
+> **当前源码位置**: `G:\dev\godot-mcp-fc-a`
+> **目的**: 记录 MCP fork 的历史本地修改与当前维护方式
 
 ## 仓库说明
 
-当前使用的是 [tugcantopaloglu/godot-mcp](https://github.com/tugcantopaloglu/godot-mcp)，这是 [Coding-Solo/godot-mcp](https://github.com/Coding-Solo/godot-mcp) (2.4k stars) 的**增强版 fork**：
+当前统一维护的仓库是：
+
+- **上游增强版**: [tugcantopaloglu/godot-mcp](https://github.com/tugcantopaloglu/godot-mcp)
+- **当前团队 fork**: [WhiteGiverMa/godot-mcp-full-control-adaptive](https://github.com/WhiteGiverMa/godot-mcp-full-control-adaptive)
+- **本地工作目录**: `G:\dev\godot-mcp-fc-a`
+
+本项目中的 `addons/godot_mcp/` 运行时脚本采用 **vendor** 方式同步自该 fork 的 `build/scripts/` 产物，而不是继续在项目内长期分叉维护。
+
+参考版本关系：
 
 | 版本 | 工具数量 | 说明 |
 |------|---------|------|
 | Coding-Solo/godot-mcp | 20 | 原版 |
-| tugcantopaloglu/godot-mcp | **149** | 增强版，扩展了运行时代码执行、节点操作、网络、3D/2D 渲染等 |
-
-**个人 Fork**: [WhiteGiverMa/godot-mcp-whitegiver-adapted](https://github.com/WhiteGiverMa/godot-mcp-whitegiver-adapted)
+| tugcantopaloglu/godot-mcp | **149+** | 增强版，扩展了运行时代码执行、节点操作、网络、3D/2D 渲染等 |
+| WhiteGiverMa/godot-mcp-full-control-adaptive | 基于上游增强版 | 当前使用 fork，追加 GUIDE 兼容与下游同步流程 |
 
 **端口配置**: MCP 交互服务器使用端口 **9090** (默认)
 
@@ -280,9 +287,40 @@ methods: {
 
 ---
 
-## 更新方法
+## 当前维护方式
 
-如果上游更新，执行以下步骤保留本地修改：
+### fork 开发
+
+在以下仓库中修改源码：
+
+```powershell
+cd G:\dev\godot-mcp-fc-a
+npm run build
+npm test
+```
+
+### 下游同步
+
+使用 fork 仓库中的同步脚本，将 `build/scripts/*.gd` vendor 到项目：
+
+```powershell
+cd G:\dev\godot-mcp-fc-a
+.\scripts\sync-downstream.ps1
+```
+
+### 项目内保留文件
+
+下列内容保留在项目中本地维护，不随 fork 整目录覆盖：
+
+- `addons/godot_mcp/plugin.cfg`
+- `addons/godot_mcp/mcp_editor_plugin.gd`
+- `addons/godot_mcp/README.md`
+- `config/mcp_server.json`
+- `src/autoload/project_mcp_commands.gd`
+
+## 历史更新方法（归档）
+
+以下流程是旧阶段保留的历史记录，对应当时手动维护的旧本地仓库（**现已废弃**）：
 
 ```bash
 cd C:\Users\A1337\godot-mcp
@@ -302,3 +340,5 @@ git push myfork local-schema-fixes
 # 4. 重新构建
 npm run build
 ```
+
+当前请优先参考 fork 仓库中的 `docs/upstream-sync.md`。
