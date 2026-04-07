@@ -9,128 +9,21 @@ var _client: StreamPeerTCP
 var _buffer: String = ""
 var _busy: bool = false
 var _busy_since: float = 0.0
-const DEFAULT_PORT: int = 9090
-const DEFAULT_HOST: String = "127.0.0.1"
-const DEFAULT_MAX_PORT_TRIES: int = 20
-const CONFIG_PATH: String = "res://config/mcp_server.json"
-const RUNTIME_INFO_PATH: String = "user://mcp_server_runtime.json"
+const PORT: int = 9090
 const BUSY_TIMEOUT: float = 30.0
 var _key_map: Dictionary
 var _held_keys: Dictionary = {}
-var _listen_host: String = DEFAULT_HOST
-var _listen_port: int = DEFAULT_PORT
-var _allow_port_fallback: bool = true
-var _max_port_tries: int = DEFAULT_MAX_PORT_TRIES
-var _headless_server_enabled: bool = false
-
-
-func _should_start_in_headless() -> bool:
-	if OS.has_environment("MCP_SERVER_ENABLE_IN_HEADLESS"):
-		var raw_value := OS.get_environment("MCP_SERVER_ENABLE_IN_HEADLESS").strip_edges().to_lower()
-		return raw_value in ["1", "true", "yes", "on"]
-	return false
 
 func _ready() -> void:
-	_headless_server_enabled = _should_start_in_headless()
-	if DisplayServer.get_name() == "headless" and not _headless_server_enabled:
-		_write_runtime_info(true)
-		print("McpInteractionServer: Skipped startup in headless mode")
-		return
-
 	# Ensure MCP server keeps processing even when game is paused
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_init_key_map()
-	_load_server_config()
 	_server = TCPServer.new()
-	var err: int = _listen_with_fallback()
+	var err: int = _server.listen(PORT, "127.0.0.1")
 	if err != OK:
-		push_error("McpInteractionServer: Failed to listen on %s, start_port=%d, max_port_tries=%d, error=%d" % [_listen_host, _listen_port, _max_port_tries, err])
+		push_error("McpInteractionServer: Failed to listen on port %d, error: %d" % [PORT, err])
 		return
-	print("McpInteractionServer: Listening on %s:%d" % [_listen_host, _listen_port])
-	# Machine-readable marker for external MCP clients/wrappers.
-	print("MCP_SERVER_ENDPOINT %s %d" % [_listen_host, _listen_port])
-	_write_runtime_info()
-
-
-func _load_server_config() -> void:
-	var config: Dictionary = {}
-	if FileAccess.file_exists(CONFIG_PATH):
-		var file: FileAccess = FileAccess.open(CONFIG_PATH, FileAccess.READ)
-		if file != null:
-			var text: String = file.get_as_text()
-			var json: JSON = JSON.new()
-			if json.parse(text) == OK and json.data is Dictionary:
-				config = json.data
-			else:
-				push_warning("McpInteractionServer: Invalid config JSON at %s, using defaults" % CONFIG_PATH)
-
-	_listen_host = str(config.get("host", DEFAULT_HOST))
-	if _listen_host.is_empty():
-		_listen_host = DEFAULT_HOST
-
-	_listen_port = clampi(int(config.get("port", DEFAULT_PORT)), 1, 65535)
-	_allow_port_fallback = bool(config.get("allow_port_fallback", true))
-	_max_port_tries = max(1, int(config.get("max_port_tries", DEFAULT_MAX_PORT_TRIES)))
-
-	# Optional environment overrides for local debugging/CI
-	if OS.has_environment("MCP_SERVER_HOST"):
-		var env_host: String = OS.get_environment("MCP_SERVER_HOST").strip_edges()
-		if not env_host.is_empty():
-			_listen_host = env_host
-
-	if OS.has_environment("MCP_SERVER_PORT"):
-		var env_port: int = int(OS.get_environment("MCP_SERVER_PORT"))
-		if env_port >= 1 and env_port <= 65535:
-			_listen_port = env_port
-
-	if OS.has_environment("MCP_SERVER_ALLOW_FALLBACK"):
-		var env_fallback: String = OS.get_environment("MCP_SERVER_ALLOW_FALLBACK").to_lower()
-		_allow_port_fallback = env_fallback in ["1", "true", "yes", "on"]
-
-	if OS.has_environment("MCP_SERVER_MAX_PORT_TRIES"):
-		var env_max_tries: int = int(OS.get_environment("MCP_SERVER_MAX_PORT_TRIES"))
-		if env_max_tries > 0:
-			_max_port_tries = env_max_tries
-
-
-func _listen_with_fallback() -> int:
-	var start_port: int = _listen_port
-	var attempts: int = 1
-	if _allow_port_fallback:
-		attempts = _max_port_tries
-
-	var last_err: int = ERR_UNAVAILABLE
-	for offset in range(attempts):
-		var port: int = start_port + offset
-		if port > 65535:
-			break
-		var err: int = _server.listen(port, _listen_host)
-		if err == OK:
-			if port != start_port:
-				push_warning("McpInteractionServer: Port %d busy, fallback to %d" % [start_port, port])
-			_listen_port = port
-			return OK
-		last_err = err
-		if err != ERR_ALREADY_IN_USE:
-			break
-
-	return last_err
-
-
-func _write_runtime_info(is_stopped: bool = false) -> void:
-	var payload: Dictionary = {
-		"host": _listen_host,
-		"port": _listen_port,
-		"stopped": is_stopped,
-		"timestamp_unix": Time.get_unix_time_from_system()
-	}
-
-	var file: FileAccess = FileAccess.open(RUNTIME_INFO_PATH, FileAccess.WRITE)
-	if file == null:
-		push_warning("McpInteractionServer: Failed to write runtime info at %s" % RUNTIME_INFO_PATH)
-		return
-
-	file.store_string(JSON.stringify(payload))
+	print("McpInteractionServer: Listening on 127.0.0.1:%d" % PORT)
 
 
 func _process(_delta: float) -> void:
@@ -430,8 +323,6 @@ func _handle_command(json_str: String) -> void:
 		"resource":
 			_cmd_resource(params)
 		_:
-			if _try_project_command(command, params):
-				return
 			_send_response({"error": "Unknown command: %s" % command})
 
 
@@ -1346,6 +1237,18 @@ func _cmd_key_hold(params: Dictionary) -> void:
 	var key: String = params.get("key", "")
 
 	if action.length() > 0:
+		var guide_binding := _resolve_guide_binding_for_action(action)
+		if not guide_binding.is_empty():
+			_inject_guide_binding_event(guide_binding, true)
+			_held_keys["guide_action:" + action] = guide_binding
+			_send_response({
+				"success": true,
+				"held": action,
+				"type": "guide_action",
+				"binding": guide_binding,
+			})
+			return
+
 		Input.action_press(action)
 		_held_keys["action:" + action] = true
 		_send_response({"success": true, "held": action, "type": "action"})
@@ -1374,6 +1277,19 @@ func _cmd_key_release(params: Dictionary) -> void:
 	var key: String = params.get("key", "")
 
 	if action.length() > 0:
+		var guide_hold_key := "guide_action:" + action
+		if _held_keys.has(guide_hold_key):
+			var guide_binding: Dictionary = _held_keys[guide_hold_key]
+			_inject_guide_binding_event(guide_binding, false)
+			_held_keys.erase(guide_hold_key)
+			_send_response({
+				"success": true,
+				"released": action,
+				"type": "guide_action",
+				"binding": guide_binding,
+			})
+			return
+
 		Input.action_release(action)
 		_held_keys.erase("action:" + action)
 		_send_response({"success": true, "released": action, "type": "action"})
@@ -1394,6 +1310,88 @@ func _cmd_key_release(params: Dictionary) -> void:
 		return
 
 	_send_response({"error": "Must provide 'key' or 'action' parameter"})
+
+
+func _resolve_guide_binding_for_action(action_name: String) -> Dictionary:
+	var guide := get_node_or_null("/root/GUIDE")
+	if guide == null or not guide.has_method("get_enabled_mapping_contexts"):
+		return {}
+
+	var contexts: Array = guide.get_enabled_mapping_contexts()
+	for context in contexts:
+		if not is_instance_valid(context):
+			continue
+		for action_mapping in context.mappings:
+			if action_mapping == null or action_mapping.action == null:
+				continue
+			if String(action_mapping.action.name) != action_name:
+				continue
+
+			var binding := _resolve_supported_binding_from_action_mapping(action_mapping)
+			if not binding.is_empty():
+				return binding
+
+	return {}
+
+
+func _resolve_supported_binding_from_action_mapping(action_mapping) -> Dictionary:
+	for input_mapping in action_mapping.input_mappings:
+		if input_mapping == null or input_mapping.input == null:
+			continue
+
+		var input = input_mapping.input
+		if input is GUIDEInputKey:
+			return {
+				"kind": "key",
+				"keycode": int(input.key),
+				"physical_keycode": int(input.key),
+				"shift": input.shift,
+				"ctrl": input.control,
+				"alt": input.alt,
+				"meta": input.meta,
+			}
+		if input is GUIDEInputMouseButton:
+			return {
+				"kind": "mouse_button",
+				"button_index": int(input.button),
+			}
+		if input is GUIDEInputJoyButton:
+			return {
+				"kind": "joy_button",
+				"button_index": int(input.button),
+				"device": int(input.joy_index),
+			}
+
+	return {}
+
+
+func _inject_guide_binding_event(binding: Dictionary, pressed: bool) -> void:
+	match String(binding.get("kind", "")):
+		"key":
+			var key_event := InputEventKey.new()
+			key_event.keycode = int(binding.get("keycode", KEY_NONE)) as Key
+			key_event.physical_keycode = int(binding.get("physical_keycode", key_event.keycode)) as Key
+			key_event.shift_pressed = bool(binding.get("shift", false))
+			key_event.ctrl_pressed = bool(binding.get("ctrl", false))
+			key_event.alt_pressed = bool(binding.get("alt", false))
+			key_event.meta_pressed = bool(binding.get("meta", false))
+			key_event.pressed = pressed
+			Input.parse_input_event(key_event)
+		"mouse_button":
+			var mouse_event := InputEventMouseButton.new()
+			var mouse_pos := get_viewport().get_mouse_position()
+			mouse_event.position = mouse_pos
+			mouse_event.global_position = mouse_pos
+			mouse_event.button_index = int(binding.get("button_index", MOUSE_BUTTON_LEFT)) as MouseButton
+			mouse_event.pressed = pressed
+			Input.parse_input_event(mouse_event)
+		"joy_button":
+			var joy_event := InputEventJoypadButton.new()
+			joy_event.device = int(binding.get("device", 0))
+			joy_event.button_index = int(binding.get("button_index", JOY_BUTTON_A)) as JoyButton
+			joy_event.pressed = pressed
+			joy_event.pressure = 1.0 if pressed else 0.0
+			Input.parse_input_event(joy_event)
 
 
 # --- Scroll ---
@@ -4516,22 +4514,6 @@ func _cmd_resource(params: Dictionary) -> void:
 			_send_response({"error": "Unknown resource action: %s" % action})
 
 
-func _try_project_command(command: String, params: Dictionary) -> bool:
-	var project_commands: Node = get_tree().root.get_node_or_null("ProjectMcpCommands")
-	if project_commands == null:
-		return false
-	if not project_commands.has_method("can_handle_command") or not project_commands.has_method("handle_command"):
-		return false
-	if not bool(project_commands.call("can_handle_command", command)):
-		return false
-	var result: Variant = project_commands.call("handle_command", command, params)
-	if result is Dictionary:
-		_send_response(result)
-	else:
-		_send_response({"success": false, "error": "Project command returned invalid response: %s" % command})
-	return true
-
-
 func _exit_tree() -> void:
 	_clear_debug_draw()
 	if _websocket != null:
@@ -4540,8 +4522,7 @@ func _exit_tree() -> void:
 	if _client != null:
 		_client.disconnect_from_host()
 		_client = null
-	if _server != null and _server.is_listening():
+	if _server != null:
 		_server.stop()
-	_server = null
-	_write_runtime_info(true)
+		_server = null
 	print("McpInteractionServer: Stopped")
