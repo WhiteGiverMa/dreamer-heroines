@@ -1,6 +1,8 @@
 class_name HealthComponent
 extends Node
 
+const DamageDataClass = preload("res://src/utils/damage_data.gd")
+
 # HealthComponent - 生命值组件
 # 可复用的生命值管理系统
 
@@ -41,7 +43,11 @@ func _ready():
 		parent_node = get_parent()
 
 
-func take_damage(amount: int, source: Node = null) -> void:
+func apply_damage(damage_data: DamageDataClass) -> void:
+	if damage_data == null:
+		return
+
+	var amount := damage_data.amount
 	if is_invulnerable or is_dead or amount <= 0:
 		return
 
@@ -50,13 +56,17 @@ func take_damage(amount: int, source: Node = null) -> void:
 	var actual_damage = previous_health - current_health
 
 	health_changed.emit(current_health, max_health, -actual_damage)
-	damage_taken.emit(actual_damage, source)
+	damage_taken.emit(actual_damage, damage_data.source)
 
 	if invulnerability_duration > 0:
 		start_invulnerability()
 
 	if current_health <= 0:
 		_die()
+
+
+func take_damage(amount: int, source: Node = null) -> void:
+	apply_damage(DamageDataClass.new(amount, Vector2.ZERO, source, source))
 
 
 func heal(amount: int) -> void:

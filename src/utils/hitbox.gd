@@ -1,6 +1,11 @@
 class_name Hitbox
 extends Area2D
 
+const DamageDataClass = preload("res://src/utils/damage_data.gd")
+const DamageSystemClass = preload("res://src/utils/damage_system.gd")
+
+var _damage_system: Variant = DamageSystemClass.new()
+
 # Hitbox - 攻击判定框
 # 用于检测攻击命中
 
@@ -93,7 +98,14 @@ func _try_hit_hurtbox(hurtbox: Hurtbox) -> void:
 			)
 			knockback_dir = knockback_dir.normalized()
 
-		hurtbox.take_damage(damage, knockback_dir * knockback_force, self)
+		var source_node := get_parent() if get_parent() is Node else null
+		var damage_data := DamageDataClass.new(
+			damage,
+			knockback_dir * knockback_force,
+			source_node,
+			self
+		)
+		_damage_system.call("apply_damage", hurtbox, damage_data)
 		hit_hurtbox.emit(hurtbox, damage)
 
 		if damage_cooldown > 0:
