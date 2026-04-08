@@ -1,6 +1,11 @@
 class_name Projectile
 extends Area2D
 
+const DamageDataClass = preload("res://src/utils/damage_data.gd")
+const DamageSystemClass = preload("res://src/utils/damage_system.gd")
+
+var _damage_system: Variant = DamageSystemClass.new()
+
 # Projectile - 投射物基类
 # 子弹、火箭等飞行物的基础实现
 
@@ -158,14 +163,18 @@ func _physics_process(delta: float) -> void:
 	position += velocity * delta
 
 
-func _is_valid_target(body: Node2D) -> bool:
+func _is_valid_target(body: Node) -> bool:
 	"""Check if body is a valid target based on faction."""
 	var target_type := Faction.get_target_type(faction_type)
+	var target_node: Node = body
+
+	if body is Hurtbox and body.get_parent() != null:
+		target_node = body.get_parent()
 
 	if target_type == Faction.Type.PLAYER:
-		return body.is_in_group("player")
+		return target_node.is_in_group("player")
 	if target_type == Faction.Type.ENEMY:
-		return body.is_in_group("enemy")
+		return target_node.is_in_group("enemy")
 	return false
 
 
@@ -202,11 +211,13 @@ func _on_area_entered(area: Area2D) -> void:
 
 
 func _deal_damage(target) -> void:
-	if target.has_method("take_damage"):
-		target.take_damage(damage, velocity.normalized() * 100)
+	var knockback := velocity.normalized() * 100 if velocity.length() > 0.0 else Vector2.ZERO
+	var damage_data := DamageDataClass.new(damage, knockback, owner_node, self)
+	var damage_applied: bool = bool(_damage_system.call("apply_damage", target, damage_data))
 
 	# 创建命中特效
-	_spawn_hit_effect()
+	if damage_applied:
+		_spawn_hit_effect()
 
 
 func _impact() -> void:
@@ -232,14 +243,14 @@ func _explode() -> void:
 	var results = space_state.intersect_shape(query)
 
 	for result in results:
-		var body = result.collider
-		if body.has_method("take_damage"):
+		var body := result.collider as Node2D
+		if body != null:
 			var distance = global_position.distance_to(body.global_position)
 			var damage_factor = 1.0 - (distance / explosion_radius)
 			var final_damage = int(explosion_damage * damage_factor)
-			body.take_damage(
-				final_damage, (body.global_position - global_position).normalized() * 200
-			)
+			var knockback: Vector2 = (body.global_position - global_position).normalized() * 200
+			var damage_data := DamageDataClass.new(final_damage, knockback, owner_node, self)
+			_damage_system.call("apply_damage", body, damage_data)
 
 
 func _spawn_hit_effect() -> void:
