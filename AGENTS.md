@@ -1,6 +1,6 @@
-﻿# AGENTS.md - DreamerHeroines 执行手册
+﻿# AGENTS.md - 逐梦少女 项目手册
 
-> 项目：DreamerHeroines / 逐梦少女
+> 项目：DreamerHeroines(DH) / 逐梦少女
 > 引擎：Godot 4.6.1
 > 架构：GDScript + C# 混用
 > 目标：让 Agent 快速找到入口、遵守约束、完成验证
