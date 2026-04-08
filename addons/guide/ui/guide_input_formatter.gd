@@ -49,7 +49,7 @@ static func _ensure_readiness() -> void:
 	if _icon_maker == null:
 		_icon_maker = preload("icon_maker/icon_maker.tscn").instantiate()
 		root.add_child.call_deferred(_icon_maker)
-	
+
 	add_icon_renderer(KeyRenderer.instantiate())
 	add_icon_renderer(MouseRenderer.instantiate())
 	add_icon_renderer(TouchRenderer.instantiate())
@@ -57,10 +57,10 @@ static func _ensure_readiness() -> void:
 	add_icon_renderer(JoyRenderer.instantiate())
 	add_icon_renderer(ControllerRenderer.instantiate())
 	add_icon_renderer(FallbackRenderer.instantiate())
-	
+
 	add_text_provider(DefaultTextProvider.new())
 	add_text_provider(ControllerTextProvider.new())
-	
+
 	_is_ready = true
 
 
@@ -269,10 +269,13 @@ func _materialize_action_input(action:GUIDEAction) -> MaterializedInput:
 				chord.parts.append(combo)
 			if combos.is_empty():
 				if input_mapping.input != null:
-					chord.parts.append(
-						_materialize_input(FormattingContext.for_action(input_mapping.input, input_mapping, action))
-					)					
-			result.parts.append(chord)
+					var additional_inputs := _materialize_input(FormattingContext.for_action(input_mapping.input, input_mapping, action))
+					# https://github.com/godotneers/G.U.I.D.E/issues/175
+					# additional inputs can be blank if they are filtered out. if they are blank
+					# we can discard the whole input mapping, as it could never trigger (we have a chorded action + no input)
+					if not additional_inputs.is_blank():
+						chord.parts.append(additional_inputs)
+						result.parts.append(chord)
 		else:
 			for combo in combos:
 				result.parts.append(combo)
@@ -282,7 +285,7 @@ func _materialize_action_input(action:GUIDEAction) -> MaterializedInput:
 						_materialize_input(FormattingContext.for_action(input_mapping.input, input_mapping, action))
 					)
 	return result
-	
+
 ## Materializes direct input.
 func _materialize_input(context:FormattingContext, materialize_actions:bool = true) -> MaterializedInput:
 	if context.input == null:
@@ -292,7 +295,7 @@ func _materialize_input(context:FormattingContext, materialize_actions:bool = tr
 	# if the formatting options exclude this input, return an empty input.
 	if not formatting_options.input_filter.call(context):
 		return MaterializedMixedInput.new()
-		
+
 	
 	# if its an action input, get its parts
 	if context.input is GUIDEInputAction:
@@ -325,34 +328,57 @@ func _materialize_input(context:FormattingContext, materialize_actions:bool = tr
 		if chord.parts.is_empty():
 			return MaterializedSimpleInput.new(context.input)
 			
-		chord.parts.append(MaterializedSimpleInput.new(context.input))	
+		chord.parts.append(MaterializedSimpleInput.new(context.input))
 		return chord
 
 	# everything else is just a simple input
 	return MaterializedSimpleInput.new(context.input)
-	
+
 	
 class MaterializedInput:
-	pass
+	func is_blank() -> bool:
+		return false
 	
 class MaterializedSimpleInput:
 	extends MaterializedInput
-	var input:GUIDEInput	
+	var input:GUIDEInput
 	
 	func _init(input:GUIDEInput):
 		self.input = input
-	
+
+	func _to_string() -> String:
+		return "MaterializedSimpleInput(%s)" % input
+
 class MaterializedMixedInput:
 	extends MaterializedInput
 	var parts:Array[MaterializedInput] = []
-	
+
+	func is_blank() -> bool:
+		return parts.is_empty()
+
+	func _to_string() -> String:
+		return "MaterializedMixedInput(%s)" % ", ".join(parts.map(func(it:MaterializedInput)->String: return it.to_string()))
+
 class MaterializedChordedInput:
 	extends MaterializedInput
 	var parts:Array[MaterializedInput] = []
-	
+
+	func is_blank() -> bool:
+		return parts.is_empty()
+
+	func _to_string() -> String:
+		return "MaterializedChordedInput(%s)" % ", ".join(parts.map(func(it:MaterializedInput)->String: return it.to_string()))
+
 class MaterializedComboInput:
 	extends MaterializedInput
 	var parts:Array[MaterializedInput] = []
+
+	func is_blank() -> bool:
+		return parts.is_empty()
+
+	func _to_string() -> String:
+		return "MaterializedComboInput(%s)" % ", ".join(parts.map(func(it:MaterializedInput)->String: return it.to_string()))
+
 
 ## A formatting context.
 class FormattingContext:

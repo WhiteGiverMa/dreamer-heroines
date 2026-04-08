@@ -17,13 +17,6 @@ static func _instrument(viewport:Viewport):
 func _unhandled_input(event:InputEvent):
 	GUIDE.inject_input(event)
 
-## ALSO catch input via _input as backup (some events may not reach _unhandled_input)
-func _input(event:InputEvent):
-	# Only process mouse button events that weren't handled elsewhere
-	if event is InputEventMouseButton:
-		# Forward to GUIDE directly (this ensures we get mouse events even if UI handles them)
-		GUIDE.inject_input(event)
-
 ## Some ... creative code ... to catch events from popup windows
 ## that are spawned by Godot's control nodes.
 func _control_focused(control:Control):
