@@ -177,8 +177,8 @@ func _perform_melee_attack() -> void:
 		# 计算击退方向
 		var knockback_dir = (player.global_position - global_position).normalized()
 		var knockback = knockback_dir * attack_knockback
-
-		player.take_damage(attack_damage, knockback)
+		var damage_data := DamageDataClass.new(attack_damage, knockback, self, self)
+		_damage_system.call("apply_damage", player, damage_data)
 
 		# 播放命中特效
 		_play_hit_effect()

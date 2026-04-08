@@ -1,6 +1,11 @@
 ﻿class_name EnemyBase
 extends CharacterBody2D
 
+const DamageDataClass = preload("res://src/utils/damage_data.gd")
+const DamageSystemClass = preload("res://src/utils/damage_system.gd")
+
+var _damage_system: Variant = DamageSystemClass.new()
+
 # EnemyBase - 敌人基类
 # 所有敌人的父类，实现基础AI和战斗逻辑
 
@@ -49,6 +54,9 @@ var current_weapon_index: int = 0
 @onready var attack_timer: Timer = $AttackTimer
 @onready var ground_check: RayCast2D = get_node_or_null("GroundCheck") as RayCast2D
 @onready var wall_check: RayCast2D = get_node_or_null("WallCheck") as RayCast2D
+@onready var health_component = get_node_or_null("HealthComponent")
+@onready var hurtbox = get_node_or_null("Hurtbox")
+@onready var hitbox = get_node_or_null("Hitbox")
 
 
 func _get_enemy_manager() -> Node:
@@ -56,7 +64,7 @@ func _get_enemy_manager() -> Node:
 
 func _ready():
 	add_to_group("enemy")
-	current_health = max_health
+	_setup_damage_pipeline()
 	patrol_start_position = global_position
 
 	# 注册到全局敌人管理器
@@ -76,6 +84,55 @@ func _ready():
 	_sync_detection_range_shape()
 
 	change_state(State.PATROL)
+
+
+func _setup_damage_pipeline() -> void:
+	if health_component:
+		health_component.max_health = max_health
+		health_component.invulnerability_duration = 0.0
+		health_component.set_health(max_health)
+		if not health_component.health_changed.is_connected(_on_health_component_changed):
+			health_component.health_changed.connect(_on_health_component_changed)
+		if not health_component.health_depleted.is_connected(_on_health_component_depleted):
+			health_component.health_depleted.connect(_on_health_component_depleted)
+		current_health = health_component.current_health
+	else:
+		current_health = max_health
+
+	if hurtbox:
+		hurtbox.health_component = health_component
+		hurtbox.invulnerability_duration = 0.1
+		if not hurtbox.damage_taken.is_connected(_on_hurtbox_damage_taken):
+			hurtbox.damage_taken.connect(_on_hurtbox_damage_taken)
+
+	if hitbox:
+		hitbox.damage = attack_damage
+
+
+func _on_health_component_changed(current: int, max_value: int, _change_amount: int) -> void:
+	current_health = current
+	max_health = max_value
+	health_changed.emit(current_health, max_health)
+
+
+func _on_health_component_depleted() -> void:
+	if current_state != State.DEAD:
+		change_state(State.DEAD)
+
+
+func _on_hurtbox_damage_taken(_amount: int, knockback: Vector2, _source: Node) -> void:
+	if current_state == State.DEAD:
+		return
+
+	velocity += knockback
+	_flash_sprite()
+	AudioManager.play_sfx("enemy_hurt")
+
+	if health_component and health_component.current_health > 0:
+		change_state(State.HURT)
+		await get_tree().create_timer(0.2).timeout
+		if current_state == State.HURT:
+			change_state(State.CHASE)
 
 func _physics_process(delta: float) -> void:
 	if current_state == State.DEAD:
@@ -211,9 +268,20 @@ func _melee_attack() -> void:
 
 	if player and global_position.distance_to(player.global_position) <= attack_range:
 		var knockback = (player.global_position - global_position).normalized() * 200
-		player.take_damage(attack_damage, knockback)
+		var damage_data := DamageDataClass.new(attack_damage, knockback, self, self)
+		_damage_system.call("apply_damage", player, damage_data)
 
-func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
+
+func apply_damage(damage_data: DamageDataClass) -> void:
+	if damage_data == null:
+		return
+
+	if hurtbox and hurtbox.has_method("apply_damage"):
+		hurtbox.apply_damage(damage_data)
+		return
+
+	var amount := damage_data.amount
+	var knockback := damage_data.knockback
 	if current_state == State.DEAD:
 		return
 
@@ -235,7 +303,15 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 		if current_state == State.HURT:
 			change_state(State.CHASE)
 
+
+func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
+	apply_damage(DamageDataClass.new(amount, knockback, null, null))
+
 func heal(amount: int) -> void:
+	if health_component and health_component.has_method("heal"):
+		health_component.heal(amount)
+		return
+
 	current_health = min(current_health + amount, max_health)
 	health_changed.emit(current_health, max_health)
 

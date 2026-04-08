@@ -137,7 +137,8 @@ func _end_dive() -> void:
 	# 对玩家造成伤害
 	if player and global_position.distance_to(player.global_position) < attack_range:
 		var knockback = Vector2(0, -300)  # 向上击退
-		player.take_damage(attack_damage, knockback)
+		var damage_data := DamageDataClass.new(attack_damage, knockback, self, self)
+		_damage_system.call("apply_damage", player, damage_data)
 
 	# 返回空中
 	base_y_position = global_position.y - 100.0

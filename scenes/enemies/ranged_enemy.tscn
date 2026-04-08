@@ -1,6 +1,9 @@
-[gd_scene load_steps=10 format=3 uid="uid://rangedenemy12345"]
+[gd_scene load_steps=13 format=3 uid="uid://rangedenemy12345"]
 
 [ext_resource type="Script" path="res://src/enemies/ranged_enemy.gd" id="1_ranged"]
+[ext_resource type="Script" path="res://src/utils/hitbox.gd" id="2_hitbox"]
+[ext_resource type="Script" path="res://src/utils/hurtbox.gd" id="3_hurtbox"]
+[ext_resource type="Script" path="res://src/utils/health_component.gd" id="4_health_component"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(36, 56)
@@ -189,6 +192,7 @@ shape = SubResource("CircleShape2D_detection")
 [node name="Hitbox" type="Area2D" parent="."]
 collision_layer = 0
 collision_mask = 1
+script = ExtResource("2_hitbox")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
 position = Vector2(0, -28)
@@ -197,6 +201,7 @@ shape = SubResource("RectangleShape2D_hitbox")
 [node name="Hurtbox" type="Area2D" parent="."]
 collision_layer = 2
 collision_mask = 0
+script = ExtResource("3_hurtbox")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
 position = Vector2(0, -28)
@@ -204,6 +209,9 @@ shape = SubResource("RectangleShape2D_hurtbox")
 
 [node name="AttackTimer" type="Timer" parent="."]
 one_shot = true
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("4_health_component")
 
 [node name="GroundCheck" type="RayCast2D" parent="."]
 position = Vector2(0, -5)
