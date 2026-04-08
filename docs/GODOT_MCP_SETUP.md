@@ -91,7 +91,7 @@ godot --editor --path .
         "G:/dev/godot-mcp-fc-a/build/index.js"
       ],
       "environment": {
-        "GODOT_PATH": "G:\\dev\\Godot_v4.6.1\\godot.bat",
+        "GODOT_PATH": "G:\\dev\\Godot_v4.6.2\\godot.bat",
         "GODOT_PROJECT_PATH": "G:\\dev\\DreamerHeroines"
       },
       "enabled": true

@@ -2241,7 +2241,7 @@ func _init(p_damage: float, p_type: int, p_source: Node) -> void:
             "request": "launch",
             "mode": "executable",
             "preLaunchTask": "build",
-            "executable": "${env:GODOT4}\Godot_v4.6.1-stable_mono_win64.exe",
+            "executable": "${env:GODOT4}\godot.exe",
             "executableArguments": [
                 "--path",
                 "${workspaceRoot}"
