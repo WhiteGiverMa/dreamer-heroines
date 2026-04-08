@@ -1,5 +1,7 @@
-﻿class_name Player
+class_name Player
 extends CharacterBody2D
+
+const DamageDataClass = preload("res://src/utils/damage_data.gd")
 
 # Player - 玩家控制器
 # 实现横板射击游戏的核心玩家逻辑
@@ -76,6 +78,8 @@ signal dash_ended()
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var invulnerability_timer: Timer = $InvulnerabilityTimer
 @onready var dash_iframe_timer: Timer = $DashIframeTimer
+@onready var health_component = get_node_or_null("HealthComponent")
+@onready var hurtbox = get_node_or_null("Hurtbox")
 
 # 状态变量
 var current_health: int = 100
@@ -122,7 +126,7 @@ func _ready():
 	# 注册到 GameManager
 	GameManager.register_player(self)
 
-	current_health = max_health
+	_setup_damage_pipeline()
 	invulnerability_timer.wait_time = invulnerability_time
 	if jump_action and not jump_action.just_triggered.is_connected(_on_jump_action_just_triggered):
 		jump_action.just_triggered.connect(_on_jump_action_just_triggered)
@@ -138,6 +142,46 @@ func _ready():
 	_initialize_weapons()
 
 	print("Player initialized")
+
+
+func _setup_damage_pipeline() -> void:
+	if health_component:
+		health_component.max_health = max_health
+		health_component.invulnerability_duration = 0.0
+		health_component.set_health(max_health)
+		if not health_component.health_changed.is_connected(_on_health_component_changed):
+			health_component.health_changed.connect(_on_health_component_changed)
+		if not health_component.health_depleted.is_connected(_on_health_component_depleted):
+			health_component.health_depleted.connect(_on_health_component_depleted)
+		current_health = health_component.current_health
+	else:
+		current_health = max_health
+
+	if hurtbox:
+		hurtbox.health_component = health_component
+		hurtbox.invulnerability_duration = invulnerability_time
+		if not hurtbox.damage_taken.is_connected(_on_hurtbox_damage_taken):
+			hurtbox.damage_taken.connect(_on_hurtbox_damage_taken)
+
+
+func _on_health_component_changed(current: int, max_value: int, _change_amount: int) -> void:
+	current_health = current
+	max_health = max_value
+	health_changed.emit(current_health, max_health)
+
+
+func _on_health_component_depleted() -> void:
+	if current_health <= 0:
+		_die()
+
+
+func _on_hurtbox_damage_taken(_amount: int, knockback: Vector2, _source: Node) -> void:
+	if dash_interrupt_mode == DashInterruptMode.ON_DAMAGE and dash_state == DashState.DASHING:
+		_interrupt_dash()
+
+	velocity += knockback * (1.0 - knockback_resistance)
+	_flash_sprite()
+	AudioManager.play_sfx("player_hurt")
 
 
 func _input(event: InputEvent) -> void:
@@ -696,7 +740,17 @@ func _on_weapon_spread_changed(current_spread: float, base_spread: float) -> voi
 	if GameManager.hud:
 		GameManager.hud.update_crosshair_spread(current_spread, base_spread)
 
-func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
+
+func apply_damage(damage_data: DamageDataClass) -> void:
+	if damage_data == null:
+		return
+
+	if hurtbox and hurtbox.has_method("apply_damage"):
+		hurtbox.apply_damage(damage_data)
+		return
+
+	var amount := damage_data.amount
+	var knockback := damage_data.knockback
 	if is_invulnerable or current_health <= 0:
 		return
 
@@ -721,7 +775,15 @@ func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
 	if current_health <= 0:
 		_die()
 
+
+func take_damage(amount: int, knockback: Vector2 = Vector2.ZERO) -> void:
+	apply_damage(DamageDataClass.new(amount, knockback, null, null))
+
 func heal(amount: int) -> void:
+	if health_component and health_component.has_method("heal"):
+		health_component.heal(amount)
+		return
+
 	current_health = min(current_health + amount, max_health)
 	health_changed.emit(current_health, max_health)
 
@@ -734,8 +796,14 @@ func _die() -> void:
 
 func respawn(spawn_position: Vector2) -> void:
 	global_position = spawn_position
-	current_health = max_health
+	if health_component and health_component.has_method("reset"):
+		health_component.reset()
+		current_health = health_component.current_health
+	else:
+		current_health = max_health
 	velocity = Vector2.ZERO
+	if hurtbox and hurtbox.has_method("stop_invulnerability"):
+		hurtbox.stop_invulnerability()
 	# 如果 god_mode 启用，保持无敌状态
 	if not DeveloperMode or not DeveloperMode.god_mode:
 		is_invulnerable = false

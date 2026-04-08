@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://player12345"]
+[gd_scene load_steps=17 format=3 uid="uid://player12345"]
 
 [ext_resource type="Script" path="res://src/characters/player.gd" id="1_player"]
 [ext_resource type="Resource" uid="uid://c8a2h5m1n3k9" path="res://config/input/actions/move.tres" id="2_move"]
@@ -12,6 +12,8 @@
 [ext_resource type="Resource" path="res://config/input/actions/weapon_secondary.tres" id="10_weapon_secondary"]
 [ext_resource type="Script" path="res://src/utils/camera_shake.gd" id="11_camera_shake"]
 [ext_resource type="Resource" uid="uid://toggle_light_action" path="res://config/input/actions/toggle_light.tres" id="12_toggle_light"]
+[ext_resource type="Script" path="res://src/utils/health_component.gd" id="13_health_component"]
+[ext_resource type="Script" path="res://src/utils/hurtbox.gd" id="14_hurtbox"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_player"]
 size = Vector2(32, 64)
@@ -21,6 +23,9 @@ size = Vector2(32, 64)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_feet"]
 size = Vector2(30, 4)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
+size = Vector2(36, 68)
 
 [sub_resource type="Animation" id="Animation_idle"]
 resource_name = "idle"
@@ -215,6 +220,16 @@ drag_top_margin = 0.1
 drag_bottom_margin = 0.1
 
 [node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("13_health_component")
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+script = ExtResource("14_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(0, -32)
+shape = SubResource("RectangleShape2D_hurtbox")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
