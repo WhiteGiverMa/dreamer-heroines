@@ -13,7 +13,7 @@
 cd G:\dev\DreamerHeroines
 
 # 运行自动化集成测试
-G:\dev\Godot_v4.6.1\godot.bat tests/scenes/test_launcher.tscn
+G:\dev\Godot_v4.6.2\godot.bat tests/scenes/test_launcher.tscn
 ```
 
 **预期输出：**
@@ -59,7 +59,7 @@ G:\dev\Godot_v4.6.1\godot.bat tests/scenes/test_launcher.tscn
 
 ```bash
 # 仅运行单元测试（不需要图形界面）
-G:\dev\Godot_v4.6.1\godot.bat --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests/unit -ginclude_subdirs -gexit
+G:\dev\Godot_v4.6.2\godot.bat --headless -s addons/gut/gut_cmdln.gd -- -gdir=tests/unit -ginclude_subdirs -gexit
 ```
 
 ---

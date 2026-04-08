@@ -25,7 +25,7 @@
 **终端 1 - 启动游戏：**
 ```bash
 cd G:\dev\DreamerHeroines
-G:\dev\Godot_v4.6.1\godot.bat --scene scenes/main.tscn
+G:\dev\Godot_v4.6.2\godot.bat --scene scenes/main.tscn
 ```
 
 **终端 2 - 运行测试（使用 MCP）：**
