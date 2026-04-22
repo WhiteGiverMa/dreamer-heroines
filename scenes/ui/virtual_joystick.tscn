@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[node name="VirtualJoystick" type="CanvasLayer"]
+
+[node name="LeftStick" type="GUIDEVirtualStick" parent="."]
+offset_left = 150.0
+offset_top = 930.0
+offset_right = 150.0
+offset_bottom = 930.0
+interaction_zone_radius = 120.0
+stick_radius = 60.0
+max_actuation_radius = 60.0
+stick_position = 0
+position_mode = 0
+
+[node name="RightStick" type="GUIDEVirtualStick" parent="."]
+offset_left = 1770.0
+offset_top = 930.0
+offset_right = 1770.0
+offset_bottom = 930.0
+interaction_zone_radius = 120.0
+stick_radius = 60.0
+max_actuation_radius = 60.0
+stick_position = 1
+position_mode = 0

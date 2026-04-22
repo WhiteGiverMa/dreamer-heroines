@@ -446,7 +446,12 @@ func _get_default_settings() -> Dictionary:
 		"window_mode": 0,  # 0=Windowed, 1=Fullscreen, 2=Borderless
 		"locale": "zh_CN",
 		"developer_mode_enabled": false,
-		"lighting_enabled": true
+		"lighting_enabled": true,
+		"mobile_deadzone": 0.4,
+		"mobile_target_search_angle": 60.0,
+		"mobile_show_deadzone_ring": true,
+		"mobile_show_aim_line": true,
+		"mobile_lock_on_sound_enabled": true
 	}
 
 	var crosshair_defaults := (

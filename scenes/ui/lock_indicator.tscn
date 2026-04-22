@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/ui/lock_indicator.gd" id="1_script"]
+
+[node name="LockIndicator" type="CanvasLayer"]
+script = ExtResource("1_script")
+
+[node name="LockFrame" type="ColorRect" parent="."]
+visible = false
+offset_right = 52.0
+offset_bottom = 52.0
+color = Color(1, 0.8, 0, 0.8)
+
+[node name="AimLine" type="Line2D" parent="."]
+visible = false
+points = PackedVector2Array(0, 0, 100, 100)
+width = 2.0
+default_color = Color(1, 0.8, 0, 0.6)

@@ -1,6 +1,8 @@
 extends CanvasLayer
 
 const LocalizedTextBinderClass = preload("res://src/ui/localized_text_binder.gd")
+const VirtualJoystickScene = preload("res://scenes/ui/virtual_joystick.tscn")
+const LockIndicatorScene = preload("res://scenes/ui/lock_indicator.tscn")
 
 # HUD - 游戏内界面
 # 显示生命值、弹药、分数等游戏信息
@@ -78,6 +80,10 @@ var is_deploying: bool = false
 # 武器槽位
 var current_slot: int = 0  # 0 = primary, 1 = secondary
 
+# 移动端 UI
+var _virtual_joystick: CanvasLayer = null
+var _lock_indicator: CanvasLayer = null
+
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var hit_marker_timer: Timer = $HitMarkerTimer
 
@@ -133,7 +139,38 @@ func _ready() -> void:
 	_apply_localized_texts()
 	_sync_crosshair_runtime_from_player()
 
+	_setup_mobile_ui()
+
 	print("HUD initialized")
+
+
+func _setup_mobile_ui() -> void:
+	# 实例化虚拟摇杆
+	_virtual_joystick = VirtualJoystickScene.instantiate()
+	add_child(_virtual_joystick)
+	_virtual_joystick.visible = InputModeManager.is_mobile_mode()
+
+	# 实例化锁定指示器
+	_lock_indicator = LockIndicatorScene.instantiate()
+	add_child(_lock_indicator)
+	_lock_indicator.visible = InputModeManager.is_mobile_mode()
+
+	# 监听模式变化
+	if not InputModeManager.input_mode_changed.is_connected(_on_input_mode_changed):
+		InputModeManager.input_mode_changed.connect(_on_input_mode_changed)
+
+
+func _on_input_mode_changed(mode: int) -> void:
+	var is_mobile := (mode == 1)  # InputMode.MOBILE = 1
+	if _virtual_joystick:
+		_virtual_joystick.visible = is_mobile
+	if _lock_indicator:
+		_lock_indicator.visible = is_mobile
+
+
+func _exit_tree() -> void:
+	if InputModeManager and InputModeManager.input_mode_changed.is_connected(_on_input_mode_changed):
+		InputModeManager.input_mode_changed.disconnect(_on_input_mode_changed)
 
 
 func _setup_localized_bindings() -> void:

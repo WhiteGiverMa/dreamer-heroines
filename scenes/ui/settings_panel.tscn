@@ -166,6 +166,70 @@ layout_mode = 2
 button_pressed = true
 text = "光效"
 
+[node name="MobileSettingsSection" type="VBoxContainer" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent"]
+unique_name_in_owner = true
+layout_mode = 2
+visible = false
+theme_override_constants/separation = 8
+
+[node name="MobileSettingsLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent/MobileSettingsSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "移动端设置"
+
+[node name="DeadzoneLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent/MobileSettingsSection"]
+layout_mode = 2
+text = "摇杆死区"
+
+[node name="DeadzoneSlider" type="HSlider" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent/MobileSettingsSection"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 0.7
+step = 0.05
+value = 0.4
+
+[node name="DeadzoneValueLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent/MobileSettingsSection"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0.40"
+horizontal_alignment = 1
+
+[node name="SearchAngleLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent/MobileSettingsSection"]
+layout_mode = 2
+text = "目标搜索角度"
+
+[node name="SearchAngleSlider" type="HSlider" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent/MobileSettingsSection"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 30.0
+max_value = 120.0
+step = 5.0
+value = 60.0
+
+[node name="SearchAngleValueLabel" type="Label" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent/MobileSettingsSection"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "60°"
+horizontal_alignment = 1
+
+[node name="ShowDeadzoneRingCheck" type="CheckBox" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent/MobileSettingsSection"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "显示死区环"
+
+[node name="ShowAimLineCheck" type="CheckBox" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent/MobileSettingsSection"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "显示瞄准线"
+
+[node name="LockOnSoundCheck" type="CheckBox" parent="TabContainer/BasicTab/BasicScrollContainer/BasicContent/MobileSettingsSection"]
+unique_name_in_owner = true
+layout_mode = 2
+button_pressed = true
+text = "锁定音效"
+
 [node name="CrosshairTab" type="VBoxContainer" parent="TabContainer"]
 layout_mode = 2
 size_flags_horizontal = 3

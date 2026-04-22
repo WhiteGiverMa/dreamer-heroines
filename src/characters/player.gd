@@ -34,6 +34,7 @@ signal dash_ended()
 @export var weapon_primary_action: GUIDEAction
 @export var weapon_secondary_action: GUIDEAction
 @export var toggle_light_action: GUIDEAction
+@export var aim_action: GUIDEAction
 
 # 移动参数
 @export_group("Movement")
@@ -80,8 +81,9 @@ signal dash_ended()
 @onready var dash_iframe_timer: Timer = $DashIframeTimer
 @onready var health_component = get_node_or_null("HealthComponent")
 @onready var hurtbox = get_node_or_null("Hurtbox")
+@onready var target_acquisition: TargetAcquisition = $TargetAcquisition
 
-# 状态变量
+	# 状态变量
 var current_health: int = 100
 var is_grounded: bool = false
 var is_crouching: bool = false
@@ -137,6 +139,12 @@ func _ready():
 	invulnerability_timer.timeout.connect(_on_invulnerability_timeout)
 	dash_iframe_timer.timeout.connect(_on_dash_iframe_timeout)
 	is_grounded = is_on_floor()
+
+	# 确保 TargetAcquisition 节点存在
+	if target_acquisition == null:
+		target_acquisition = TargetAcquisition.new()
+		target_acquisition.name = "TargetAcquisition"
+		add_child(target_acquisition)
 
 	# 初始化武器系统
 	_initialize_weapons()
@@ -238,6 +246,17 @@ func _physics_process(delta: float):
 	_handle_movement(delta)
 	_update_dash(delta)
 	_sample_frame_aim()
+
+	# 移动端：更新目标锁定
+	if InputModeManager.is_mobile_mode() and target_acquisition and aim_action:
+		var aim_input := EnhancedInput.instance.get_axis_2d(aim_action)
+		if aim_input.length() > 0.01:
+			var settings := SaveManager.load_settings()
+			var search_angle: float = settings.get("mobile_target_search_angle", 60.0)
+			target_acquisition.update_lock(_frame_aim_origin, aim_input, search_angle)
+		else:
+			target_acquisition.clear_lock()
+
 	_handle_aiming()
 	_sample_frame_muzzle_position()
 	_handle_shooting()
@@ -245,6 +264,12 @@ func _physics_process(delta: float):
 
 	# 更新 HUD 进度显示
 	_update_hud_progress(delta)
+
+	# 检查锁定目标是否仍然有效
+	if target_acquisition and target_acquisition.get_locked_target() != null:
+		var locked := target_acquisition.get_locked_target()
+		if not is_instance_valid(locked) or (locked is EnemyBase and locked.current_state == EnemyBase.State.DEAD):
+			target_acquisition.clear_lock()
 
 	move_and_slide()
 	is_grounded = is_on_floor()
@@ -396,12 +421,22 @@ func _handle_shooting() -> void:
 		push_warning("current_weapon is NULL!")
 		return
 
-	var is_pressed = EnhancedInput.instance.is_action_pressed(shoot_action)
-	if is_pressed:
-		# 使用 Weapon 组件：传递枪口位置和瞄准方向
+	var should_shoot := false
+
+	# PC 模式：使用 shoot_action（鼠标左键）
+	if not InputModeManager.is_mobile_mode():
+		should_shoot = EnhancedInput.instance.is_action_pressed(shoot_action)
+	else:
+		# 移动端模式：右摇杆摇出死区时射击
+		if aim_action != null:
+			var aim_input := EnhancedInput.instance.get_axis_2d(aim_action)
+			var settings := SaveManager.load_settings()
+			var deadzone: float = settings.get("mobile_deadzone", 0.4)
+			should_shoot = aim_input.length() > deadzone
+
+	if should_shoot:
 		if current_weapon:
 			current_weapon.try_shoot(_frame_muzzle_pos, _frame_aim_dir)
-
 
 	if EnhancedInput.instance.is_action_just_pressed(reload_action) and current_weapon:
 		current_weapon.reload()
@@ -912,6 +947,16 @@ func _sample_frame_muzzle_position() -> void:
 
 
 func _compute_aim_direction_from_origin(aim_origin: Vector2) -> Vector2:
+	# 移动端模式：如果有锁定目标，返回指向目标的方向
+	if InputModeManager.is_mobile_mode() and target_acquisition:
+		var locked := target_acquisition.get_locked_target()
+		if is_instance_valid(locked):
+			var aim_vector := locked.global_position - aim_origin
+			if aim_vector.length_squared() > 0.0001:
+				return aim_vector.normalized()
+			return Vector2.RIGHT
+
+	# PC 模式或没有锁定目标：使用鼠标瞄准
 	var mouse_world_position := EnhancedInput.instance.get_mouse_world_position()
 	var aim_vector := mouse_world_position - aim_origin
 

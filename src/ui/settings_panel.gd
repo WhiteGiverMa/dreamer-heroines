@@ -1,4 +1,4 @@
-﻿class_name SettingsPanel
+class_name SettingsPanel
 extends Panel
 
 const DisplaySettingsBoundary = preload("res://src/autoload/display_settings_boundary.gd")
@@ -19,6 +19,11 @@ const DEFAULT_BASIC_SETTINGS := {
 	"developer_mode_enabled": false,
 	"lighting_enabled": true,
 	"slider_wheel_on_slider": true,
+	"mobile_deadzone": 0.4,
+	"mobile_target_search_angle": 60.0,
+	"mobile_show_deadzone_ring": true,
+	"mobile_show_aim_line": true,
+	"mobile_lock_on_sound_enabled": true,
 }
 
 const DEFAULT_RESOLUTION_INDEX := 1
@@ -52,6 +57,14 @@ const WINDOW_MODES = DisplaySettingsBoundary.WINDOW_MODES
 @onready var lighting_effects_check: CheckBox = %LightingEffectsCheck
 @onready var slider_wheel_on_slider_check: CheckBox = %SliderWheelOnSliderCheck
 @onready var crosshair_panel_host: Control = %CrosshairPanelHost
+@onready var mobile_settings_section: VBoxContainer = %MobileSettingsSection
+@onready var deadzone_slider: HSlider = %DeadzoneSlider
+@onready var deadzone_value_label: Label = %DeadzoneValueLabel
+@onready var search_angle_slider: HSlider = %SearchAngleSlider
+@onready var search_angle_value_label: Label = %SearchAngleValueLabel
+@onready var show_deadzone_ring_check: CheckBox = %ShowDeadzoneRingCheck
+@onready var show_aim_line_check: CheckBox = %ShowAimLineCheck
+@onready var lock_on_sound_check: CheckBox = %LockOnSoundCheck
 @onready var save_button: Button = %SaveButton
 @onready var cancel_button: Button = %CancelButton
 @onready var back_button: Button = %BackButton
@@ -127,6 +140,22 @@ func _init_controls() -> void:
 	if sensitivity_slider:
 		sensitivity_slider.step = 1.0
 		sensitivity_slider.rounded = true
+
+	if deadzone_slider:
+		deadzone_slider.min_value = 0.1
+		deadzone_slider.max_value = 0.7
+		deadzone_slider.step = 0.05
+		deadzone_slider.value = 0.4
+
+	if search_angle_slider:
+		search_angle_slider.min_value = 30.0
+		search_angle_slider.max_value = 120.0
+		search_angle_slider.step = 5.0
+		search_angle_slider.value = 60.0
+
+	if mobile_settings_section:
+		var os_name := OS.get_name()
+		mobile_settings_section.visible = os_name in ["Android", "iOS", "Web"]
 
 
 func _setup_slider_value_inputs() -> void:
@@ -216,6 +245,21 @@ func _connect_signals() -> void:
 	if slider_wheel_on_slider_check:
 		slider_wheel_on_slider_check.toggled.connect(_on_slider_wheel_on_slider_toggled)
 
+	if deadzone_slider:
+		deadzone_slider.value_changed.connect(_on_deadzone_changed)
+
+	if search_angle_slider:
+		search_angle_slider.value_changed.connect(_on_search_angle_changed)
+
+	if show_deadzone_ring_check:
+		show_deadzone_ring_check.toggled.connect(_on_show_deadzone_ring_toggled)
+
+	if show_aim_line_check:
+		show_aim_line_check.toggled.connect(_on_show_aim_line_toggled)
+
+	if lock_on_sound_check:
+		lock_on_sound_check.toggled.connect(_on_lock_on_sound_toggled)
+
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
 
@@ -304,6 +348,26 @@ func _apply_basic_settings(settings: Dictionary, _persist_after_apply: bool = fa
 		slider_wheel_on_slider_check.button_pressed = bool(settings.get("slider_wheel_on_slider", DEFAULT_BASIC_SETTINGS["slider_wheel_on_slider"]))
 		if UISettingsService:
 			UISettingsService.set_setting("slider_wheel_on_slider", slider_wheel_on_slider_check.button_pressed, false)
+
+	if deadzone_slider:
+		deadzone_slider.value = float(settings.get("mobile_deadzone", DEFAULT_BASIC_SETTINGS["mobile_deadzone"]))
+		if deadzone_value_label:
+			deadzone_value_label.text = "%.2f" % deadzone_slider.value
+
+	if search_angle_slider:
+		search_angle_slider.value = float(settings.get("mobile_target_search_angle", DEFAULT_BASIC_SETTINGS["mobile_target_search_angle"]))
+		if search_angle_value_label:
+			search_angle_value_label.text = "%d°" % int(search_angle_slider.value)
+
+	if show_deadzone_ring_check:
+		show_deadzone_ring_check.button_pressed = bool(settings.get("mobile_show_deadzone_ring", DEFAULT_BASIC_SETTINGS["mobile_show_deadzone_ring"]))
+
+	if show_aim_line_check:
+		show_aim_line_check.button_pressed = bool(settings.get("mobile_show_aim_line", DEFAULT_BASIC_SETTINGS["mobile_show_aim_line"]))
+
+	if lock_on_sound_check:
+		lock_on_sound_check.button_pressed = bool(settings.get("mobile_lock_on_sound_enabled", DEFAULT_BASIC_SETTINGS["mobile_lock_on_sound_enabled"]))
+
 	_is_loading_settings = false
 
 
@@ -449,6 +513,55 @@ func _on_slider_wheel_on_slider_toggled(enabled: bool) -> void:
 		return
 
 	_pending_settings["slider_wheel_on_slider"] = enabled
+	_mark_as_changed()
+
+
+func _on_deadzone_changed(value: float) -> void:
+	"""处理摇杆死区变化 - 暂存到_pending_settings"""
+	if _is_updating_controls or _is_loading_settings:
+		return
+
+	if deadzone_value_label:
+		deadzone_value_label.text = "%.2f" % value
+	_pending_settings["mobile_deadzone"] = value
+	_mark_as_changed()
+
+
+func _on_search_angle_changed(value: float) -> void:
+	"""处理目标搜索角度变化 - 暂存到_pending_settings"""
+	if _is_updating_controls or _is_loading_settings:
+		return
+
+	if search_angle_value_label:
+		search_angle_value_label.text = "%d°" % int(value)
+	_pending_settings["mobile_target_search_angle"] = value
+	_mark_as_changed()
+
+
+func _on_show_deadzone_ring_toggled(enabled: bool) -> void:
+	"""处理显示死区环切换 - 暂存到_pending_settings"""
+	if _is_updating_controls or _is_loading_settings:
+		return
+
+	_pending_settings["mobile_show_deadzone_ring"] = enabled
+	_mark_as_changed()
+
+
+func _on_show_aim_line_toggled(enabled: bool) -> void:
+	"""处理显示瞄准线切换 - 暂存到_pending_settings"""
+	if _is_updating_controls or _is_loading_settings:
+		return
+
+	_pending_settings["mobile_show_aim_line"] = enabled
+	_mark_as_changed()
+
+
+func _on_lock_on_sound_toggled(enabled: bool) -> void:
+	"""处理锁定音效切换 - 暂存到_pending_settings"""
+	if _is_updating_controls or _is_loading_settings:
+		return
+
+	_pending_settings["mobile_lock_on_sound_enabled"] = enabled
 	_mark_as_changed()
 
 
@@ -649,6 +762,11 @@ func _save_settings_to_file() -> void:
 	settings["developer_mode_enabled"] = _original_settings.get("developer_mode_enabled", DEFAULT_BASIC_SETTINGS["developer_mode_enabled"])
 	settings["lighting_enabled"] = _original_settings.get("lighting_enabled", DEFAULT_BASIC_SETTINGS["lighting_enabled"])
 	settings["slider_wheel_on_slider"] = _original_settings.get("slider_wheel_on_slider", DEFAULT_BASIC_SETTINGS["slider_wheel_on_slider"])
+	settings["mobile_deadzone"] = _original_settings.get("mobile_deadzone", DEFAULT_BASIC_SETTINGS["mobile_deadzone"])
+	settings["mobile_target_search_angle"] = _original_settings.get("mobile_target_search_angle", DEFAULT_BASIC_SETTINGS["mobile_target_search_angle"])
+	settings["mobile_show_deadzone_ring"] = _original_settings.get("mobile_show_deadzone_ring", DEFAULT_BASIC_SETTINGS["mobile_show_deadzone_ring"])
+	settings["mobile_show_aim_line"] = _original_settings.get("mobile_show_aim_line", DEFAULT_BASIC_SETTINGS["mobile_show_aim_line"])
+	settings["mobile_lock_on_sound_enabled"] = _original_settings.get("mobile_lock_on_sound_enabled", DEFAULT_BASIC_SETTINGS["mobile_lock_on_sound_enabled"])
 	settings["resolution_width"] = window_size.x
 	settings["resolution_height"] = window_size.y
 
